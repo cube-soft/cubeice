@@ -37,7 +37,7 @@ namespace cube {
 				std::basic_string<TCHAR> dest = cube::dialog::browsefolder(_T("解凍するフォルダーを指定して下さい。"));
 				dest += _T("\\") + filename.substr(0, filename.find_last_of(_T('.')));
 				std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
-				cmdline += _T(" x -bd -scsDOS -y -o\"") + dest + _T("\"");
+				cmdline += _T(" x -bd -scsWIN -y -o\"") + dest + _T("\"");
 				cmdline += _T(" \"") + *first + _T("\"");
 				this->execute(cmdline);
 			}
@@ -57,17 +57,29 @@ namespace cube {
 		void execute(const std::basic_string<TCHAR>& cmdline) {
 			PROCESS_INFORMATION pi = {};
 			
+#if 0
+			// MEMO: こういった処理を行いたいが，popen を使用すると DOS 窓が開いてしまう．
+			// TODO: popen 相当の関数を CreateProcess と CreatePipe を用いて作成する．
+			// see also: http://support.microsoft.com/kb/190351/ja
+			cube::dialog::progressbar progress(app_);
+
+			FILE* fd = _tpopen(cmdline.c_str(), _T("r"));
+			TCHAR buffer[2048] = {};
+			while (_fgetts(buffer, 2048, fd)) {
+				progress.text(buffer);
+				progress += 10; // TODO: (1 / 総ファイル数) だけ進める．
+				Sleep(50);
+			}
+#else
 			// MEMO: 現在は，いったんファイルに吐き出して結果を列挙している．
 			// TODO: 作成したプロセスの標準出力を標準入力にリダイレクトし，
 			// その内容を一行ずつ表示する．
-			// see also: http://support.microsoft.com/kb/190351/ja
 			SECURITY_ATTRIBUTES sa;
 			sa.nLength= sizeof(SECURITY_ATTRIBUTES);
 			sa.lpSecurityDescriptor = NULL;
 			sa.bInheritHandle = TRUE;
 			HANDLE handle = CreateFile( _T("tmp.txt"), GENERIC_WRITE, FILE_SHARE_WRITE, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
 			
-
 			STARTUPINFO si = {};
 			//GetStartupInfo(&si);
 			si.dwFlags = STARTF_USESTDHANDLES;
@@ -110,22 +122,12 @@ namespace cube {
 			cube::dialog::progressbar progress(app_);
 			for (std::vector<std::basic_string<TCHAR> >::iterator pos = v.begin(); pos != v.end(); ++pos) {
 				progress.text(*pos);
-				progress += 10; // TODO: (1 / 総ファイル数) だけ進める．
-				
-				// キャンセルボタンを有効にするために，メッセージを監視する．
-				MSG msg;
-				BOOL status = GetMessage(&msg, NULL, 0, 0);
-				if (status == 0 || status == -1) break;
-				else {
-					if (!IsDialogMessage(progress.handle(), &msg)) {
-						TranslateMessage(&msg);
-						DispatchMessage(&msg);
-					}
-				}
-
-				Sleep(50);
+				progress += 5; // TODO: (1 / 総ファイル数) だけ進める．
+				Sleep(10);
 			}
 			CloseHandle(handle);
+			DeleteFile( _T("tmp.txt"));
+#endif
 		}
 	};
 }
