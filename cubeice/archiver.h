@@ -4,19 +4,23 @@
 #include <string>
 #include <vector>
 #include <tchar.h>
+#include <clx/split.h>
+#include "tcharext.h"
 
-#define CUBE_ICE_ENGINE _T("7z")
+#define CUBE_ICE_ENGINE _T("7z.exe")
 
 namespace cube {
 	class archiver {
 	public:
+		archiver(HINSTANCE app) : app_(app) {}
+
 		/* ----------------------------------------------------------------- */
 		//  compress
 		/* ----------------------------------------------------------------- */
 		template <class InputIterator>
 		void compress(InputIterator first, InputIterator last) {
 			const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-			std::basic_string<TCHAR> dest = cube::win32api::save_dialog(filter);
+			std::basic_string<TCHAR> dest = cube::dialog::savefile(filter);
 			std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
 			cmdline += _T(" a -tzip -y \"") + dest + _T("\"");
 			while (++first != last) cmdline += _T(" \"") + *first + _T("\"");
@@ -31,7 +35,7 @@ namespace cube {
 			while (++first != last) {
 				std::basic_string<TCHAR>::size_type pos = first->find_last_of('\\');
 				std::basic_string<TCHAR> filename = (pos == std::basic_string<TCHAR>::npos) ? *first : first->substr(pos);
-				std::basic_string<TCHAR> dest = cube::win32api::folder_dialog(_T("解凍するフォルダーを指定して下さい。"));
+				std::basic_string<TCHAR> dest = cube::dialog::browsefolder(_T("解凍するフォルダーを指定して下さい。"));
 				dest += _T("\\") + filename.substr(0, filename.find_last_of(_T('.')));
 				std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
 				cmdline += _T(" x -y -o\"") + dest + _T("\"");
@@ -41,36 +45,76 @@ namespace cube {
 		}
 		
 	private:
+		HINSTANCE app_;
+
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  execute
 		 *
-		 *  MEMO: CreateProcess に渡すコマンドライン文字列は変更される可能性が
-		 *  あるため，いったん配列 (vector) にコピーして渡している．
+		 *  MEMO: CreateProcess に渡すコマンドライン文字列は変更される
+		 *  可能性があるため，いったん配列 (vector) にコピーして渡している．
 		 */
 		/* ----------------------------------------------------------------- */
 		void execute(const std::basic_string<TCHAR>& cmdline) {
-			STARTUPINFO si = {};
 			PROCESS_INFORMATION pi = {};
-			GetStartupInfo(&si);
+			
+			// MEMO: 現在は，いったんファイルに吐き出して結果を列挙している．
+			// TODO: 作成したプロセスの標準出力を標準入力にリダイレクトし，
+			// その内容を一行ずつ表示する．
+			// see also: http://support.microsoft.com/kb/190351/ja
+			SECURITY_ATTRIBUTES sa;
+			sa.nLength= sizeof(SECURITY_ATTRIBUTES);
+			sa.lpSecurityDescriptor = NULL;
+			sa.bInheritHandle = TRUE;
+			HANDLE handle = CreateFile( _T("tmp.txt"), GENERIC_WRITE, FILE_SHARE_WRITE, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+			
+
+			STARTUPINFO si = {};
+			//GetStartupInfo(&si);
+			si.dwFlags = STARTF_USESTDHANDLES;
+			si.hStdOutput = handle;
 			
 			// \0 で終わる const でない char 配列
 			std::vector<TCHAR> tmp(cmdline.begin(), cmdline.end());
 			tmp.push_back(0);
 			
-			MessageBox(NULL, cmdline.c_str(), _T("cmdline"), MB_OK);
+			//MessageBox(NULL, cmdline.c_str(), _T("cmdline"), MB_OK);
 	
 			CreateProcess(
-				CUBE_ICE_ENGINE,    // 実行可能モジュール
-				&tmp.at(0),    // コマンドライン
+				NULL, // 実行可能モジュール
+				&tmp.at(0), // コマンドライン
 				NULL,
 				NULL,
-				FALSE,
-				0,
+				TRUE,
+				CREATE_NO_WINDOW | DETACHED_PROCESS, // 作成のフラグ
 				NULL,
-				NULL,               // カレントディレクトリ
+				NULL, // カレントディレクトリ
 				&si, &pi
 			);
+			
+			WaitForSingleObject(pi.hProcess, INFINITE);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+			CloseHandle(handle);
+			
+			// 1行ずつ表示するサンプル．
+			handle = CreateFile( _T("tmp.txt"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+			std::basic_string<TCHAR> src;
+			TCHAR buffer[2048] = {};
+			DWORD n = 0;
+			while (ReadFile(handle, buffer, 2048, &n, NULL) && n > 0) src += buffer;
+			std::vector<std::basic_string<TCHAR> > v;
+			clx::split_if(src, v, clx::is_any_of(_T("\r\n")));
+
+			// progressbar: プログレスバーを表示するためのクラス．
+			// ++演算子で1進む．text() に引数を指定すると，指定された内容が表示される．
+			cube::dialog::progressbar progress(app_);
+			for (std::vector<std::basic_string<TCHAR> >::iterator pos = v.begin(); pos != v.end(); ++pos) {
+				progress.text(*pos);
+				progress += 10; // TODO: (1 / 総ファイル数) だけ進める．
+				Sleep(50);
+			}
+			CloseHandle(handle);
 		}
 	};
 }

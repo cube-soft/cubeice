@@ -46,11 +46,219 @@
 #define CUBE_MAX_PATH 2048
 
 namespace cube {
-	namespace win32api {
-		extern std::basic_string<TCHAR> open_dialog(const TCHAR* filter, const TCHAR* title = _T("ファイルを開く"));
-		extern std::basic_string<TCHAR> save_dialog(const TCHAR* filter, const TCHAR* title = _T("名前を付けて保存"));
-		extern std::basic_string<TCHAR> folder_dialog(const TCHAR* description = _T("フォルダーの参照"));
+	namespace dialog {
+		extern std::basic_string<TCHAR> openfile(const TCHAR* filter, const TCHAR* title = _T("ファイルを開く"));
+		extern std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* title = _T("名前を付けて保存"));
+		extern std::basic_string<TCHAR> browsefolder(const TCHAR* description = _T("フォルダーの参照"));
+		
+		/* ----------------------------------------------------------------- */
+		//  progressbar
+		/* ----------------------------------------------------------------- */
+		class progressbar {
+		public:
+			typedef TCHAR char_type;
+			typedef std::basic_string<TCHAR> string_type;
+			
+			/* ------------------------------------------------------------- */
+			//  static functions
+			/* ------------------------------------------------------------- */
+			static int minimum() { return 0; }
+			static int maximum() { return 1000; }
+			static int step() { return 1; }
+			
+			/* ------------------------------------------------------------- */
+			//  constructor
+			/* ------------------------------------------------------------- */
+			progressbar(HINSTANCE app) :
+				app_(app), handle_(NULL), pos_(progressbar::minimum()) {
+				this->initialize();  
+			}
+			
+			/* ------------------------------------------------------------- */
+			/*
+			 *  operator+=
+			 *
+			 *  プログレスバーを n ステップ進める．1 ステップの値は
+			 *  progressbar::step() から取得できる．
+			 */
+			/* ------------------------------------------------------------- */
+			progressbar& operator+=(int n) {
+				this->position(pos_ + n * progressbar::step());
+				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				return *this;
+			}
+			
+			/* ------------------------------------------------------------- */
+			/*
+			 *  operator-=
+			 *
+			 *  プログレスバーを n ステップ戻す．1 ステップの値は
+			 *  progressbar::step() から取得できる．
+			 */
+			/* ------------------------------------------------------------- */
+			progressbar& operator-=(int n) {
+				this->position(pos_ - n * progressbar::step());
+				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				return *this;
+			}
+
+			/* ------------------------------------------------------------- */
+			/*
+			 *  operator++(int)
+			 *
+			 *  プログレスバーを 1 ステップ進める．1 ステップの値は
+			 *  progressbar::step() から取得できる．
+			 */
+			/* ------------------------------------------------------------- */
+			progressbar& operator++(int) {
+				this->position(pos_ + progressbar::step());
+				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				return *this;
+			}
+
+			/* ------------------------------------------------------------- */
+			/*
+			 *  operator++
+			 *
+			 *  プログレスバーを 1 ステップ進める．1 ステップの値は
+			 *  progressbar::step() から取得できる．
+			 */
+			/* ------------------------------------------------------------- */
+			progressbar& operator++() {
+				this->position(pos_ + progressbar::step());
+				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				return *this;
+			}
+			
+			/* ------------------------------------------------------------- */
+			/*
+			 *  operator--
+			 *
+			 *  プログレスバーを 1 ステップ戻す．1 ステップの値は
+			 *  progressbar::step() から取得できる．
+			 */
+			/* ------------------------------------------------------------- */
+			progressbar& operator--() {
+				this->position(pos_ - progressbar::step());
+				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				return *this;
+			}
+
+			/* ------------------------------------------------------------- */
+			/*
+			 *  operator--(int)
+			 *
+			 *  プログレスバーを 1 ステップ戻す．1 ステップの値は
+			 *  progressbar::step() から取得できる．
+			 */
+			/* ------------------------------------------------------------- */
+			progressbar& operator--(int) {
+				this->position(pos_ - progressbar::step());
+				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				return *this;
+			}
+
+			/* ------------------------------------------------------------- */
+			//  position
+			/* ------------------------------------------------------------- */
+			int position() const { return pos_; }
+			
+			/* ------------------------------------------------------------- */
+			//  position
+			/* ------------------------------------------------------------- */
+			void position(int pos) {
+				if (pos < progressbar::minimum()) pos_ = progressbar::minimum();
+				else if (pos > progressbar::maximum()) pos_ = progressbar::maximum();
+				else pos_ = pos;
+			}
+
+			/* ------------------------------------------------------------- */
+			//  text
+			/* ------------------------------------------------------------- */
+			string_type text() const {
+				TCHAR buffer[2048];
+				GetWindowText(GetDlgItem(handle_, id_text), buffer, 2048);
+				return string_type(buffer);
+			}
+			
+			/* ------------------------------------------------------------- */
+			//  text
+			/* ------------------------------------------------------------- */
+			void text(const string_type& s) {
+				SetWindowText(GetDlgItem(handle_, id_text), s.c_str());
+			}
+
+			/* ------------------------------------------------------------- */
+			//  handle
+			/* ------------------------------------------------------------- */
+			const HWND& handle() const { return handle_; }
+			
+		private:
+			HINSTANCE app_;
+			HWND handle_;
+			int pos_;
+
+			/* ------------------------------------------------------------- */
+			//  progress_dialog の各種コントールの ID
+			/* ------------------------------------------------------------- */
+			enum {
+				id_cancel = 2,
+				id_text = 3,
+				id_progress = 4,
+			};
+			
+			/* ------------------------------------------------------------- */
+			//  initialize
+			/* ------------------------------------------------------------- */
+			void initialize() {
+				handle_ = CreateDialog(app_, _T("PROGRESS_DIALOG"), NULL, wndproc);
+			}
+			
+			/* ------------------------------------------------------------- */
+			//  wndproc
+			/* ------------------------------------------------------------- */
+			static BOOL CALLBACK wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+				switch (msg) {
+				case WM_INITDIALOG:
+				{
+					// 画面中央に表示
+					RECT rect = {};
+					GetWindowRect(hWnd, (LPRECT)&rect);
+					int x = (GetSystemMetrics(SM_CXSCREEN) - (rect.right - rect.left)) / 2;
+					int y = (GetSystemMetrics(SM_CYSCREEN) - (rect.bottom - rect.top)) / 2;
+					SetWindowPos(hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
+					
+					// プログレスバーの min, max, step 値を登録
+					HWND handle = GetDlgItem(hWnd, progressbar::id_progress);
+					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(progressbar::minimum(), progressbar::maximum()));
+					SendMessage(handle, PBM_SETSTEP, (WPARAM)progressbar::step(), 0);
+
+					return TRUE;
+				}
+				case WM_COMMAND:
+					switch (LOWORD(wp)) {
+					case progressbar::id_cancel:
+						EndDialog(hWnd, 0);
+						break;
+					default:
+						break;
+					}
+					break;
+				default:
+					break;
+				}
+
+				return FALSE;
+			}
+
+		private:
+			/* ------------------------------------------------------------- */
+			//  non-copyable
+			/* ------------------------------------------------------------- */
+			progressbar(const progressbar& cp);
+			progressbar& operator=(const progressbar& cp);
+		};
 	}
 }
 
-#endif // CUBE_WINDOW_H
+#endif // CUBE_DIALOG_H

@@ -38,16 +38,16 @@
 #include <tchar.h>
 
 namespace cube {
-	namespace win32api {
+	namespace dialog {
 		/* ----------------------------------------------------------------- */
 		/*
-		 *  open_dialog
+		 *  openfile
 		 *
 		 *  MEMO: filter (OPENFILENAME.lpstrFilter) は区切り文字として
 		 *  '\0' を使用しているため string は使用できない．
 		 */
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> open_dialog(const TCHAR* filter, const TCHAR* title) {
+		std::basic_string<TCHAR> openfile(const TCHAR* filter, const TCHAR* title) {
 			typedef TCHAR char_type;
 			char_type path[CUBE_MAX_PATH] = {};
 			char_type filename[CUBE_MAX_PATH] = {};
@@ -67,9 +67,9 @@ namespace cube {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  save_dialog
+		//  savefile
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> save_dialog(const TCHAR* filter, const TCHAR* title) {
+		std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* title) {
 			typedef TCHAR char_type;
 			char_type path[CUBE_MAX_PATH] = {};
 			char_type filename[CUBE_MAX_PATH] = {};
@@ -100,14 +100,14 @@ namespace cube {
 
 		/* ----------------------------------------------------------------- */
 		/*
-		 *  folder_dialog
+		 *  browsefolder
 		 *
 		 *  see also:
 		 *  http://msdn.microsoft.com/en-us/library/bb762115(VS.85).aspx
 		 *  http://msdn.microsoft.com/en-us/library/bb773205(VS.85).aspx
 		 */
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> folder_dialog(const TCHAR* description) {
+		std::basic_string<TCHAR> browsefolder(const TCHAR* description) {
 			typedef TCHAR char_type;
 			char_type path[CUBE_MAX_PATH] = {};
 			GetCurrentDirectory(CUBE_MAX_PATH, path);
