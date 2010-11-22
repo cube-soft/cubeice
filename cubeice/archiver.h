@@ -21,7 +21,7 @@ namespace cube {
 			const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
 			std::basic_string<TCHAR> dest = cube::dialog::savefile(filter);
 			std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
-			cmdline += _T(" a -tzip -bd -y \"") + dest + _T("\"");
+			cmdline += _T(" a -tzip -bd -scsWIN -y \"") + dest + _T("\"");
 			while (++first != last) cmdline += _T(" \"") + *first + _T("\"");
 			this->execute(cmdline);
 		}
@@ -37,7 +37,7 @@ namespace cube {
 				std::basic_string<TCHAR> dest = cube::dialog::browsefolder(_T("解凍するフォルダーを指定して下さい。"));
 				dest += _T("\\") + filename.substr(0, filename.find_last_of(_T('.')));
 				std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
-				cmdline += _T(" x -bd -y -o\"") + dest + _T("\"");
+				cmdline += _T(" x -bd -scsDOS -y -o\"") + dest + _T("\"");
 				cmdline += _T(" \"") + *first + _T("\"");
 				this->execute(cmdline);
 			}
@@ -104,13 +104,25 @@ namespace cube {
 			while (ReadFile(handle, buffer, 2048, &n, NULL) && n > 0) src += buffer;
 			std::vector<std::basic_string<TCHAR> > v;
 			clx::split_if(src, v, clx::is_any_of(_T("\r\n")));
-
+			
 			// progressbar: プログレスバーを表示するためのクラス．
 			// ++演算子で1進む．text() に引数を指定すると，指定された内容が表示される．
 			cube::dialog::progressbar progress(app_);
 			for (std::vector<std::basic_string<TCHAR> >::iterator pos = v.begin(); pos != v.end(); ++pos) {
 				progress.text(*pos);
 				progress += 10; // TODO: (1 / 総ファイル数) だけ進める．
+				
+				// キャンセルボタンを有効にするために，メッセージを監視する．
+				MSG msg;
+				BOOL status = GetMessage(&msg, NULL, 0, 0);
+				if (status == 0 || status == -1) break;
+				else {
+					if (!IsDialogMessage(progress.handle(), &msg)) {
+						TranslateMessage(&msg);
+						DispatchMessage(&msg);
+					}
+				}
+
 				Sleep(50);
 			}
 			CloseHandle(handle);
