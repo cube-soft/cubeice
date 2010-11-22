@@ -55,6 +55,8 @@
 #include "archiver.h"
 #include "tcharext.h"
 
+HINSTANCE AppInstance; // アプリケーションのハンドル
+
 namespace cube {
 	namespace cmdline {
 		typedef clx::escape_separator<TCHAR> separator;
