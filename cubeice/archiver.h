@@ -11,7 +11,7 @@
 namespace cube {
 	class archiver {
 	public:
-		archiver(HINSTANCE app) : app_(app) {}
+		archiver() {}
 
 		/* ----------------------------------------------------------------- */
 		//  compress
@@ -34,7 +34,7 @@ namespace cube {
 			while (++first != last) {
 				std::basic_string<TCHAR>::size_type pos = first->find_last_of('\\');
 				std::basic_string<TCHAR> filename = (pos == std::basic_string<TCHAR>::npos) ? *first : first->substr(pos);
-				std::basic_string<TCHAR> dest = cube::dialog::browsefolder(_T("解凍するフォルダーを指定して下さい。"));
+				std::basic_string<TCHAR> dest = cube::dialog::browsefolder(_T("解凍するフォルダを指定して下さい。"));
 				dest += _T("\\") + filename.substr(0, filename.find_last_of(_T('.')));
 				std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
 				cmdline += _T(" x -bd -scsWIN -y -o\"") + dest + _T("\"");
@@ -44,8 +44,6 @@ namespace cube {
 		}
 		
 	private:
-		HINSTANCE app_;
-
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  execute
@@ -119,7 +117,7 @@ namespace cube {
 			
 			// progressbar: プログレスバーを表示するためのクラス．
 			// ++演算子で1進む．text() に引数を指定すると，指定された内容が表示される．
-			cube::dialog::progressbar progress(app_);
+			cube::dialog::progressbar progress;
 			for (std::vector<std::basic_string<TCHAR> >::iterator pos = v.begin(); pos != v.end(); ++pos) {
 				progress.text(*pos);
 				progress += 5; // TODO: (1 / 総ファイル数) だけ進める．
@@ -129,6 +127,13 @@ namespace cube {
 			DeleteFile( _T("tmp.txt"));
 #endif
 		}
+
+	private:
+		/* ----------------------------------------------------------------- */
+		//  non-copyable
+		/* ----------------------------------------------------------------- */
+		archiver(const archiver& cp);
+		archiver& operator=(const archiver& cp);
 	};
 }
 

@@ -49,7 +49,7 @@ namespace cube {
 	namespace dialog {
 		extern std::basic_string<TCHAR> openfile(const TCHAR* filter, const TCHAR* title = _T("ファイルを開く"));
 		extern std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* title = _T("名前を付けて保存"));
-		extern std::basic_string<TCHAR> browsefolder(const TCHAR* description = _T("フォルダーの参照"));
+		extern std::basic_string<TCHAR> browsefolder(const TCHAR* description = _T("フォルダの参照"));
 		
 		/* ----------------------------------------------------------------- */
 		//  progressbar
@@ -69,8 +69,8 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			//  constructor
 			/* ------------------------------------------------------------- */
-			progressbar(HINSTANCE app) :
-				app_(app), handle_(NULL), pos_(progressbar::minimum()) {
+			progressbar() :
+				handle_(NULL), pos_(progressbar::minimum()) {
 				this->initialize();  
 			}
 			
@@ -194,7 +194,6 @@ namespace cube {
 			const HWND handle() const { return handle_; }
 			
 		private:
-			HINSTANCE app_;
 			HWND handle_;
 			int pos_;
 
@@ -211,7 +210,7 @@ namespace cube {
 			//  initialize
 			/* ------------------------------------------------------------- */
 			void initialize() {
-				handle_ = CreateDialog(app_, _T("PROGRESS_DIALOG"), NULL, wndproc);
+				handle_ = CreateDialog(GetModuleHandle(NULL), _T("PROGRESS_DIALOG"), NULL, wndproc);
 			}
 			
 			/* ------------------------------------------------------------- */
