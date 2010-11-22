@@ -5,7 +5,6 @@
 #include <vector>
 #include <tchar.h>
 #include <clx/split.h>
-#include "tcharext.h"
 
 #define CUBE_ICE_ENGINE _T("7z.exe")
 
@@ -22,7 +21,7 @@ namespace cube {
 			const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
 			std::basic_string<TCHAR> dest = cube::dialog::savefile(filter);
 			std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
-			cmdline += _T(" a -tzip -y \"") + dest + _T("\"");
+			cmdline += _T(" a -tzip -bd -y \"") + dest + _T("\"");
 			while (++first != last) cmdline += _T(" \"") + *first + _T("\"");
 			this->execute(cmdline);
 		}
@@ -38,7 +37,7 @@ namespace cube {
 				std::basic_string<TCHAR> dest = cube::dialog::browsefolder(_T("解凍するフォルダーを指定して下さい。"));
 				dest += _T("\\") + filename.substr(0, filename.find_last_of(_T('.')));
 				std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
-				cmdline += _T(" x -y -o\"") + dest + _T("\"");
+				cmdline += _T(" x -bd -y -o\"") + dest + _T("\"");
 				cmdline += _T(" \"") + *first + _T("\"");
 				this->execute(cmdline);
 			}

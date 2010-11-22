@@ -191,7 +191,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			//  handle
 			/* ------------------------------------------------------------- */
-			const HWND& handle() const { return handle_; }
+			const HWND handle() const { return handle_; }
 			
 		private:
 			HINSTANCE app_;
