@@ -38,6 +38,7 @@
 #include <cstdlib>
 #include <string>
 #include <tchar.h>
+#include <winreg.h>
 
 /* ------------------------------------------------------------------------- */
 //  出力先フォルダに関連するフラグ
@@ -56,7 +57,9 @@
 /* ------------------------------------------------------------------------- */
 //  レジストリに関する情報
 /* ------------------------------------------------------------------------- */
-#define CUBEICE_REG_ROOT            "Software\\CubeSoft\\CubeICE";
+#define CUBEICE_REG_ROOT            "Software\\CubeSoft\\CubeICE"
+#define CUBEICE_REG_COMPRESS        "Compress"
+#define CUBEICE_REG_DECOMPRESS      "Decompress"
 #define CUBEICE_REG_FLAGS           "Flags"
 #define CUBEICE_REG_OUTPUT_FLAG     "OutputFlag"
 #define CUBEICE_REG_OUTPUT_PATH     "OutputPath"
@@ -64,6 +67,7 @@
 #define CUBEICE_REG_CONV_CHARSET    "ConvCharset"
 #define CUBEICE_REG_FILTER          "Filter"
 #define CUBEICE_REG_POSTOPEN        "PostOpen"
+#define CUBEICE_REG_CONTEXT         "ContextFlags"
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */
@@ -92,13 +96,69 @@ namespace cubeice {
 		//  load
 		/* ----------------------------------------------------------------- */
 		void load(const string_type& root) {
-			
+			HKEY hkResult;		// キーのハンドル
+			DWORD dwDisposition;	// 処理結果を受け取る
+			LONG lResult;		// 関数の戻り値を格納する
+			lResult = RegOpenKeyEx(HKEY_CURRENT_CONFIG, root_.c_str(), 0, KEY_ALL_ACCESS, NULL, &hkResult);
+			if (!lResult) {
+				DWORD dwType;		// 値の種類を受け取る
+				DWORD dwSize;		// データのサイズを受け取る
+			 
+				// flags
+				RegQueryValueEx(hkResult, CUBEICE_REG_FLAGS, NULL, &dwType, NULL, &dwSize);
+				RegQueryValueEx(hkResult, CUBEICE_REG_FLAGS, NULL, &dwType, (LPBYTE)&flags_, &dwSize);
+				// output_flag
+				RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_FLAG, NULL, &dwType, NULL, &dwSize);
+				RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_FLAG, NULL, &dwType, (LPBYTE)&output_condition_, &dwSize);
+				// output_path
+				RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, NULL, &dwType, NULL, &dwSize);
+				RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, NULL, &dwType, (LPBYTE)&output_path_.c_str, &dwSize);
+				// create_folder
+				DWORD dw_create_folder;
+				RegQueryValueEx(hkResult, CUBEICE_REG_CREATE_FOLDER, NULL, &dwType, NULL, &dwSize);
+				RegQueryValueEx(hkResult, CUBEICE_REG_CREATE_FOLDER, NULL, &dwType, (LPBYTE)&dw_create_folder, &dwSize);
+				create_folder_ = (dw_create_folder != 0) ? TRUE : FALSE;
+				// conv_charset
+				DWORD dw_conv_charset;
+				RegQueryValueEx(hkResult, CUBEICE_REG_CONV_CHARSET, NULL, &dwType, NULL, &dwSize);
+				RegQueryValueEx(hkResult, CUBEICE_REG_CONV_CHARSET, NULL, &dwType, (LPBYTE)&dw_conv_charset, &dwSize);
+				conv_charset_ = (dw_conv_charset != 0) ? TRUE : FALSE;
+				// filter
+				DWORD dw_filter;
+				RegQueryValueEx(hkResult, CUBEICE_REG_FILTER, NULL, &dwType, NULL, &dwSize);
+				RegQueryValueEx(hkResult, CUBEICE_REG_FILTER, NULL, &dwType, (LPBYTE)&dw_filter, &dwSize);
+				filter_ = (dw_filter != 0) ? TRUE : FALSE;
+				// postopen
+				DWORD dw_postopen;
+				RegQueryValueEx(hkResult, CUBEICE_REG_POSTOPEN, NULL, &dwType, NULL, &dwSize);
+				RegQueryValueEx(hkResult, CUBEICE_REG_POSTOPEN, NULL, &dwType, (LPBYTE)&dw_postopen, &dwSize);
+				postopen_ = (dw_postopen != 0) ? TRUE : FALSE;
+			}
 		}
 		
 		/* ----------------------------------------------------------------- */
 		//  save
 		/* ----------------------------------------------------------------- */
-		void save() {}
+		void save() {
+			HKEY hkResult;		// キーのハンドル
+			DWORD dwDisposition;	// 処理結果を受け取る
+			LONG lResult;		// 関数の戻り値を格納する
+			lResult = RegCreateKeyEx(HKEY_CURRENT_CONFIG, root_.c_str(), 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
+			if (!lResult) {
+				RegSaveKeyEx(hkResult, CUBEICE_REG_FLAGS, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags));
+				// OUTPUT_FLAG == output_condition ?? 
+				RegSaveKeyEx(hkResult, CUBEICE_REG_OUTPUT_FLAG, 0, REG_DWORD, (CONST BYTE*)&output_condition_, sizeof(output_condition_));
+				RegSaveKeyEx(hkResult, CUBEICE_REG_OUTPUT_PATH, 0, REG_SZ, output_path_.c_str, output_path_.length() + 1);
+				DWORD dw_create_folder = (create_folder_) ? 1 : 0;
+				RegSaveKeyEx(hkResult, CUBEICE_REG_CREATE_FOLDER,0,REG_DWORD, (CONST BYTE*)&dw_create_folder, sizeof(dw_create_folder));
+				DWORD dw_conv_charset  = (conv_charset_) ? 1 : 0;
+				RegSaveKeyEx(hkResult, CUBEICE_REG_CONV_CHARSET, 0, REG_DWORD, (CONST BYTE*)&dw_conv_charset, sizeof(dw_conv_charset));
+				DWORD dw_filter = (filter) ? 1 : 0;
+				RegSaveKeyEx(hkResult, CUBEICE_REG_FILTER, 0, REG_DWORD, (CONST BYTE*)&dw_filter, sizeof(dw_filter));
+				DWORD dw_postopen = (postopen_) ? 1 : 0;
+				RegSaveKeyEx(hkResult, CUBEICE_REG_POSTOPEN, 0, REG_DWORD, (CONST BYTE*)&dw_postopen, sizeof(dw_postopen));
+			}
+		}
 		
 		/* ----------------------------------------------------------------- */
 		/*
@@ -206,13 +266,37 @@ namespace cubeice {
 		//  load
 		/* ----------------------------------------------------------------- */
 		void load() {
-			
+			comp_.load();
+			decomp_.load();
+			// load context
+			HKEY hkResult;		// キーのハンドル
+			DWORD dwDisposition;	// 処理結果を受け取る
+			LONG lResult;		// 関数の戻り値を格納する
+			lResult = RegOpenKeyEx(HKEY_CURRENT_CONFIG, root_.c_str(), 0, KEY_ALL_ACCESS, NULL, &hkResult);
+			if (!lResult) {
+				DWORD dwType;		// 値の種類を受け取る
+				DWORD dwSize;		// データのサイズを受け取る
+				// flags
+				RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, NULL, &dwSize);
+				RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&flags_, &dwSize);
+			}
 		}
 		
 		/* ----------------------------------------------------------------- */
 		//  save
 		/* ----------------------------------------------------------------- */
-		void save() {}
+		void save() {
+			comp_.save();
+			decomp_.save();
+			// save context
+			HKEY hkResult;		// キーのハンドル
+			DWORD dwDisposition;	// 処理結果を受け取る
+			LONG lResult;		// 関数の戻り値を格納する
+			lResult = RegCreateKeyEx(HKEY_CURRENT_CONFIG, root_.c_str(), 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
+			if (!lResult) {
+				RegSaveKeyEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags));
+			}
+		}
 		
 		/* ----------------------------------------------------------------- */
 		/*
