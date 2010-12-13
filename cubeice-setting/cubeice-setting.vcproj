@@ -195,6 +195,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\resource.h"
+				>
+			</File>
+			<File
 				RelativePath=".\user-setting.h"
 				>
 			</File>
