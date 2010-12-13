@@ -202,7 +202,7 @@ namespace cube {
 			//  initialize
 			/* ------------------------------------------------------------- */
 			void initialize() {
-				handle_ = CreateDialog(GetModuleHandle(NULL), _T("PROGRESS_DIALOG"), NULL, wndproc);
+				handle_ = CreateDialog(GetModuleHandle(NULL), _T("IDD_PROGRESS"), NULL, wndproc);
 			}
 			
 			/* ------------------------------------------------------------- */

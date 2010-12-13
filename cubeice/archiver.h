@@ -66,6 +66,7 @@ namespace cube {
 			while (_fgetts(buffer, 2048, fd)) {
 				progress.text(buffer);
 				progress += 10; // TODO: (1 / 総ファイル数) だけ進める．
+				Sleep(100);
 			}
 #else
 			// MEMO: 現在は，いったんファイルに吐き出して結果を列挙している．
