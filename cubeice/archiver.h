@@ -55,18 +55,17 @@ namespace cube {
 		void execute(const std::basic_string<TCHAR>& cmdline) {
 			PROCESS_INFORMATION pi = {};
 			
-#if 0
+#if 1
 			// MEMO: こういった処理を行いたいが，popen を使用すると DOS 窓が開いてしまう．
 			// TODO: popen 相当の関数を CreateProcess と CreatePipe を用いて作成する．
 			// see also: http://support.microsoft.com/kb/190351/ja
-			cube::dialog::progressbar progress(app_);
+			cube::dialog::progressbar progress;
 
 			FILE* fd = _tpopen(cmdline.c_str(), _T("r"));
 			TCHAR buffer[2048] = {};
 			while (_fgetts(buffer, 2048, fd)) {
 				progress.text(buffer);
 				progress += 10; // TODO: (1 / 総ファイル数) だけ進める．
-				Sleep(50);
 			}
 #else
 			// MEMO: 現在は，いったんファイルに吐き出して結果を列挙している．

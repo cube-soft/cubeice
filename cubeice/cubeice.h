@@ -53,7 +53,6 @@
 
 #include "dialog.h"
 #include "archiver.h"
-#include "tcharext.h"
 
 HINSTANCE AppInstance; // アプリケーションのハンドル
 

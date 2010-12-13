@@ -146,6 +146,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				AdditionalManifestFiles="$(TargetFileName).manifest"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
@@ -180,10 +181,6 @@
 				RelativePath=".\dialog.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\tcharext.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="ヘッダー ファイル"
@@ -200,10 +197,6 @@
 			</File>
 			<File
 				RelativePath=".\dialog.h"
-				>
-			</File>
-			<File
-				RelativePath=".\tcharext.h"
 				>
 			</File>
 		</Filter>
