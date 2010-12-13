@@ -37,6 +37,7 @@
 
 #include <string>
 #include <tchar.h>
+#include "resource.h"
 
 #ifndef NO_WIN32_LEAN_AND_MEAN
 #define NO_WIN32_LEAN_AND_MEAN
@@ -84,7 +85,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			progressbar& operator+=(int n) {
 				this->position(pos_ + n * progressbar::step());
-				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
 			
@@ -98,7 +99,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			progressbar& operator-=(int n) {
 				this->position(pos_ - n * progressbar::step());
-				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
 
@@ -112,7 +113,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			progressbar& operator++(int) {
 				this->position(pos_ + progressbar::step());
-				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
 
@@ -126,7 +127,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			progressbar& operator++() {
 				this->position(pos_ + progressbar::step());
-				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
 			
@@ -140,7 +141,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			progressbar& operator--() {
 				this->position(pos_ - progressbar::step());
-				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
 
@@ -154,7 +155,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			progressbar& operator--(int) {
 				this->position(pos_ - progressbar::step());
-				SendMessage(GetDlgItem(handle_, id_progress), PBM_SETPOS, pos_, 0);
+				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
 
@@ -177,7 +178,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			string_type text() const {
 				TCHAR buffer[2048];
-				GetWindowText(GetDlgItem(handle_, id_text), buffer, 2048);
+				GetWindowText(GetDlgItem(handle_, IDC_INFO_LABEL), buffer, 2048);
 				return string_type(buffer);
 			}
 			
@@ -185,7 +186,7 @@ namespace cube {
 			//  text
 			/* ------------------------------------------------------------- */
 			void text(const string_type& s) {
-				SetWindowText(GetDlgItem(handle_, id_text), s.c_str());
+				SetWindowText(GetDlgItem(handle_, IDC_INFO_LABEL), s.c_str());
 			}
 
 			/* ------------------------------------------------------------- */
@@ -196,15 +197,6 @@ namespace cube {
 		private:
 			HWND handle_;
 			int pos_;
-
-			/* ------------------------------------------------------------- */
-			//  progress_dialog の各種コントールの ID
-			/* ------------------------------------------------------------- */
-			enum {
-				id_cancel = 2,
-				id_text = 3,
-				id_progress = 4,
-			};
 			
 			/* ------------------------------------------------------------- */
 			//  initialize
@@ -228,7 +220,7 @@ namespace cube {
 					SetWindowPos(hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
 					
 					// プログレスバーの min, max, step 値を登録
-					HWND handle = GetDlgItem(hWnd, progressbar::id_progress);
+					HWND handle = GetDlgItem(hWnd, IDC_PROGRESS);
 					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(progressbar::minimum(), progressbar::maximum()));
 					SendMessage(handle, PBM_SETSTEP, (WPARAM)progressbar::step(), 0);
 
@@ -236,7 +228,7 @@ namespace cube {
 				}
 				case WM_COMMAND:
 					switch (LOWORD(wp)) {
-					case progressbar::id_cancel:
+					case IDCANCEL:
 						EndDialog(hWnd, 0);
 						break;
 					default:
