@@ -54,6 +54,8 @@
 #include "dialog.h"
 #include "archiver.h"
 
+#pragma comment(lib, "comctl32.lib")
+
 HINSTANCE AppInstance; // アプリケーションのハンドル
 
 namespace cube {

@@ -5,12 +5,17 @@
 #include <vector>
 #include <tchar.h>
 #include <clx/split.h>
+#include "wpopen.h"
 
 #define CUBE_ICE_ENGINE _T("7z.exe")
 
 namespace cube {
 	class archiver {
 	public:
+		typedef TCHAR char_type;
+		typedef std::basic_string<TCHAR> string_type;
+		typedef std::size_t size_type;
+
 		archiver() {}
 
 		/* ----------------------------------------------------------------- */
@@ -23,7 +28,7 @@ namespace cube {
 			std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
 			cmdline += _T(" a -tzip -bd -scsWIN -y \"") + dest + _T("\"");
 			while (++first != last) cmdline += _T(" \"") + *first + _T("\"");
-			this->execute(cmdline);
+			this->execute(cmdline, 0);
 		}
 
 		/* ----------------------------------------------------------------- */
@@ -39,7 +44,7 @@ namespace cube {
 				std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
 				cmdline += _T(" x -bd -scsWIN -y -o\"") + dest + _T("\"");
 				cmdline += _T(" \"") + *first + _T("\"");
-				this->execute(cmdline);
+				this->execute(cmdline, 0);
 			}
 		}
 		
@@ -52,80 +57,36 @@ namespace cube {
 		 *  可能性があるため，いったん配列 (vector) にコピーして渡している．
 		 */
 		/* ----------------------------------------------------------------- */
-		void execute(const std::basic_string<TCHAR>& cmdline) {
+		void execute(const std::basic_string<TCHAR>& cmdline, size_type n) {
 			PROCESS_INFORMATION pi = {};
 			
-#if 1
-			// MEMO: こういった処理を行いたいが，popen を使用すると DOS 窓が開いてしまう．
-			// TODO: popen 相当の関数を CreateProcess と CreatePipe を用いて作成する．
-			// see also: http://support.microsoft.com/kb/190351/ja
 			cube::dialog::progressbar progress;
+			if (n == 0) progress.marquee(true);
 
-			FILE* fd = _tpopen(cmdline.c_str(), _T("r"));
-			TCHAR buffer[2048] = {};
-			while (_fgetts(buffer, 2048, fd)) {
-				progress.text(buffer);
-				progress += 10; // TODO: (1 / 総ファイル数) だけ進める．
-				Sleep(100);
-			}
-#else
-			// MEMO: 現在は，いったんファイルに吐き出して結果を列挙している．
-			// TODO: 作成したプロセスの標準出力を標準入力にリダイレクトし，
-			// その内容を一行ずつ表示する．
-			SECURITY_ATTRIBUTES sa;
-			sa.nLength= sizeof(SECURITY_ATTRIBUTES);
-			sa.lpSecurityDescriptor = NULL;
-			sa.bInheritHandle = TRUE;
-			HANDLE handle = CreateFile( _T("tmp.txt"), GENERIC_WRITE, FILE_SHARE_WRITE, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
+			cube::popen proc;
+			if (!proc.open(cmdline.c_str(), _T("r"))) return;
 			
-			STARTUPINFO si = {};
-			//GetStartupInfo(&si);
-			si.dwFlags = STARTF_USESTDHANDLES;
-			si.hStdOutput = handle;
-			
-			// \0 で終わる const でない char 配列
-			std::vector<TCHAR> tmp(cmdline.begin(), cmdline.end());
-			tmp.push_back(0);
-			
-			//MessageBox(NULL, cmdline.c_str(), _T("cmdline"), MB_OK);
-	
-			CreateProcess(
-				NULL, // 実行可能モジュール
-				&tmp.at(0), // コマンドライン
-				NULL,
-				NULL,
-				TRUE,
-				CREATE_NO_WINDOW | DETACHED_PROCESS, // 作成のフラグ
-				NULL,
-				NULL, // カレントディレクトリ
-				&si, &pi
-			);
-			
-			WaitForSingleObject(pi.hProcess, INFINITE);
-			CloseHandle(pi.hThread);
-			CloseHandle(pi.hProcess);
-			CloseHandle(handle);
-			
-			// 1行ずつ表示するサンプル．
-			handle = CreateFile( _T("tmp.txt"), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-			std::basic_string<TCHAR> src;
-			TCHAR buffer[2048] = {};
-			DWORD n = 0;
-			while (ReadFile(handle, buffer, 2048, &n, NULL) && n > 0) src += buffer;
-			std::vector<std::basic_string<TCHAR> > v;
-			clx::split_if(src, v, clx::is_any_of(_T("\r\n")));
-			
-			// progressbar: プログレスバーを表示するためのクラス．
-			// ++演算子で1進む．text() に引数を指定すると，指定された内容が表示される．
-			cube::dialog::progressbar progress;
-			for (std::vector<std::basic_string<TCHAR> >::iterator pos = v.begin(); pos != v.end(); ++pos) {
-				progress.text(*pos);
-				progress += 5; // TODO: (1 / 総ファイル数) だけ進める．
+			// 1 ファイル辺りのプログレスバーの進行量
+			size_type step = (n > 0) ? (progress.maximum() - progress.minimum()) / n : 1;
+			if (step == 0) step = 1;
+
+			int status = 0;
+			string_type buffer;
+			while ((status = proc.gets(buffer)) >= 0) {
+				if (status == 2) break; // pipe closed
+				else if (status == 1 && !buffer.empty()) {
+					progress.text(buffer);
+					if (n > 0) progress += step;
+				}
+				buffer.clear();
+
+				progress.refresh();
+				if (progress.is_cancel()) {
+					proc.close();
+					break;
+				}
 				Sleep(10);
 			}
-			CloseHandle(handle);
-			DeleteFile( _T("tmp.txt"));
-#endif
 		}
 
 	private:
