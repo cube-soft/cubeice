@@ -203,6 +203,10 @@
 				RelativePath=".\resource.h"
 				>
 			</File>
+			<File
+				RelativePath=".\wpopen.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="リソース ファイル"

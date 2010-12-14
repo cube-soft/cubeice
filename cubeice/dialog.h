@@ -35,6 +35,7 @@
 #ifndef CUBE_DIALOG_H
 #define CUBE_DIALOG_H
 
+#include <set>
 #include <string>
 #include <tchar.h>
 #include "resource.h"
@@ -48,6 +49,22 @@
 
 namespace cube {
 	namespace dialog {
+		namespace detail {
+			/* ------------------------------------------------------------- */
+			//  dialog_init
+			/* ------------------------------------------------------------- */
+			class dialog_init {
+			public:
+				dialog_init() {
+					INITCOMMONCONTROLSEX ic = { sizeof(INITCOMMONCONTROLSEX) };
+					ic.dwICC = ICC_PROGRESS_CLASS;
+					InitCommonControlsEx(&ic);
+				}
+			};
+
+			static dialog_init dialog_init_;
+		}
+
 		extern std::basic_string<TCHAR> openfile(const TCHAR* filter, const TCHAR* title = _T("ファイルを開く"));
 		extern std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* title = _T("名前を付けて保存"));
 		extern std::basic_string<TCHAR> browsefolder(const TCHAR* description = _T("フォルダの参照"));
@@ -59,32 +76,25 @@ namespace cube {
 		public:
 			typedef TCHAR char_type;
 			typedef std::basic_string<TCHAR> string_type;
-			
-			/* ------------------------------------------------------------- */
-			//  static functions
-			/* ------------------------------------------------------------- */
-			static int minimum() { return 0; }
-			static int maximum() { return 1000; }
-			static int step() { return 1; }
+			typedef std::size_t size_type;
 			
 			/* ------------------------------------------------------------- */
 			//  constructor
 			/* ------------------------------------------------------------- */
 			progressbar() :
-				handle_(NULL), pos_(progressbar::minimum()) {
-				this->initialize();  
+				handle_(NULL), pos_(0), min_(0), max_(1000), step_(1), cancel_(false) {
+				this->initialize();
 			}
-			
+
 			/* ------------------------------------------------------------- */
 			/*
 			 *  operator+=
 			 *
-			 *  プログレスバーを n ステップ進める．1 ステップの値は
-			 *  progressbar::step() から取得できる．
+			 *  プログレスバーを n ステップ進める．．
 			 */
 			/* ------------------------------------------------------------- */
-			progressbar& operator+=(int n) {
-				this->position(pos_ + n * progressbar::step());
+			progressbar& operator+=(size_type n) {
+				this->position(pos_ + n * step_);
 				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
@@ -93,40 +103,37 @@ namespace cube {
 			/*
 			 *  operator-=
 			 *
-			 *  プログレスバーを n ステップ戻す．1 ステップの値は
-			 *  progressbar::step() から取得できる．
+			 *  プログレスバーを n ステップ戻す．
 			 */
 			/* ------------------------------------------------------------- */
-			progressbar& operator-=(int n) {
-				this->position(pos_ - n * progressbar::step());
+			progressbar& operator-=(size_type n) {
+				this->position(pos_ - n * step_);
 				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
-
+			
 			/* ------------------------------------------------------------- */
 			/*
 			 *  operator++(int)
 			 *
-			 *  プログレスバーを 1 ステップ進める．1 ステップの値は
-			 *  progressbar::step() から取得できる．
+			 *  プログレスバーを 1 ステップ進める．
 			 */
 			/* ------------------------------------------------------------- */
 			progressbar& operator++(int) {
-				this->position(pos_ + progressbar::step());
+				this->position(pos_ + step_);
 				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
-
+			
 			/* ------------------------------------------------------------- */
 			/*
 			 *  operator++
 			 *
-			 *  プログレスバーを 1 ステップ進める．1 ステップの値は
-			 *  progressbar::step() から取得できる．
+			 *  プログレスバーを 1 ステップ進める．
 			 */
 			/* ------------------------------------------------------------- */
 			progressbar& operator++() {
-				this->position(pos_ + progressbar::step());
+				this->position(pos_ + step_);
 				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
@@ -135,44 +142,91 @@ namespace cube {
 			/*
 			 *  operator--
 			 *
-			 *  プログレスバーを 1 ステップ戻す．1 ステップの値は
-			 *  progressbar::step() から取得できる．
+			 *  プログレスバーを 1 ステップ戻す．
 			 */
 			/* ------------------------------------------------------------- */
 			progressbar& operator--() {
-				this->position(pos_ - progressbar::step());
+				this->position(pos_ - step_);
 				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
-
+			
 			/* ------------------------------------------------------------- */
 			/*
 			 *  operator--(int)
 			 *
-			 *  プログレスバーを 1 ステップ戻す．1 ステップの値は
-			 *  progressbar::step() から取得できる．
+			 *  プログレスバーを 1 ステップ戻す．
 			 */
 			/* ------------------------------------------------------------- */
 			progressbar& operator--(int) {
-				this->position(pos_ - progressbar::step());
+				this->position(pos_ - step_);
 				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
 				return *this;
 			}
-
-			/* ------------------------------------------------------------- */
-			//  position
-			/* ------------------------------------------------------------- */
-			int position() const { return pos_; }
 			
 			/* ------------------------------------------------------------- */
 			//  position
 			/* ------------------------------------------------------------- */
-			void position(int pos) {
+			size_type position() const { return pos_; }
+			
+			/* ------------------------------------------------------------- */
+			//  position
+			/* ------------------------------------------------------------- */
+			void position(size_type pos) {
 				if (pos < progressbar::minimum()) pos_ = progressbar::minimum();
 				else if (pos > progressbar::maximum()) pos_ = progressbar::maximum();
 				else pos_ = pos;
 			}
+			
+			/* ------------------------------------------------------------- */
+			//  minimum
+			/* ------------------------------------------------------------- */
+			size_type minimum() const { return min_; }
 
+			/* ------------------------------------------------------------- */
+			//  minimum
+			/* ------------------------------------------------------------- */
+			void minimum(size_type n) {
+				min_ = n;
+				if (min_ < max_) {
+					HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
+					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(min_, max_));
+				}
+			}
+
+			/* ------------------------------------------------------------- */
+			//  maximum
+			/* ------------------------------------------------------------- */
+			size_type maximum() const { return max_; }
+
+			/* ------------------------------------------------------------- */
+			//  maximum
+			/* ------------------------------------------------------------- */
+			void maximum(size_type n) {
+				max_ = n;
+				if (min_ < max_) {
+					HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
+					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(min_, max_));
+				}
+			}
+
+			/* ------------------------------------------------------------- */
+			//  step
+			/* ------------------------------------------------------------- */
+			int step() const { return step_; }
+			
+			/* ------------------------------------------------------------- */
+			//  step
+			/* ------------------------------------------------------------- */
+			void step(size_type n) {
+				if (n < 1) step_ = 1;
+				else if (n > max_) step_ = progressbar::maximum();
+				else step_ = n;
+
+				HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
+				SendMessage(handle, PBM_SETSTEP, (WPARAM)step_, 0);
+			}
+			
 			/* ------------------------------------------------------------- */
 			//  text
 			/* ------------------------------------------------------------- */
@@ -188,7 +242,50 @@ namespace cube {
 			void text(const string_type& s) {
 				SetWindowText(GetDlgItem(handle_, IDC_INFO_LABEL), s.c_str());
 			}
+			
+			/* ------------------------------------------------------------- */
+			//  is_cancel
+			/* ------------------------------------------------------------- */
+			bool is_cancel() const { return cancel_; }
+			
+			/* ------------------------------------------------------------- */
+			/*
+			 *  marquee
+			 *
+			 *  speed はミリ秒単位で指定する．値が大きくなるほど遅くなる．
+			 */
+			/* ------------------------------------------------------------- */
+			void marquee(bool enable, int speed = 50) {
+				HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
 
+				LONG_PTR style = ::GetWindowLongPtr(handle, GWL_STYLE);
+				if (enable) style |= PBM_SETMARQUEE;
+				else style &= ~PBM_SETMARQUEE;
+				::SetWindowLongPtr(handle, GWL_STYLE, style | PBS_MARQUEE);
+
+				BOOL wp = enable ? TRUE : FALSE;
+				SendMessage(handle, PBM_SETMARQUEE, (WPARAM)wp, (LPARAM)speed);
+			}
+
+			/* ------------------------------------------------------------- */
+			//  refresh
+			/* ------------------------------------------------------------- */
+			void refresh() {
+				MSG msg = {};
+				if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+					if (!GetMessage(&msg, NULL, 0, 0)) return;
+					if (!IsDialogMessage(handle_, &msg)) {
+						TranslateMessage(&msg);
+						DispatchMessage(&msg);
+					}
+					
+					if (progressbar::closed_handles().find(handle_) != progressbar::closed_handles().end()) {
+						progressbar::closed_handles().erase(handle_);
+						cancel_ = true;
+					}
+				}
+			}
+			
 			/* ------------------------------------------------------------- */
 			//  handle
 			/* ------------------------------------------------------------- */
@@ -196,13 +293,25 @@ namespace cube {
 			
 		private:
 			HWND handle_;
-			int pos_;
+			size_type pos_;
+			size_type min_;
+			size_type max_;
+			size_type step_;
+			bool cancel_;
 			
 			/* ------------------------------------------------------------- */
 			//  initialize
 			/* ------------------------------------------------------------- */
 			void initialize() {
 				handle_ = CreateDialog(GetModuleHandle(NULL), _T("IDD_PROGRESS"), NULL, wndproc);
+			}
+			
+			/* ------------------------------------------------------------- */
+			//  closed_handles
+			/* ------------------------------------------------------------- */
+			static std::set<HANDLE>& closed_handles() {
+				static std::set<HANDLE> handles;
+				return handles;
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -219,17 +328,18 @@ namespace cube {
 					int y = (GetSystemMetrics(SM_CYSCREEN) - (rect.bottom - rect.top)) / 2;
 					SetWindowPos(hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
 					
-					// プログレスバーの min, max, step 値を登録
+					// プログレスバーの min, max, step の初期値を登録
 					HWND handle = GetDlgItem(hWnd, IDC_PROGRESS);
-					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(progressbar::minimum(), progressbar::maximum()));
-					SendMessage(handle, PBM_SETSTEP, (WPARAM)progressbar::step(), 0);
-
+					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(0, 1000));
+					SendMessage(handle, PBM_SETSTEP, 1, 0);
+					
 					return TRUE;
 				}
 				case WM_COMMAND:
 					switch (LOWORD(wp)) {
 					case IDCANCEL:
-						EndDialog(hWnd, 0);
+						DestroyWindow(hWnd);
+						progressbar::closed_handles().insert(hWnd);
 						break;
 					default:
 						break;
@@ -238,10 +348,10 @@ namespace cube {
 				default:
 					break;
 				}
-
+				
 				return FALSE;
 			}
-
+			
 		private:
 			/* ------------------------------------------------------------- */
 			//  non-copyable
