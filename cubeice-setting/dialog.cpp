@@ -76,7 +76,15 @@ namespace cubeice {
 			case WM_COMMAND:
 				break;
 			default:
-				return common_dialogproc(hWnd, msg, wp, lp);
+				switch (LOWORD(wp)) {
+				case IDC_ZIP_CHECKBOX: // *.zip
+					// チェックボックスのチェックの有無によって変える．
+					Setting.decompression().flags() |= ZIP_FLAG;
+					// Setting.decompression().flags() &= ~ZIP_FLAG;
+					break;
+				default:
+					return common_dialogproc(hWnd, msg, wp, lp);
+				}
 			}
 			return FALSE;
 		}
