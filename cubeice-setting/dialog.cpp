@@ -90,7 +90,7 @@ namespace cubeice {
 		}
 
 		/* ----------------------------------------------------------------- */
-		//  archive_dialogproc
+		//  compress_dialogproc
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK archive_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
@@ -103,7 +103,7 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  expand_dialogproc
+		//  decompress_dialogproc
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK expand_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
