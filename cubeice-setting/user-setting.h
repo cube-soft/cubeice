@@ -84,7 +84,7 @@ namespace cubeice {
 		//  constructor
 		/* ----------------------------------------------------------------- */
 		explicit user_setting_property(const string_type& root) :
-			root_(root), flags_(0), output_condition_(0), output_path_(),
+			root_(root), flags_(0), output_condition_(0), output_path_(), overwrite_(0),
 			create_folder_(false), conv_charset_(false), filter_(false), postopen_(false) {
 			this->load();
 		}
@@ -186,6 +186,12 @@ namespace cubeice {
 		const size_type& output_condition() const { return output_condition_; }
 		
 		/* ----------------------------------------------------------------- */
+		//  overwrite
+		/* ----------------------------------------------------------------- */
+		size_type& overwrite() { return overwrite_; }
+		const size_type& overwrite() const { return overwrite_; }
+
+		/* ----------------------------------------------------------------- */
 		/*
 		 *  output_path
 		 *
@@ -241,6 +247,7 @@ namespace cubeice {
 		size_type flags_;
 		size_type output_condition_;
 		string_type output_path_;
+		size_type overwrite_;
 		bool create_folder_;
 		bool conv_charset_;
 		bool filter_;
