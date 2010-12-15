@@ -257,12 +257,12 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			void marquee(bool enable, int speed = 50) {
 				HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
-
+				
 				LONG_PTR style = ::GetWindowLongPtr(handle, GWL_STYLE);
 				if (enable) style |= PBM_SETMARQUEE;
 				else style &= ~PBM_SETMARQUEE;
 				::SetWindowLongPtr(handle, GWL_STYLE, style | PBS_MARQUEE);
-
+				
 				BOOL wp = enable ? TRUE : FALSE;
 				SendMessage(handle, PBM_SETMARQUEE, (WPARAM)wp, (LPARAM)speed);
 			}
