@@ -74,8 +74,6 @@ namespace cubeice {
 		static BOOL CALLBACK general_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_COMMAND:
-				break;
-			default:
 				switch (LOWORD(wp)) {
 				case IDC_ZIP_CHECKBOX: // *.zip
 					// チェックボックスのチェックの有無によって変える．
@@ -85,6 +83,9 @@ namespace cubeice {
 				default:
 					return common_dialogproc(hWnd, msg, wp, lp);
 				}
+				break;
+			default:
+				return common_dialogproc(hWnd, msg, wp, lp);
 			}
 			return FALSE;
 		}
