@@ -35,8 +35,11 @@
 #ifndef CUBEICE_DIALOG_H
 #define CUBEICE_DIALOG_H
 
-#include "resource.h"
 #include <windows.h>
+#include "resource.h"
+#include "user-setting.h"
+
+extern cubeice::user_setting Setting;
 
 /* ------------------------------------------------------------------------- */
 //  functions declarations

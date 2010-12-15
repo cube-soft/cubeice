@@ -32,10 +32,11 @@
  *  Last-modified: Wed 17 Nov 2010 17:39:00 JST
  */
 /* ------------------------------------------------------------------------- */
-#include "dialog.h"
 #include <cstdlib>
 #include <tchar.h>
+#include <windows.h>
 #include <commctrl.h>
+#include "dialog.h"
 
 namespace cubeice {
 	namespace detail {
@@ -57,7 +58,7 @@ namespace cubeice {
 			{
 				NMHDR* nmhdr = (NMHDR *)lp;
 				if (nmhdr->code == PSN_APPLY) {
-					//MessageBox(NULL, _T("OK"), _T("Information"), MB_OK);
+					Setting.save();
 				}
 				break;
 			}

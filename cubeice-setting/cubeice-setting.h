@@ -37,4 +37,8 @@
 
 #pragma comment(lib, "comctl32.lib")
 
+#include "user-setting.h"
+
+//extern cubeice::user_setting Setting;
+
 #endif // CUBEICE_SETTING_H
