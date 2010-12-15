@@ -86,7 +86,7 @@ namespace cubeice {
 		explicit user_setting_property(const string_type& root) :
 			root_(root), flags_(0), output_condition_(0), output_path_(),
 			create_folder_(false), conv_charset_(false), filter_(false), postopen_(false) {
-			this->load();	
+			this->load();
 		}
 		
 		/* ----------------------------------------------------------------- */
