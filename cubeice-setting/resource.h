@@ -75,9 +75,9 @@
 //  「圧縮/解凍」タブ
 /* ------------------------------------------------------------------------- */
 #define IDC_DEST_GROUP              3000
-#define IDC_SPECIFIC_CHECKBOX       3001 // 指定したフォルダ
-#define IDC_SOURCE_CHECKBOX         3002 // 元のファイルと同じフォルダ
-#define IDC_RUNTIME_CHECKBOX        3003 // 実行時に指定する
+#define IDC_SPECIFIC_RADIO          3001 // 指定したフォルダ
+#define IDC_SOURCE_RADIO            3002 // 元のファイルと同じフォルダ
+#define IDC_RUNTIME_RADIO           3003 // 実行時に指定する
 #define IDC_DEST_TEXTBOX            3004
 #define IDC_DEST_BUTTON             3005
 

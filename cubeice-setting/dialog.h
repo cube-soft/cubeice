@@ -40,15 +40,17 @@
 #include "resource.h"
 #include "user-setting.h"
 
+#ifndef CUBE_MAX_PATH
+#define CUBE_MAX_PATH 2048
+#endif
+
 extern cubeice::user_setting Setting;
 
-/* ------------------------------------------------------------------------- */
-//  functions declarations
-/* ------------------------------------------------------------------------- */
 namespace cubeice {
 	extern int create_propsheet(HWND parent);
 	
 	typedef std::map<std::size_t, std::size_t> flag_map;
+	
 	/* ----------------------------------------------------------------- */
 	//  compress_map
 	/* ----------------------------------------------------------------- */
@@ -137,9 +139,9 @@ namespace cubeice {
 		static bool initialized = false;
 		static flag_map dest;
 		if (!initialized) {
-			dest[IDC_SPECIFIC_CHECKBOX] = OUTPUT_SPECIFIC;
-			dest[IDC_SOURCE_CHECKBOX] = OUTPUT_SOURCE;
-			dest[IDC_RUNTIME_CHECKBOX] = OUTPUT_RUNTIME;
+			dest[IDC_SPECIFIC_RADIO] = OUTPUT_SPECIFIC;
+			dest[IDC_SOURCE_RADIO] = OUTPUT_SOURCE;
+			dest[IDC_RUNTIME_RADIO] = OUTPUT_RUNTIME;
 		}
 		return dest;
 	}

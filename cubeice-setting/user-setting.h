@@ -100,14 +100,14 @@
 /* ------------------------------------------------------------------------- */
 //  ÉåÉWÉXÉgÉäÇ…ä÷Ç∑ÇÈèÓïÒ
 /* ------------------------------------------------------------------------- */
-#define CUBEICE_REG_ROOT            "Software\\CubeSoft\\CubeICE"
-#define CUBEICE_REG_COMPRESS        "Compress"
-#define CUBEICE_REG_DECOMPRESS      "Decompress"
-#define CUBEICE_REG_FLAGS           "Flags"
-#define CUBEICE_REG_DETAILS	        "Details"
-#define CUBEICE_REG_OUTPUT_FLAG     "OutputFlag"
-#define CUBEICE_REG_OUTPUT_PATH     "OutputPath"
-#define CUBEICE_REG_CONTEXT         "ContextFlags"
+#define CUBEICE_REG_ROOT                "Software\\CubeSoft\\CubeICE"
+#define CUBEICE_REG_COMPRESS            "Compress"
+#define CUBEICE_REG_DECOMPRESS          "Decompress"
+#define CUBEICE_REG_FLAGS               "Flags"
+#define CUBEICE_REG_DETAILS	            "Details"
+#define CUBEICE_REG_OUTPUT_CONDITION    "OutputCondition"
+#define CUBEICE_REG_OUTPUT_PATH         "OutputPath"
+#define CUBEICE_REG_CONTEXT             "ContextFlags"
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */
@@ -148,7 +148,7 @@ namespace cubeice {
 				RegQueryValueEx(hkResult, CUBEICE_REG_DETAILS, NULL, &dwType, (LPBYTE)&details_, &dwSize);
 
 				dwSize = sizeof(output_condition_);
-				RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_FLAG, NULL, &dwType, (LPBYTE)&output_condition_, &dwSize);
+				RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_CONDITION, NULL, &dwType, (LPBYTE)&output_condition_, &dwSize);
 				
 				char_type buffer[1024] = {};
 				dwSize = sizeof(buffer);
@@ -169,7 +169,7 @@ namespace cubeice {
 			if (!lResult) {
 				RegSetValueEx(hkResult, CUBEICE_REG_FLAGS, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
 				RegSetValueEx(hkResult, CUBEICE_REG_DETAILS, 0, REG_DWORD, (CONST BYTE*)&details_, sizeof(details_));
-				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_FLAG, 0, REG_DWORD, (CONST BYTE*)&output_condition_, sizeof(output_condition_));
+				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_CONDITION, 0, REG_DWORD, (CONST BYTE*)&output_condition_, sizeof(output_condition_));
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, 0, REG_SZ, (CONST BYTE*)output_path_.c_str(), output_path_.length() + 1);
 			}
 		}
