@@ -324,27 +324,27 @@ namespace cubeice {
 		page.hInstance = GetModuleHandle(NULL);
 		
 		// 「一般」ページ
-		page.pszTemplate = _T("GENERAL_TABPAGE");
+		page.pszTemplate = _T("IDD_GENERAL");
 		page.pfnDlgProc = (DLGPROC)detail::general_dialogproc;
 		ref[0] = CreatePropertySheetPage(&page);
 		
 		// 「圧縮」ページ
-		page.pszTemplate = _T("ARCHIVE_TABPAGE");
+		page.pszTemplate = _T("IDD_COMPRESS");
 		page.pfnDlgProc = (DLGPROC)detail::archive_dialogproc;
 		ref[1] = CreatePropertySheetPage(&page);
 		
 		// 「解凍」ページ
-		page.pszTemplate = _T("EXPAND_TABPAGE");
+		page.pszTemplate = _T("IDD_DECOMPRESS");
 		page.pfnDlgProc = (DLGPROC)detail::expand_dialogproc;
 		ref[2] = CreatePropertySheetPage(&page);
 		
 		// 「フィルタリング」ページ
-		page.pszTemplate = _T("FILTER_TABPAGE");
+		page.pszTemplate = _T("IDD_FILTER");
 		page.pfnDlgProc = (DLGPROC)detail::filter_dialogproc;
 		ref[3] = CreatePropertySheetPage(&page);
 
 		// 「バージョン情報」ページ
-		page.pszTemplate = _T("VERSION_TABPAGE");
+		page.pszTemplate = _T("IDD_VERSION");
 		page.pfnDlgProc = (DLGPROC)detail::version_dialogproc;;
 		ref[4] = CreatePropertySheetPage(&page);
 		
@@ -352,7 +352,7 @@ namespace cubeice {
 		psh.dwSize = sizeof (PROPSHEETHEADER);
 		psh.dwFlags = PSH_DEFAULT | PSH_USEHICON;
 		psh.hwndParent = parent;
-		psh.hIcon = LoadIcon(page.hInstance, _T("CUBEICE_ICON"));
+		psh.hIcon = LoadIcon(page.hInstance, _T("IDC_APP"));
 		psh.pszCaption = _T("CubeICE 設定");
 		psh.nPages = pagenum;
 		psh.phpage = ref;
