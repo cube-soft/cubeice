@@ -180,9 +180,9 @@ namespace cubeice {
 		/* ---------------------------------------------------------------- */
 		static void filter_initdialog(HWND hWnd) {
 			// ñ¢é¿ëïÇ»ÇÃÇ≈ disable Ç…ÇµÇƒÇ®Ç≠ÅD
-			HWND handle = GetDlgItem(hWnd, IDC_FILTER_TEXTBOX);
-			EnableWindow(handle, false);
-			SetWindowText(handle, "ñ¢é¿ëï");
+			//HWND handle = GetDlgItem(hWnd, IDC_FILTER_TEXTBOX);
+			//EnableWindow(handle, false);
+			//SetWindowText(handle, "ñ¢é¿ëï");
 		}
 		
 		/* ----------------------------------------------------------------- */
