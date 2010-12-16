@@ -52,44 +52,37 @@ namespace cubeice {
 			if (IsDlgButtonChecked(handle, id) == BST_CHECKED) dest |= kind;
 			else dest &= ~kind;
 		}
-		
+
 		/* ---------------------------------------------------------------- */
 		/*
-		 *  detail_initdialog
+		 *  archive_initdialog
 		 *
 		 *  「圧縮」タブおよび「解凍」タブの初期設定
 		 */
 		/* ---------------------------------------------------------------- */
-		static void detail_initdialog(HWND hWnd, user_setting_property& detail) {
+		static void archive_initdialog(HWND hWnd, user_setting::archive_type& prop) {
 			// 「出力先フォルダ」グループ
-			if (detail.output_condition() & OUTPUT_SPECIFIC) {
+			if (prop.output_condition() & OUTPUT_SPECIFIC) {
 				CheckDlgButton(hWnd, IDC_SPECIFIC_CHECKBOX, BM_SETCHECK);
 			}
-			if (detail.output_condition() & OUTPUT_SOURCE) {
+			if (prop.output_condition() & OUTPUT_SOURCE) {
 				CheckDlgButton(hWnd, IDC_SOURCE_CHECKBOX, BM_SETCHECK);
 			}
-			if (detail.output_condition() & OUTPUT_RUNTIME) {
+			if (prop.output_condition() & OUTPUT_RUNTIME) {
 				CheckDlgButton(hWnd, IDC_RUNTIME_CHECKBOX, BM_SETCHECK);
 			}
 
 			// 「詳細」グループ
-			if (detail.overwrite() & OVERWRITE_NOTIFY) {
-				CheckDlgButton(hWnd, IDC_OVERWRITE_CHECKBOX, BM_SETCHECK);
+			const flag_map& detail = detail_map();
+			for (flag_map::const_iterator pos = detail.begin(); pos != detail.end(); ++pos) {
+				if (prop.details() & pos->second) CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
 			}
-			if (detail.overwrite() & OVERWRITE_NEWER) {
-				CheckDlgButton(hWnd, IDC_NEWER_CHECKBOX, BM_SETCHECK);
-			}
-			if (detail.conv_charset()) {
-				CheckDlgButton(hWnd, IDC_CHARCODE_CHECKBOX, BM_SETCHECK);
-			}
-			if (detail.filter()) {
-				CheckDlgButton(hWnd, IDC_FILTER_CHECKBOX, BM_SETCHECK);
-			}
-			if (detail.postopen()) {
-				CheckDlgButton(hWnd, IDC_POSTOPEN_CHECKBOX, BM_SETCHECK);
+			
+			if ((prop.details() & DETAIL_OVERWRITE) == 0) {
+				EnableWindow(GetDlgItem(hWnd, IDC_NEWER_CHECKBOX), FALSE);
 			}
 		}
-		
+
 		/* ---------------------------------------------------------------- */
 		/*
 		 *  general_initdialog
@@ -106,14 +99,6 @@ namespace cubeice {
 				}
 			}
 			
-			// 「コンテキストメニュー」グループ
-			const flag_map& context = context_map();
-			for (flag_map::const_iterator pos = context.begin(); pos != context.end(); ++pos) {
-				if (Setting.context_flags() & pos->second) {
-					CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
-				}
-			}
-			
 			// コンテキストメニューの圧縮のサブ項目
 			const flag_map& comp = compress_map();
 			for (flag_map::const_iterator pos = comp.begin(); pos != comp.end(); ++pos) {
@@ -121,6 +106,30 @@ namespace cubeice {
 					CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
 				}
 			}
+
+			// 「コンテキストメニュー」グループ
+			const flag_map& context = context_map();
+			for (flag_map::const_iterator pos = context.begin(); pos != context.end(); ++pos) {
+				if (Setting.context_flags() & pos->second) {
+					CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
+				}
+				else if (pos->second == COMPRESS_FLAG) {
+					// 圧縮のサブ項目を無効化
+					for (flag_map::const_iterator subpos = comp.begin(); subpos != comp.end(); ++subpos) {
+						EnableWindow(GetDlgItem(hWnd, subpos->first), FALSE);
+					}
+				}
+			}
+		}
+		
+		/* ---------------------------------------------------------------- */
+		//  filter_initdialog
+		/* ---------------------------------------------------------------- */
+		static void filter_initdialog(HWND hWnd) {
+			// 未実装なので disable にしておく．
+			HWND handle = GetDlgItem(hWnd, IDC_FILTER_TEXTBOX);
+			EnableWindow(handle, false);
+			SetWindowText(handle, "未実装");
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -171,19 +180,27 @@ namespace cubeice {
 					return TRUE;
 				}
 				
-				// 「コンテキストメニュー」グループ
-				const flag_map& context = context_map();
-				pos = context.find(parameter);
-				if (pos != context.end()) {
-					change_flag(Setting.context_flags(), hWnd, pos->first, pos->second);
-					return TRUE;
-				}
-				
 				// コンテキストメニューの圧縮のサブ項目
 				const flag_map& comp = compress_map();
 				pos = comp.find(parameter);
 				if (pos != comp.end()) {
 					change_flag(Setting.compression().flags(), hWnd, pos->first, pos->second);
+					return TRUE;
+				}
+
+				// 「コンテキストメニュー」グループ
+				const flag_map& context = context_map();
+				pos = context.find(parameter);
+				if (pos != context.end()) {
+					change_flag(Setting.context_flags(), hWnd, pos->first, pos->second);
+
+					// 圧縮のサブ項目の有効/無効を変更する．
+					if (pos->first == IDC_COMPRESS_CHECKBOX) {
+						BOOL enabled = IsDlgButtonChecked(hWnd, IDC_COMPRESS_CHECKBOX);
+						for (flag_map::const_iterator subpos = comp.begin(); subpos != comp.end(); ++subpos) {
+							EnableWindow(GetDlgItem(hWnd, subpos->first), enabled);
+						}
+					}
 					return TRUE;
 				}
 
@@ -195,40 +212,52 @@ namespace cubeice {
 			return FALSE;
 		}
 		
+		/* ---------------------------------------------------------------- */
+		/*
+		 *  archive_dialogproc
+		 *
+		 *  compress_dialogproc(), decompress_dialogproc() 共通の処理．
+		 */
+		/* ---------------------------------------------------------------- */
+		static BOOL archive_dialogproc(user_setting::archive_type& prop, HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+			std::size_t parameter = LOWORD(wp);
+			const flag_map& detail = detail_map();
+			flag_map::const_iterator pos = detail.find(parameter);
+			if (pos != detail.end()) {
+				change_flag(prop.details(), hWnd, pos->first, pos->second);
+				if (pos->first == IDC_OVERWRITE_CHECKBOX) {
+					BOOL enabled = (prop.details() & DETAIL_OVERWRITE) ? TRUE : FALSE;
+					EnableWindow(GetDlgItem(hWnd, IDC_NEWER_CHECKBOX), enabled);
+				}
+				return TRUE;
+			}
+
+			switch(LOWORD(wp)) {
+			case IDC_SPECIFIC_CHECKBOX:
+				change_flag(prop.output_condition(), hWnd, IDC_SPECIFIC_CHECKBOX, OUTPUT_SPECIFIC);
+				return TRUE;
+			case IDC_SOURCE_CHECKBOX:
+				change_flag(prop.output_condition(), hWnd, IDC_SOURCE_CHECKBOX, OUTPUT_SOURCE);
+				return TRUE;
+			case IDC_RUNTIME_CHECKBOX:
+				change_flag(prop.output_condition(), hWnd, IDC_RUNTIME_CHECKBOX, OUTPUT_RUNTIME);
+				return TRUE;
+			default:
+				break;
+			}
+			return common_dialogproc(hWnd, msg, wp, lp);
+		}
+
 		/* ----------------------------------------------------------------- */
 		//  compress_dialogproc
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK compress_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_INITDIALOG:
-				detail_initdialog(hWnd, Setting.compression());
+				archive_initdialog(hWnd, Setting.compression());
 				break;
 			case WM_COMMAND:
-				switch(LOWORD(wp)) {
-				case IDC_SPECIFIC_CHECKBOX:
-					change_flag(Setting.compression().output_condition(), hWnd, IDC_SPECIFIC_CHECKBOX, OUTPUT_SPECIFIC);
-					return TRUE;
-				case IDC_SOURCE_CHECKBOX:
-					change_flag(Setting.compression().output_condition(), hWnd, IDC_SOURCE_CHECKBOX, OUTPUT_SOURCE);
-					return TRUE;
-				case IDC_RUNTIME_CHECKBOX:
-					change_flag(Setting.compression().output_condition(), hWnd, IDC_RUNTIME_CHECKBOX, OUTPUT_RUNTIME);
-					return TRUE;
-				case IDC_FILTER_CHECKBOX:
-					Setting.decompression().filter() = (IsDlgButtonChecked(hWnd, IDC_FILTER_CHECKBOX) == BST_CHECKED);
-					return TRUE;
-				case IDC_OVERWRITE_CHECKBOX:
-					change_flag(Setting.compression().overwrite(), hWnd, IDC_OVERWRITE_CHECKBOX, OVERWRITE_NOTIFY);
-					return TRUE;
-				case IDC_NEWER_CHECKBOX:
-					change_flag(Setting.compression().overwrite(), hWnd, IDC_NEWER_CHECKBOX, OVERWRITE_NEWER);
-					return TRUE;
-				case IDC_POSTOPEN_CHECKBOX:
-					Setting.decompression().postopen() = (IsDlgButtonChecked(hWnd, IDC_POSTOPEN_CHECKBOX) == BST_CHECKED);
-					return TRUE;
-				default:
-					return common_dialogproc(hWnd, msg, wp, lp);
-				}
+				return archive_dialogproc(Setting.compression(), hWnd, msg, wp, lp);
 			default:
 				return common_dialogproc(hWnd, msg, wp, lp);
 			}
@@ -241,39 +270,10 @@ namespace cubeice {
 		static BOOL CALLBACK decompress_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_INITDIALOG:
-				detail_initdialog(hWnd, Setting.decompression());
+				archive_initdialog(hWnd, Setting.decompression());
+				break;
 			case WM_COMMAND:
-				switch(LOWORD(wp)) {
-				case IDC_SPECIFIC_CHECKBOX:
-					change_flag(Setting.decompression().output_condition(), hWnd, IDC_SPECIFIC_CHECKBOX, OUTPUT_SPECIFIC);
-					return TRUE;
-				case IDC_SOURCE_CHECKBOX:
-					change_flag(Setting.decompression().output_condition(), hWnd, IDC_SOURCE_CHECKBOX, OUTPUT_SOURCE);
-					return TRUE;
-				case IDC_RUNTIME_CHECKBOX:
-					change_flag(Setting.decompression().output_condition(), hWnd, IDC_RUNTIME_CHECKBOX, OUTPUT_RUNTIME);
-					return TRUE;
-				case IDC_FILTER_CHECKBOX:
-					Setting.decompression().filter() = (IsDlgButtonChecked(hWnd, IDC_FILTER_CHECKBOX) == BST_CHECKED);
-					return TRUE;
-				case IDC_OVERWRITE_CHECKBOX:
-					change_flag(Setting.decompression().overwrite(), hWnd, IDC_OVERWRITE_CHECKBOX, OVERWRITE_NOTIFY);
-					return TRUE;
-				case IDC_NEWER_CHECKBOX:
-					change_flag(Setting.decompression().overwrite(), hWnd, IDC_NEWER_CHECKBOX, OVERWRITE_NEWER);
-					return TRUE;
-				case IDC_MAKE_FOLDER_CHECKBOX:
-					Setting.decompression().create_folder() = (IsDlgButtonChecked(hWnd, IDC_MAKE_FOLDER_CHECKBOX) == BST_CHECKED);
-					return TRUE;
-				case IDC_CHARCODE_CHECKBOX:
-					Setting.decompression().conv_charset() = (IsDlgButtonChecked(hWnd, IDC_CHARCODE_CHECKBOX) == BST_CHECKED);
-					return TRUE;
-				case IDC_POSTOPEN_CHECKBOX:
-					Setting.decompression().postopen() = (IsDlgButtonChecked(hWnd, IDC_POSTOPEN_CHECKBOX) == BST_CHECKED);
-					return TRUE;
-				default:
-					return common_dialogproc(hWnd, msg, wp, lp);
-				}
+				return archive_dialogproc(Setting.decompression(), hWnd, msg, wp, lp);
 			default:
 				return common_dialogproc(hWnd, msg, wp, lp);
 			}
@@ -285,6 +285,9 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK filter_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
+			case WM_INITDIALOG:
+				filter_initdialog(hWnd);
+				break;
 			case WM_COMMAND:
 				break;
 			default:
@@ -299,9 +302,7 @@ namespace cubeice {
 		static BOOL CALLBACK version_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_INITDIALOG:
-			{
 				break;
-			}
 			case WM_COMMAND:
 				break;
 			default:

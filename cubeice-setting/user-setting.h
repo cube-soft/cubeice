@@ -42,6 +42,38 @@
 #include <winreg.h>
 
 /* ------------------------------------------------------------------------- */
+//  関連付けに関連するフラグ
+/* ------------------------------------------------------------------------- */
+#define ZIP_FLAG            0x00000001
+#define LZH_FLAG            0x00000002
+#define RAR_FLAG            0x00000004
+#define TAR_FLAG            0x00000008
+#define GZ_FLAG             0x00000010
+#define SEVENZIP_FLAG       0x00000020
+#define ARJ_FLAG            0x00000040
+#define BZ2_FLAG            0x00000080
+#define CAB_FLAG            0x00000100
+#define CHM_FLAG            0x00000200
+#define CPIO_FLAG           0x00000400
+#define DEB_FLAG            0x00000800
+#define DMG_FLAG            0x00001000
+#define ISO_FLAG            0x00002000
+#define RPM_FLAG            0x00004000
+#define TBZ_FLAG            0x00008000
+#define TGZ_FLAG            0x00010000
+#define WIM_FLAG            0x00020000
+#define XAR_FLAG            0x00040000
+#define XZ_FLAG             0x00080000
+#define EXE_FLAG            0x00100000 // 自己解凍形式
+
+/* ------------------------------------------------------------------------- */
+//  コンテキストメニューに関連するフラグ
+/* ------------------------------------------------------------------------- */
+#define COMPRESS_FLAG       0x0001
+#define DECOMPRESS_FLAG     0x0002
+#define SETTING_FLAG        0x0004
+
+/* ------------------------------------------------------------------------- */
 //  出力先フォルダに関連するフラグ
 /* ------------------------------------------------------------------------- */
 #define OUTPUT_RUNTIME      0x00    // 実行時に指定する
@@ -56,25 +88,36 @@
 #define OVERWRITE_NEWER     0x02    // 更新日時が元のファイルより新しい場合上書き
 
 /* ------------------------------------------------------------------------- */
+//  圧縮/解凍タブの詳細設定に関連するフラグ
+/* ------------------------------------------------------------------------- */
+#define DETAIL_OVERWRITE      0x0001  // 上書きの確認
+#define DETAIL_IGNORE_NEWER   0x0002  // 更新日時が新しい場合は無視
+#define DETAIL_OPEN           0x0004  // 保存先を開く
+#define DETAIL_CREATE_FOLDER  0x0008  // フォルダを作成する
+#define DETAIL_CHARCODE       0x0010  // 文字コードを変換する
+#define DETAIL_FILTER         0x0020  // フィルタリングを行う
+
+/* ------------------------------------------------------------------------- */
 //  レジストリに関する情報
 /* ------------------------------------------------------------------------- */
 #define CUBEICE_REG_ROOT            "Software\\CubeSoft\\CubeICE"
 #define CUBEICE_REG_COMPRESS        "Compress"
 #define CUBEICE_REG_DECOMPRESS      "Decompress"
 #define CUBEICE_REG_FLAGS           "Flags"
+#define CUBEICE_REG_DETAILS	        "Details"
 #define CUBEICE_REG_OUTPUT_FLAG     "OutputFlag"
 #define CUBEICE_REG_OUTPUT_PATH     "OutputPath"
-#define CUBEICE_REG_CREATE_FOLDER   "CreateFolder"
-#define CUBEICE_REG_CONV_CHARSET    "ConvCharset"
-#define CUBEICE_REG_FILTER          "Filter"
-#define CUBEICE_REG_POSTOPEN        "PostOpen"
 #define CUBEICE_REG_CONTEXT         "ContextFlags"
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */
-	//  user_setting_property
+	/*
+	 *  archive_setting
+	 *
+	 *  圧縮/解凍の設定をレジストリへ入出力するためのクラス．
+	 */
 	/* --------------------------------------------------------------------- */
-	class user_setting_property {
+	class archive_setting {
 	public:
 		typedef std::size_t size_type;
 		typedef TCHAR char_type;
@@ -83,9 +126,8 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  constructor
 		/* ----------------------------------------------------------------- */
-		explicit user_setting_property(const string_type& root) :
-			root_(root), flags_(0), output_condition_(0), output_path_(), overwrite_(0),
-			create_folder_(false), conv_charset_(false), filter_(false), postopen_(false) {
+		explicit archive_setting(const string_type& root) :
+			root_(root), flags_(0), details_(0), output_condition_(0), output_path_() {
 			this->load();
 		}
 		
@@ -101,35 +143,17 @@ namespace cubeice {
 				
 				dwSize = sizeof(flags_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_FLAGS, NULL, &dwType, (LPBYTE)&flags_, &dwSize);
+				
+				dwSize = sizeof(details_);
+				RegQueryValueEx(hkResult, CUBEICE_REG_DETAILS, NULL, &dwType, (LPBYTE)&details_, &dwSize);
 
 				dwSize = sizeof(output_condition_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_FLAG, NULL, &dwType, (LPBYTE)&output_condition_, &dwSize);
-
+				
 				char_type buffer[1024] = {};
 				dwSize = sizeof(buffer);
 				if (RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) {
 					output_path_ = buffer;
-				}
-				
-				DWORD condition = 0;
-				dwSize = sizeof(condition);
-				if (RegQueryValueEx(hkResult, CUBEICE_REG_CREATE_FOLDER, NULL, &dwType, (LPBYTE)&condition, &dwSize) == ERROR_SUCCESS) {
-					create_folder_ = (condition != 0);
-				}
-				
-				dwSize = sizeof(condition);
-				if (RegQueryValueEx(hkResult, CUBEICE_REG_CONV_CHARSET, NULL, &dwType, (LPBYTE)&condition, &dwSize) == ERROR_SUCCESS) {
-					conv_charset_ = (condition != 0);
-				}
-				
-				dwSize = sizeof(condition);
-				if (RegQueryValueEx(hkResult, CUBEICE_REG_FILTER, NULL, &dwType, (LPBYTE)&condition, &dwSize) == ERROR_SUCCESS) {
-					filter_ = (condition != 0);
-				}
-				
-				dwSize = sizeof(condition);
-				if (RegQueryValueEx(hkResult, CUBEICE_REG_POSTOPEN, NULL, &dwType, (LPBYTE)&condition, &dwSize) == ERROR_SUCCESS) {
-					postopen_ = (condition != 0);
 				}
 			}
 		}
@@ -144,20 +168,9 @@ namespace cubeice {
 			lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
 			if (!lResult) {
 				RegSetValueEx(hkResult, CUBEICE_REG_FLAGS, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
+				RegSetValueEx(hkResult, CUBEICE_REG_DETAILS, 0, REG_DWORD, (CONST BYTE*)&details_, sizeof(details_));
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_FLAG, 0, REG_DWORD, (CONST BYTE*)&output_condition_, sizeof(output_condition_));
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, 0, REG_SZ, (CONST BYTE*)output_path_.c_str(), output_path_.length() + 1);
-
-				DWORD condition = (create_folder_) ? 1 : 0;
-				RegSetValueEx(hkResult, CUBEICE_REG_CREATE_FOLDER,0,REG_DWORD, (CONST BYTE*)&condition, sizeof(condition));
-
-				condition  = (conv_charset_) ? 1 : 0;
-				RegSetValueEx(hkResult, CUBEICE_REG_CONV_CHARSET, 0, REG_DWORD, (CONST BYTE*)&condition, sizeof(condition));
-
-				condition = (filter_) ? 1 : 0;
-				RegSetValueEx(hkResult, CUBEICE_REG_FILTER, 0, REG_DWORD, (CONST BYTE*)&condition, sizeof(condition));
-
-				condition = (postopen_) ? 1 : 0;
-				RegSetValueEx(hkResult, CUBEICE_REG_POSTOPEN, 0, REG_DWORD, (CONST BYTE*)&condition, sizeof(condition));
 			}
 		}
 		
@@ -175,6 +188,12 @@ namespace cubeice {
 		const size_type& flags() const { return flags_; }
 		
 		/* ----------------------------------------------------------------- */
+		//  details
+		/* ----------------------------------------------------------------- */
+		size_type& details() { return details_; }
+		const size_type& details() const { return details_; }
+
+		/* ----------------------------------------------------------------- */
 		/*
 		 *  output_condition
 		 *
@@ -184,12 +203,6 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		size_type& output_condition() { return output_condition_; }
 		const size_type& output_condition() const { return output_condition_; }
-		
-		/* ----------------------------------------------------------------- */
-		//  overwrite
-		/* ----------------------------------------------------------------- */
-		size_type& overwrite() { return overwrite_; }
-		const size_type& overwrite() const { return overwrite_; }
 
 		/* ----------------------------------------------------------------- */
 		/*
@@ -202,56 +215,12 @@ namespace cubeice {
 		string_type& output_path() { return output_path_; }
 		const string_type& output_path() const { return output_path_; }
 		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  create_folder
-		 *
-		 *  フォルダを自動生成するかどうか．
-		 */
-		/* ----------------------------------------------------------------- */
-		bool& create_folder() { return create_folder_; }
-		const bool& create_folder() const { return create_folder_; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  conv_charset
-		 *
-		 *  文字コードを変換するかどうか．
-		 */
-		/* ----------------------------------------------------------------- */
-		bool& conv_charset() { return conv_charset_; }
-		const bool& conv_charset() const { return conv_charset_; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  filter
-		 *
-		 *  フィルタリングを行うかどうか．
-		 */
-		/* ----------------------------------------------------------------- */
-		bool& filter() { return filter_; }
-		const bool& filter() const { return filter_; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  postopen
-		 *
-		 *  実行後，保存先フォルダを開くかどうか．
-		 */
-		/* ----------------------------------------------------------------- */
-		bool& postopen() { return postopen_; }
-		const bool& postopen() const { return postopen_; }
-		
 	private:
 		string_type root_;
 		size_type flags_;
+		size_type details_;
 		size_type output_condition_;
 		string_type output_path_;
-		size_type overwrite_;
-		bool create_folder_;
-		bool conv_charset_;
-		bool filter_;
-		bool postopen_;
 	};
 	
 	/* --------------------------------------------------------------------- */
@@ -259,10 +228,10 @@ namespace cubeice {
 	/* --------------------------------------------------------------------- */
 	class user_setting {
 	public:
-		typedef user_setting_property property_type;
-		typedef property_type::size_type size_type;
-		typedef property_type::char_type char_type;
-		typedef property_type::string_type string_type;
+		typedef archive_setting archive_type;
+		typedef archive_type::size_type size_type;
+		typedef archive_type::char_type char_type;
+		typedef archive_type::string_type string_type;
 		
 		/* ----------------------------------------------------------------- */
 		//  constructor
@@ -323,8 +292,8 @@ namespace cubeice {
 		 *  圧縮に関する設定．
 		 */
 		/* ----------------------------------------------------------------- */
-		property_type& compression() { return comp_; }
-		const property_type& compression() const { return comp_; }
+		archive_type& compression() { return comp_; }
+		const archive_type& compression() const { return comp_; }
 		
 		/* ----------------------------------------------------------------- */
 		/*
@@ -333,8 +302,8 @@ namespace cubeice {
 		 *  解凍に関する設定．
 		 */
 		/* ----------------------------------------------------------------- */
-		property_type& decompression() { return decomp_; }
-		const property_type& decompression() const { return decomp_; }
+		archive_type& decompression() { return decomp_; }
+		const archive_type& decompression() const { return decomp_; }
 		
 		/* ----------------------------------------------------------------- */
 		/*
@@ -348,8 +317,8 @@ namespace cubeice {
 		
 	private:
 		string_type root_;
-		property_type comp_;
-		property_type decomp_;
+		archive_type comp_;
+		archive_type decomp_;
 		size_type flags_;
 	};
 }

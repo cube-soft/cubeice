@@ -60,6 +60,7 @@ namespace cubeice {
 			dest[IDC_ADD_SEVENZIP_CHECKBOX] = SEVENZIP_FLAG;
 			dest[IDC_ADD_BZ2_CHECKBOX] = BZ2_FLAG;
 			dest[IDC_ADD_GZ_CHECKBOX] = GZ_FLAG;
+			dest[IDC_ADD_EXE_CHECKBOX] = EXE_FLAG;
 			initialized = true;
 		}
 		return dest;
@@ -113,6 +114,23 @@ namespace cubeice {
 	}
 	
 	/* ----------------------------------------------------------------- */
+	//  detail_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& detail_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_OVERWRITE_CHECKBOX] = DETAIL_OVERWRITE;
+			dest[IDC_NEWER_CHECKBOX] = DETAIL_IGNORE_NEWER;
+			dest[IDC_POSTOPEN_CHECKBOX] = DETAIL_OPEN;
+			dest[IDC_CREATE_FOLDER_CHECKBOX] = DETAIL_CREATE_FOLDER;
+			dest[IDC_CHARCODE_CHECKBOX] = DETAIL_CHARCODE;
+			dest[IDC_FILTER_CHECKBOX] = DETAIL_FILTER;
+		}
+		return dest;
+	}
+	
+	/* ----------------------------------------------------------------- */
 	//  output_map
 	/* ----------------------------------------------------------------- */
 	inline flag_map& output_map() {
@@ -122,19 +140,6 @@ namespace cubeice {
 			dest[IDC_SPECIFIC_CHECKBOX] = OUTPUT_SPECIFIC;
 			dest[IDC_SOURCE_CHECKBOX] = OUTPUT_SOURCE;
 			dest[IDC_RUNTIME_CHECKBOX] = OUTPUT_RUNTIME;
-		}
-		return dest;
-	}
-	
-	/* ----------------------------------------------------------------- */
-	//  output_map
-	/* ----------------------------------------------------------------- */
-	inline flag_map& overwrite_map() {
-		static bool initialized = false;
-		static flag_map dest;
-		if (!initialized) {
-			dest[IDC_OVERWRITE_CHECKBOX] = OVERWRITE_NOTIFY;
-			dest[IDC_NEWER_CHECKBOX] = OVERWRITE_NEWER;
 		}
 		return dest;
 	}
