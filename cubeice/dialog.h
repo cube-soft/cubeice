@@ -47,7 +47,7 @@
 
 #define CUBE_MAX_PATH 2048
 
-namespace cube {
+namespace cubeice {
 	namespace dialog {
 		namespace detail {
 			/* ------------------------------------------------------------- */

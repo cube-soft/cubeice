@@ -6,26 +6,32 @@
 #include <tchar.h>
 #include <clx/split.h>
 #include "wpopen.h"
+#include "user-setting.h"
 
-#define CUBE_ICE_ENGINE _T("7z.exe")
+#define CUBEICE_ENGINE _T("7z.exe")
 
-namespace cube {
+namespace cubeice {
 	class archiver {
 	public:
 		typedef TCHAR char_type;
 		typedef std::basic_string<TCHAR> string_type;
 		typedef std::size_t size_type;
-
-		archiver() {}
-
+		typedef cubeice::user_setting setting_type;
+		
+		/* ----------------------------------------------------------------- */
+		//  constructor
+		/* ----------------------------------------------------------------- */
+		explicit archiver(const setting_type& setting) :
+			setting_(setting) {}
+		
 		/* ----------------------------------------------------------------- */
 		//  compress
 		/* ----------------------------------------------------------------- */
 		template <class InputIterator>
 		void compress(InputIterator first, InputIterator last) {
 			const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-			std::basic_string<TCHAR> dest = cube::dialog::savefile(filter);
-			std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
+			std::basic_string<TCHAR> dest = cubeice::dialog::savefile(filter);
+			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" a -tzip -bd -scsWIN -y \"") + dest + _T("\"");
 			while (++first != last) cmdline += _T(" \"") + *first + _T("\"");
 			this->execute(cmdline, 0);
@@ -39,9 +45,13 @@ namespace cube {
 			while (++first != last) {
 				std::basic_string<TCHAR>::size_type pos = first->find_last_of('\\');
 				std::basic_string<TCHAR> filename = (pos == std::basic_string<TCHAR>::npos) ? *first : first->substr(pos);
-				std::basic_string<TCHAR> dest = cube::dialog::browsefolder(_T("解凍するフォルダを指定して下さい。"));
-				dest += _T("\\") + filename.substr(0, filename.find_last_of(_T('.')));
-				std::basic_string<TCHAR> cmdline = CUBE_ICE_ENGINE;
+				std::basic_string<TCHAR> dest = getdir(setting_.decompression(), *first);
+				if (dest.empty()) dest = cubeice::dialog::browsefolder(_T("解凍するフォルダを指定して下さい。"));
+				if (dest.empty()) break;
+				if (setting_.decompression().details() & DETAIL_CREATE_FOLDER) {
+					dest += _T("\\") + filename.substr(0, filename.find_last_of(_T('.')));
+				}
+				std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
 				cmdline += _T(" x -bd -scsWIN -y -o\"") + dest + _T("\"");
 				cmdline += _T(" \"") + *first + _T("\"");
 				this->execute(cmdline, 0);
@@ -60,7 +70,7 @@ namespace cube {
 		void execute(const std::basic_string<TCHAR>& cmdline, size_type n) {
 			PROCESS_INFORMATION pi = {};
 			
-			cube::dialog::progressbar progress;
+			cubeice::dialog::progressbar progress;
 			if (n == 0) progress.marquee(true);
 
 			cube::popen proc;
@@ -90,11 +100,43 @@ namespace cube {
 		}
 
 	private:
+		const setting_type& setting_;
+		
 		/* ----------------------------------------------------------------- */
 		//  non-copyable
 		/* ----------------------------------------------------------------- */
 		archiver(const archiver& cp);
 		archiver& operator=(const archiver& cp);
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  getdir
+		 *
+		 *  ユーザ設定の値を元に出力先ディレクトリを取得する．特定の
+		 *  ディレクトリを指定がチェックされており，かつ出力先が
+		 *  空白の場合はデスクトップのパスを返す．
+		 */
+		/* ----------------------------------------------------------------- */
+		static string_type getdir(const setting_type::archive_type& setting, const string_type& src) {
+			string_type dest;
+			if (setting.output_condition() == OUTPUT_SPECIFIC) {
+				if (!setting.output_path().empty()) return setting.output_path();
+				else { // デスクトップのパスを取得
+					LPITEMIDLIST item;
+					SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &item);
+					
+					char_type buffer[CUBE_MAX_PATH] = {};
+					SHGetPathFromIDList(item, buffer);
+					return string_type(buffer);
+				}
+			}
+			else if (setting.output_condition() == OUTPUT_SOURCE) {
+				// TODO: 相対パスの場合どうするか．
+				return src.substr(0, src.find_last_of(_T('\\')));
+			}
+			
+			return string_type();
+		}
 	};
 }
 

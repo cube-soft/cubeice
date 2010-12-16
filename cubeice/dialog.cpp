@@ -37,7 +37,7 @@
 #include <windows.h>
 #include <tchar.h>
 
-namespace cube {
+namespace cubeice {
 	namespace dialog {
 		/* ----------------------------------------------------------------- */
 		/*

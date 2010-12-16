@@ -53,12 +53,11 @@
 
 #include "dialog.h"
 #include "archiver.h"
+#include "user-setting.h"
 
-#pragma comment(lib, "comctl32.lib")
+extern cubeice::user_setting UserSetting;
 
-HINSTANCE AppInstance; // アプリケーションのハンドル
-
-namespace cube {
+namespace cubeice {
 	namespace cmdline {
 		typedef clx::escape_separator<TCHAR> separator;
 		typedef clx::basic_tokenizer<clx::escape_separator<TCHAR>, std::basic_string<TCHAR> > splitter;
