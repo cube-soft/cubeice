@@ -108,6 +108,7 @@
 #define CUBEICE_REG_OUTPUT_CONDITION    "OutputCondition"
 #define CUBEICE_REG_OUTPUT_PATH         "OutputPath"
 #define CUBEICE_REG_CONTEXT             "ContextFlags"
+#define CUBEICE_REG_FILTER              "Filter"
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */
@@ -240,7 +241,7 @@ namespace cubeice {
 			root_(CUBEICE_REG_ROOT),
 			comp_(string_type(CUBEICE_REG_ROOT) + '\\' + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + '\\' + CUBEICE_REG_DECOMPRESS),
-			flags_(0) {
+			flags_(0), filter_() {
 			this->load();	
 		}
 		
@@ -248,7 +249,7 @@ namespace cubeice {
 			root_(root),
 			comp_(root + '\\' + CUBEICE_REG_COMPRESS),
 			decomp_(root + '\\' + CUBEICE_REG_DECOMPRESS),
-			flags_(0) {
+			flags_(0), filter_() {
 			this->load();
 		}
 		
@@ -307,7 +308,7 @@ namespace cubeice {
 		
 		/* ----------------------------------------------------------------- */
 		/*
-		 *  contexts
+		 *  context_flags
 		 *
 		 *  コンテキストメニューに表示させるもの．
 		 */
@@ -315,11 +316,18 @@ namespace cubeice {
 		size_type& context_flags() { return flags_; }
 		const size_type& context_flags() const { return flags_; }
 		
+		/* ----------------------------------------------------------------- */
+		//  filters
+		/* ----------------------------------------------------------------- */
+		string_type& filter() { return filter_; }
+		const string_type& filter() const { return filter_; }
+		
 	private:
 		string_type root_;
 		archive_type comp_;
 		archive_type decomp_;
 		size_type flags_;
+		string_type filter_;
 	};
 }
 
