@@ -37,6 +37,7 @@
 
 #include <tchar.h>
 #include <cstdlib>
+#include <set>
 #include <string>
 #include <windows.h>
 #include <winreg.h>
@@ -233,6 +234,7 @@ namespace cubeice {
 		typedef archive_type::size_type size_type;
 		typedef archive_type::char_type char_type;
 		typedef archive_type::string_type string_type;
+		typedef std::set<string_type> container_type;
 		
 		/* ----------------------------------------------------------------- */
 		//  constructor
@@ -241,7 +243,7 @@ namespace cubeice {
 			root_(CUBEICE_REG_ROOT),
 			comp_(string_type(CUBEICE_REG_ROOT) + '\\' + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + '\\' + CUBEICE_REG_DECOMPRESS),
-			flags_(0), filter_() {
+			flags_(0), filters_() {
 			this->load();	
 		}
 		
@@ -249,7 +251,7 @@ namespace cubeice {
 			root_(root),
 			comp_(root + '\\' + CUBEICE_REG_COMPRESS),
 			decomp_(root + '\\' + CUBEICE_REG_DECOMPRESS),
-			flags_(0), filter_() {
+			flags_(0), filters_() {
 			this->load();
 		}
 		
@@ -268,6 +270,9 @@ namespace cubeice {
 				
 				dwSize = sizeof(flags_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&flags_, &dwSize);
+
+				// フィルタリング文字列の読み込み．型は REG_MULTI_SZ
+				// 変数側の型は std::set<std::string>
 			}
 		}
 		
@@ -283,6 +288,10 @@ namespace cubeice {
 			LONG lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
 			if (!lResult) {
 				RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
+
+				// フィルタリング文字列の書き込み．型は REG_MULTI_SZ
+				// 変数側の型は std::set<std::string>
+				// http://support.microsoft.com/kb/258545/ja
 			}
 		}
 		
@@ -319,15 +328,15 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  filters
 		/* ----------------------------------------------------------------- */
-		string_type& filter() { return filter_; }
-		const string_type& filter() const { return filter_; }
+		container_type& filters() { return filters_; }
+		const container_type& filters() const { return filters_; }
 		
 	private:
 		string_type root_;
 		archive_type comp_;
 		archive_type decomp_;
 		size_type flags_;
-		string_type filter_;
+		container_type filters_;
 	};
 }
 
