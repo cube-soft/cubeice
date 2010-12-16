@@ -40,110 +40,86 @@
 
 namespace cubeice {
 	namespace detail {
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  change_flag
+		 *
+		 *  チェックボックスの変化があったときに flags の値を更新する
+		 *  ための補助関数．
+		 */
+		/* ----------------------------------------------------------------- */
+		static void change_flag(std::size_t& dest, HWND handle, int id, std::size_t kind) {
+			if (IsDlgButtonChecked(handle, id) == BST_CHECKED) dest |= kind;
+			else dest &= ~kind;
+		}
+
 		/* ---------------------------------------------------------------- */
-		// dialog_init
-		// 
-		// Setttingの値を見て、checkBox等の初期状態を代入する。
-		// （この時点で既にSettingsの値はレジストリから取得できているようである）
+		/*
+		 *  detail_initdialog
+		 *
+		 *  「圧縮」タブおよび「解凍」タブの初期設定
+		 */
 		/* ---------------------------------------------------------------- */
-		static void dialog_init(HWND hWnd) {
-#if 0
-			char buffer[32] = {};
-			MessageBox(NULL, itoa(Setting.context_flags(), buffer, 16), "info", MB_OK);
-#endif
-			// 一般タグの「関連付け」のタグ
-			if (Setting.decompression().flags() & ZIP_FLAG) {
-				CheckDlgButton(hWnd, IDC_ZIP_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & LZH_FLAG) {
-				CheckDlgButton(hWnd, IDC_LZH_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & RAR_FLAG) {
-				CheckDlgButton(hWnd, IDC_RAR_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & TAR_FLAG) {
-				CheckDlgButton(hWnd, IDC_TAR_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & GZ_FLAG) {
-				CheckDlgButton(hWnd, IDC_GZ_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & SEVENZIP_FLAG) {
-				CheckDlgButton(hWnd, IDC_SEVENZIP_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & ARJ_FLAG) {
-				CheckDlgButton(hWnd, IDC_ARJ_CHCKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & BZ2_FLAG) {
-				CheckDlgButton(hWnd, IDC_BZ2_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & CAB_FLAG) {
-				CheckDlgButton(hWnd, IDC_CAB_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & CHM_FLAG) {
-				CheckDlgButton(hWnd, IDC_CHM_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & CPIO_FLAG) {
-				CheckDlgButton(hWnd, IDC_CPIO_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & DEB_FLAG) {
-				CheckDlgButton(hWnd, IDC_DEB_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & DMG_FLAG) {
-				CheckDlgButton(hWnd, IDC_DMG_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & ISO_FLAG) {
-				CheckDlgButton(hWnd, IDC_ISO_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & RPM_FLAG) {
-				CheckDlgButton(hWnd, IDC_RPM_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & TBZ_FLAG) {
-				CheckDlgButton(hWnd, IDC_TBZ_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & TGZ_FLAG) {
-				CheckDlgButton(hWnd, IDC_TGZ_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & WIM_FLAG) {
-				CheckDlgButton(hWnd, IDC_WIM_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & XAR_FLAG) {
-				CheckDlgButton(hWnd, IDC_XAR_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.decompression().flags() & XZ_FLAG) {
-				CheckDlgButton(hWnd, IDC_XZ_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.context_flags() & ARCHIVE_FLAG) {
-				CheckDlgButton(hWnd, IDC_ARCHIVE_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.context_flags() & EXPAND_FLAG) {
-				CheckDlgButton(hWnd, IDC_EXPAND_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.context_flags() & SETTING_FLAG) {
-				CheckDlgButton(hWnd, IDC_SETTING_CHECKBOX, BM_SETCHECK);
-			}
-			if (Setting.compression().output_condition() & OUTPUT_SPECIFIC) {
+		static void detail_initdialog(HWND hWnd, user_setting_property& detail) {
+			// 「出力先フォルダ」グループ
+			if (detail.output_condition() & OUTPUT_SPECIFIC) {
 				CheckDlgButton(hWnd, IDC_SPECIFIC_CHECKBOX, BM_SETCHECK);
 			}
-			if (Setting.compression().output_condition() & OUTPUT_SOURCE) {
+			if (detail.output_condition() & OUTPUT_SOURCE) {
 				CheckDlgButton(hWnd, IDC_SOURCE_CHECKBOX, BM_SETCHECK);
 			}
-			if (Setting.compression().output_condition() & OUTPUT_RUNTIME) {
+			if (detail.output_condition() & OUTPUT_RUNTIME) {
 				CheckDlgButton(hWnd, IDC_RUNTIME_CHECKBOX, BM_SETCHECK);
 			}
-			if (Setting.compression().overwrite() & OVERWRITE_NOTIFY) {
+
+			// 「詳細」グループ
+			if (detail.overwrite() & OVERWRITE_NOTIFY) {
 				CheckDlgButton(hWnd, IDC_OVERWRITE_CHECKBOX, BM_SETCHECK);
 			}
-			if (Setting.compression().overwrite() & OVERWRITE_NEWER) {
+			if (detail.overwrite() & OVERWRITE_NEWER) {
 				CheckDlgButton(hWnd, IDC_NEWER_CHECKBOX, BM_SETCHECK);
 			}
-			if (Setting.compression().conv_charset()) {
+			if (detail.conv_charset()) {
 				CheckDlgButton(hWnd, IDC_CHARCODE_CHECKBOX, BM_SETCHECK);
 			}
-			if (Setting.compression().filter()) {
+			if (detail.filter()) {
 				CheckDlgButton(hWnd, IDC_FILTER_CHECKBOX, BM_SETCHECK);
 			}
-			if (Setting.compression().postopen()) {
+			if (detail.postopen()) {
 				CheckDlgButton(hWnd, IDC_POSTOPEN_CHECKBOX, BM_SETCHECK);
+			}
+		}
+
+		/* ---------------------------------------------------------------- */
+		/*
+		 *  general_initdialog
+		 * 
+		 *  「一般」タブの初期設定
+		 */
+		/* ---------------------------------------------------------------- */
+		static void general_initdialog(HWND hWnd) {
+			// 「関連付け」グループ
+			const flag_map& decomp = decompress_map();
+			for (flag_map::const_iterator pos = decomp.begin(); pos != decomp.end(); ++pos) {
+				if (Setting.decompression().flags() & pos->second) {
+					CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
+				}
+			}
+			
+			// 「コンテキストメニュー」グループ
+			const flag_map& context = context_map();
+			for (flag_map::const_iterator pos = context.begin(); pos != context.end(); ++pos) {
+				if (Setting.context_flags() & pos->second) {
+					CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
+				}
+			}
+			
+			// コンテキストメニューの圧縮のサブ項目
+			const flag_map& comp = compress_map();
+			for (flag_map::const_iterator pos = comp.begin(); pos != comp.end(); ++pos) {
+				if (Setting.compression().flags() & pos->second) {
+					CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
+				}
 			}
 		}
 
@@ -157,9 +133,6 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK common_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
-			case WM_INITDIALOG:
-				dialog_init(hWnd);
-				break;
 			case WM_DESTROY:
 			case WM_CLOSE:
 				PostQuitMessage(0);
@@ -168,10 +141,6 @@ namespace cubeice {
 			{
 				NMHDR* nmhdr = (NMHDR *)lp;
 				if (nmhdr->code == PSN_APPLY) {
-#if 0
-					char buffer[32] = {};
-					MessageBox(NULL, itoa(Setting.context_flags(), buffer, 16), "info", MB_OK);
-#endif
 					Setting.save();
 				}
 				break;
@@ -181,165 +150,82 @@ namespace cubeice {
 			}
 			return FALSE;
 		}
-
-		/* ----------------------------------------------------------------- */
-		//  check_and_set_flags_for_setting
-		//  general_dialogprocの補助関数
-		//  「ファイルの関連付け」のチェックボックスのON/OFFに合わせてSetting.decompression().flagsの値を変更
-		/* ----------------------------------------------------------------- */
-		static void check_and_set_flags_for_setting(HWND hWnd, int nIDButton, unsigned int kindOfFlag) {
-			if (IsDlgButtonChecked(hWnd, nIDButton) == BST_CHECKED) {
-				Setting.decompression().flags() |= kindOfFlag;
-			} else {
-				Setting.decompression().flags() &= ~kindOfFlag;
-			}
-		}
-		/* ----------------------------------------------------------------- */
-		// check_and_set_contextflag_for_setting
-		/* ----------------------------------------------------------------- */
-		static void check_and_set_contextflag_for_setting(HWND hWnd, int nIDButton, unsigned int kindOfFlag) {
-			if (IsDlgButtonChecked(hWnd, nIDButton) == BST_CHECKED) {
-				Setting.context_flags() |= kindOfFlag;
-			} else {
-				Setting.context_flags() &= ~kindOfFlag;
-			}
-		}
+		
 		/* ----------------------------------------------------------------- */
 		//  general_dialogproc
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK general_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
+			case WM_INITDIALOG:
+				general_initdialog(hWnd);
+				break;
 			case WM_COMMAND:
-				switch (LOWORD(wp)) {
-				case IDC_ZIP_CHECKBOX: // *.zip
-					check_and_set_flags_for_setting(hWnd, IDC_ZIP_CHECKBOX, ZIP_FLAG);
-					break;
-				case IDC_LZH_CHECKBOX: // *.lzh
-					check_and_set_flags_for_setting(hWnd, IDC_LZH_CHECKBOX, LZH_FLAG);
-					break;
-				case IDC_RAR_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_RAR_CHECKBOX, RAR_FLAG);
-					break;
-				case IDC_TAR_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_TAR_CHECKBOX, TAR_FLAG);
-					break;
-				case IDC_GZ_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_GZ_CHECKBOX, GZ_FLAG);
-					break;
-				case IDC_SEVENZIP_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_SEVENZIP_CHECKBOX, SEVENZIP_FLAG);
-					break;
-				case IDC_ARJ_CHCKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_ARJ_CHCKBOX, ARJ_FLAG);
-					break;
-				case IDC_BZ2_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_BZ2_CHECKBOX, BZ2_FLAG);
-					break;
-				case IDC_CAB_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_CAB_CHECKBOX, CAB_FLAG);
-					break;
-				case IDC_CHM_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_CHM_CHECKBOX, CHM_FLAG);
-					break;
-				case IDC_CPIO_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_CPIO_CHECKBOX, CPIO_FLAG);
-					break;
-				case IDC_DEB_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_DEB_CHECKBOX, DEB_FLAG);
-					break;
-				case IDC_DMG_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_DMG_CHECKBOX, DMG_FLAG);
-					break;
-				case IDC_ISO_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_ISO_CHECKBOX, ISO_FLAG);
-					break;
-				case IDC_RPM_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_RPM_CHECKBOX, RPM_FLAG);
-					break;
-				case IDC_TBZ_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_TBZ_CHECKBOX, TBZ_FLAG);
-					break;
-				case IDC_TGZ_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_TGZ_CHECKBOX, TGZ_FLAG);
-					break;
-				case IDC_WIM_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_WIM_CHECKBOX, WIM_FLAG);
-					break;
-				case IDC_XAR_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_XAR_CHECKBOX, XAR_FLAG);
-					break;
-				case IDC_XZ_CHECKBOX:
-					check_and_set_flags_for_setting(hWnd, IDC_XZ_CHECKBOX, XZ_FLAG);
-					break;
-				case IDC_ARCHIVE_CHECKBOX:
-					check_and_set_contextflag_for_setting(hWnd, IDC_ARCHIVE_CHECKBOX, ARCHIVE_FLAG);
-					break;
-				case IDC_EXPAND_CHECKBOX:
-					check_and_set_contextflag_for_setting(hWnd, IDC_EXPAND_CHECKBOX, EXPAND_FLAG);
-					break;
-				case IDC_SETTING_CHECKBOX:
-					check_and_set_contextflag_for_setting(hWnd, IDC_SETTING_CHECKBOX, SETTING_FLAG);
-					break;
-				default:
-					return common_dialogproc(hWnd, msg, wp, lp);
+			{
+				std::size_t parameter = LOWORD(wp);
+				
+				// 「関連付け」グループ
+				const flag_map& decomp = decompress_map();
+				flag_map::const_iterator pos = decomp.find(parameter);
+				if (pos != decomp.end()) {
+					change_flag(Setting.decompression().flags(), hWnd, pos->first, pos->second);
+					return TRUE;
 				}
+				
+				// 「コンテキストメニュー」グループ
+				const flag_map& context = context_map();
+				pos = context.find(parameter);
+				if (pos != context.end()) {
+					change_flag(Setting.context_flags(), hWnd, pos->first, pos->second);
+					return TRUE;
+				}
+				
+				// コンテキストメニューの圧縮のサブ項目
+				const flag_map& comp = compress_map();
+				pos = comp.find(parameter);
+				if (pos != comp.end()) {
+					change_flag(Setting.compression().flags(), hWnd, pos->first, pos->second);
+					return TRUE;
+				}
+
+				return common_dialogproc(hWnd, msg, wp, lp);
+			}
 			default:
 				return common_dialogproc(hWnd, msg, wp, lp);
 			}
 			return FALSE;
 		}
-		
-		
-
-		/* ----------------------------------------------------------------- */
-		//  check_and_set_compress_outputcondition_for_setting
-		/* ----------------------------------------------------------------- */
-		static void check_and_set_compress_outputcondition_for_setting(HWND hWnd, int nIDButton, unsigned int kindOfFlag) {
-			if (IsDlgButtonChecked(hWnd, nIDButton) == BST_CHECKED) {
-				Setting.compression().output_condition() |= kindOfFlag;
-			} else {
-				Setting.compression().output_condition() &= ~kindOfFlag;
-			}
-		}
-		/* ----------------------------------------------------------------- */
-		//  check_and_set_compress_overwrite_for_setting
-		/* ----------------------------------------------------------------- */
-		static void check_and_set_compress_overwrite_for_setting(HWND hWnd, int nIDButton, unsigned int kindOfFlag) {
-			if (IsDlgButtonChecked(hWnd, nIDButton) == BST_CHECKED) {
-				Setting.compression().overwrite() |= kindOfFlag;
-			} else {
-				Setting.compression().overwrite() &= ~kindOfFlag;
-			}
-		}
-
+				
 		/* ----------------------------------------------------------------- */
 		//  compress_dialogproc
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK archive_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
+			case WM_INITDIALOG:
+				detail_initdialog(hWnd, Setting.compression());
+				break;
 			case WM_COMMAND:
 				switch(LOWORD(wp)) {
 				case IDC_SPECIFIC_CHECKBOX:
-					check_and_set_compress_outputcondition_for_setting(hWnd, IDC_SPECIFIC_CHECKBOX, OUTPUT_SPECIFIC);
-					break;
+					change_flag(Setting.compression().output_condition(), hWnd, IDC_SPECIFIC_CHECKBOX, OUTPUT_SPECIFIC);
+					return TRUE;
 				case IDC_SOURCE_CHECKBOX:
-					check_and_set_compress_outputcondition_for_setting(hWnd, IDC_SOURCE_CHECKBOX, OUTPUT_SOURCE);
-					break;
+					change_flag(Setting.compression().output_condition(), hWnd, IDC_SOURCE_CHECKBOX, OUTPUT_SOURCE);
+					return TRUE;
 				case IDC_RUNTIME_CHECKBOX:
-					check_and_set_compress_outputcondition_for_setting(hWnd, IDC_RUNTIME_CHECKBOX, OUTPUT_RUNTIME);
-					break;
+					change_flag(Setting.compression().output_condition(), hWnd, IDC_RUNTIME_CHECKBOX, OUTPUT_RUNTIME);
+					return TRUE;
 				case IDC_FILTER_CHECKBOX:
-					Setting.compression().filter() = (IsDlgButtonChecked(hWnd, IDC_FILTER_CHECKBOX) == BST_CHECKED);
-					break;
+					Setting.decompression().filter() = (IsDlgButtonChecked(hWnd, IDC_FILTER_CHECKBOX) == BST_CHECKED);
+					return TRUE;
 				case IDC_OVERWRITE_CHECKBOX:
-					check_and_set_compress_overwrite_for_setting(hWnd, IDC_OVERWRITE_CHECKBOX, OVERWRITE_NOTIFY);
-					break;
+					change_flag(Setting.compression().overwrite(), hWnd, IDC_OVERWRITE_CHECKBOX, OVERWRITE_NOTIFY);
+					return TRUE;
 				case IDC_NEWER_CHECKBOX:
-					check_and_set_compress_overwrite_for_setting(hWnd, IDC_NEWER_CHECKBOX, OVERWRITE_NEWER);
-					break;
+					change_flag(Setting.compression().overwrite(), hWnd, IDC_NEWER_CHECKBOX, OVERWRITE_NEWER);
+					return TRUE;
 				case IDC_POSTOPEN_CHECKBOX:
-					Setting.compression().postopen() = (IsDlgButtonChecked(hWnd, IDC_POSTOPEN_CHECKBOX) == BST_CHECKED);
-					break;
+					Setting.decompression().postopen() = (IsDlgButtonChecked(hWnd, IDC_POSTOPEN_CHECKBOX) == BST_CHECKED);
+					return TRUE;
 				default:
 					return common_dialogproc(hWnd, msg, wp, lp);
 				}
@@ -350,60 +236,41 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  check_and_set_decompress_outputcondition_for_setting
-		/* ----------------------------------------------------------------- */
-		static void check_and_set_decompress_overwrite_for_setting(HWND hWnd, int nIDButton, unsigned int kindOfFlag) {
-			if (IsDlgButtonChecked(hWnd, nIDButton) == BST_CHECKED) {
-				Setting.decompression().overwrite() |= kindOfFlag;
-			} else {
-				Setting.decompression().overwrite() &= ~kindOfFlag;
-			}
-		}
-
-		/* ----------------------------------------------------------------- */
-		//  check_and_set_decompress_outputcondition_for_setting
-		/* ----------------------------------------------------------------- */
-		static void check_and_set_decompress_outputcondition_for_setting(HWND hWnd, int nIDButton, unsigned int kindOfFlag) {
-			if (IsDlgButtonChecked(hWnd, nIDButton) == BST_CHECKED) {
-				Setting.decompression().output_condition() |= kindOfFlag;
-			} else {
-				Setting.decompression().output_condition() &= ~kindOfFlag;
-			}
-		}
-		/* ----------------------------------------------------------------- */
 		//  decompress_dialogproc
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK expand_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
+			case WM_INITDIALOG:
+				detail_initdialog(hWnd, Setting.decompression());
 			case WM_COMMAND:
 				switch(LOWORD(wp)) {
 				case IDC_SPECIFIC_CHECKBOX:
-					check_and_set_decompress_outputcondition_for_setting(hWnd, IDC_SPECIFIC_CHECKBOX, OUTPUT_SPECIFIC);
-					break;
+					change_flag(Setting.decompression().output_condition(), hWnd, IDC_SPECIFIC_CHECKBOX, OUTPUT_SPECIFIC);
+					return TRUE;
 				case IDC_SOURCE_CHECKBOX:
-					check_and_set_decompress_outputcondition_for_setting(hWnd, IDC_SOURCE_CHECKBOX, OUTPUT_SOURCE);
-					break;
+					change_flag(Setting.decompression().output_condition(), hWnd, IDC_SOURCE_CHECKBOX, OUTPUT_SOURCE);
+					return TRUE;
 				case IDC_RUNTIME_CHECKBOX:
-					check_and_set_decompress_outputcondition_for_setting(hWnd, IDC_RUNTIME_CHECKBOX, OUTPUT_RUNTIME);
-					break;
+					change_flag(Setting.decompression().output_condition(), hWnd, IDC_RUNTIME_CHECKBOX, OUTPUT_RUNTIME);
+					return TRUE;
 				case IDC_FILTER_CHECKBOX:
 					Setting.decompression().filter() = (IsDlgButtonChecked(hWnd, IDC_FILTER_CHECKBOX) == BST_CHECKED);
-					break;
+					return TRUE;
 				case IDC_OVERWRITE_CHECKBOX:
-					check_and_set_decompress_overwrite_for_setting(hWnd, IDC_OVERWRITE_CHECKBOX, OVERWRITE_NOTIFY);
-					break;
+					change_flag(Setting.decompression().overwrite(), hWnd, IDC_OVERWRITE_CHECKBOX, OVERWRITE_NOTIFY);
+					return TRUE;
 				case IDC_NEWER_CHECKBOX:
-					check_and_set_decompress_overwrite_for_setting(hWnd, IDC_NEWER_CHECKBOX, OVERWRITE_NEWER);
-					break;
+					change_flag(Setting.decompression().overwrite(), hWnd, IDC_NEWER_CHECKBOX, OVERWRITE_NEWER);
+					return TRUE;
 				case IDC_MAKE_FOLDER_CHECKBOX:
 					Setting.decompression().create_folder() = (IsDlgButtonChecked(hWnd, IDC_MAKE_FOLDER_CHECKBOX) == BST_CHECKED);
-					break;
+					return TRUE;
 				case IDC_CHARCODE_CHECKBOX:
 					Setting.decompression().conv_charset() = (IsDlgButtonChecked(hWnd, IDC_CHARCODE_CHECKBOX) == BST_CHECKED);
-					break;
+					return TRUE;
 				case IDC_POSTOPEN_CHECKBOX:
 					Setting.decompression().postopen() = (IsDlgButtonChecked(hWnd, IDC_POSTOPEN_CHECKBOX) == BST_CHECKED);
-					break;
+					return TRUE;
 				default:
 					return common_dialogproc(hWnd, msg, wp, lp);
 				}

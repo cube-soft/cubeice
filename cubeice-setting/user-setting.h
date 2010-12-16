@@ -291,7 +291,7 @@ namespace cubeice {
 			decomp_.load();
 			
 			HKEY hkResult;
-			LONG lResult = RegOpenKeyEx(HKEY_CURRENT_CONFIG, root_.c_str(), 0, KEY_ALL_ACCESS, &hkResult);
+			LONG lResult = RegOpenKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, KEY_ALL_ACCESS, &hkResult);
 			if (!lResult) {
 				DWORD dwType;
 				DWORD dwSize;
