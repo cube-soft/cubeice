@@ -42,6 +42,7 @@
 #include <windows.h>
 #include <commctrl.h>
 #include "dialog.h"
+#include "clx/split.h"
 
 namespace cubeice {
 	/* ----------------------------------------------------------------- */
@@ -185,6 +186,8 @@ namespace cubeice {
 			//SetWindowText(handle, "未実装");
 		}
 		
+		
+
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  common_dialogproc
@@ -341,8 +344,24 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
+		// get_filter_text
+		/* ----------------------------------------------------------------- */
+		static void get_filter_text(HWND hWnd) {
+			int len = GetWindowTextLength(GetDlgItem(hWnd, IDC_FILTER_TEXTBOX));
+			// 常識的なサイズ以下しか相手にしないことにする
+			const int MAX_LEN = 64 * 1024;
+			if (len < MAX_LEN) {  
+				cubeice::user_setting::char_type buffer[MAX_LEN] = {};
+				GetDlgItemText(hWnd, IDC_FILTER_TEXTBOX, (LPSTR)buffer,  sizeof(buffer));
+				cubeice::user_setting::string_type str = buffer;
+				clx::split_if(str, Setting.filters(), clx::is_any_of("\r\n"));
+			}
+		}
+
+		/* ----------------------------------------------------------------- */
 		//  filter_dialogproc
 		/* ----------------------------------------------------------------- */
+		// これのWM_NOTIFYのPSN_APPLYでfiltersのテキストボックスの文字列を取得する
 		static BOOL CALLBACK filter_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_INITDIALOG:
@@ -350,6 +369,14 @@ namespace cubeice {
 				break;
 			case WM_COMMAND:
 				break;
+			case WM_NOTIFY:
+			{
+				NMHDR* nmhdr = (NMHDR *)lp;
+				if (nmhdr->code == PSN_APPLY) {
+					get_filter_text(hWnd);
+				}
+				break;
+			}
 			default:
 				return common_dialogproc(hWnd, msg, wp, lp);
 			}
