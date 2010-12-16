@@ -104,8 +104,8 @@ namespace cubeice {
 		static bool initialized = false;
 		static flag_map dest;
 		if (!initialized) {
-			dest[IDC_ARCHIVE_CHECKBOX] = ARCHIVE_FLAG;
-			dest[IDC_EXPAND_CHECKBOX] = EXPAND_FLAG;
+			dest[IDC_COMPRESS_CHECKBOX] = COMPRESS_FLAG;
+			dest[IDC_DECOMPRESS_CHECKBOX] = DECOMPRESS_FLAG;
 			dest[IDC_SETTING_CHECKBOX] = SETTING_FLAG;
 			initialized = true;
 		}

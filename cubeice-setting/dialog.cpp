@@ -52,7 +52,7 @@ namespace cubeice {
 			if (IsDlgButtonChecked(handle, id) == BST_CHECKED) dest |= kind;
 			else dest &= ~kind;
 		}
-
+		
 		/* ---------------------------------------------------------------- */
 		/*
 		 *  detail_initdialog
@@ -89,7 +89,7 @@ namespace cubeice {
 				CheckDlgButton(hWnd, IDC_POSTOPEN_CHECKBOX, BM_SETCHECK);
 			}
 		}
-
+		
 		/* ---------------------------------------------------------------- */
 		/*
 		 *  general_initdialog
@@ -122,7 +122,7 @@ namespace cubeice {
 				}
 			}
 		}
-
+		
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  common_dialogproc
@@ -194,11 +194,11 @@ namespace cubeice {
 			}
 			return FALSE;
 		}
-				
+		
 		/* ----------------------------------------------------------------- */
 		//  compress_dialogproc
 		/* ----------------------------------------------------------------- */
-		static BOOL CALLBACK archive_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+		static BOOL CALLBACK compress_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_INITDIALOG:
 				detail_initdialog(hWnd, Setting.compression());
@@ -238,7 +238,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  decompress_dialogproc
 		/* ----------------------------------------------------------------- */
-		static BOOL CALLBACK expand_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+		static BOOL CALLBACK decompress_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_INITDIALOG:
 				detail_initdialog(hWnd, Setting.decompression());
@@ -292,7 +292,7 @@ namespace cubeice {
 			}
 			return FALSE;
 		}
-
+		
 		/* ----------------------------------------------------------------- */
 		//  version_dialogproc
 		/* ----------------------------------------------------------------- */
@@ -330,12 +330,12 @@ namespace cubeice {
 		
 		// 「圧縮」ページ
 		page.pszTemplate = _T("IDD_COMPRESS");
-		page.pfnDlgProc = (DLGPROC)detail::archive_dialogproc;
+		page.pfnDlgProc = (DLGPROC)detail::compress_dialogproc;
 		ref[1] = CreatePropertySheetPage(&page);
 		
 		// 「解凍」ページ
 		page.pszTemplate = _T("IDD_DECOMPRESS");
-		page.pfnDlgProc = (DLGPROC)detail::expand_dialogproc;
+		page.pfnDlgProc = (DLGPROC)detail::decompress_dialogproc;
 		ref[2] = CreatePropertySheetPage(&page);
 		
 		// 「フィルタリング」ページ
