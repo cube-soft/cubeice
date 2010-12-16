@@ -35,10 +35,8 @@
 #ifndef CUBEICE_SETTING_H
 #define CUBEICE_SETTING_H
 
-#pragma comment(lib, "comctl32.lib")
-
 #include "user-setting.h"
 
-//extern cubeice::user_setting Setting;
+extern cubeice::user_setting Setting;
 
 #endif // CUBEICE_SETTING_H

@@ -32,6 +32,11 @@
  *  Last-modified: Wed 17 Nov 2010 17:39:00 JST
  */
 /* ------------------------------------------------------------------------- */
+#ifndef NO_WIN32_LEAN_AND_MEAN
+#define NO_WIN32_LEAN_AND_MEAN
+#include <shlobj.h>
+#endif // NO_WIN32_LEAN_AND_MEAN
+
 #include <cstdlib>
 #include <tchar.h>
 #include <windows.h>
@@ -39,6 +44,44 @@
 #include "dialog.h"
 
 namespace cubeice {
+	/* ----------------------------------------------------------------- */
+	//  browse_proc
+	/* ----------------------------------------------------------------- */
+	static int CALLBACK browse_proc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData) {
+		if(uMsg == BFFM_INITIALIZED){
+			SendMessage(hwnd, BFFM_SETSELECTION, (WPARAM)TRUE, lpData);
+		}
+		return 0;
+	}
+	
+	/* ----------------------------------------------------------------- */
+	/*
+	 *  browsefolder
+	 *
+	 *  see also:
+	 *  http://msdn.microsoft.com/en-us/library/bb762115(VS.85).aspx
+	 *  http://msdn.microsoft.com/en-us/library/bb773205(VS.85).aspx
+	 */
+	/* ----------------------------------------------------------------- */
+	static std::basic_string<TCHAR> browsefolder(const TCHAR* description) {
+		typedef TCHAR char_type;
+		char_type path[CUBE_MAX_PATH] = {};
+		GetCurrentDirectory(CUBE_MAX_PATH, path);
+		
+		BROWSEINFO info = {};
+		info.pszDisplayName = path;
+		info.lpszTitle = description;
+		info.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+		info.lpfn = &browse_proc;
+		info.lParam = (LPARAM)path;
+		LPITEMIDLIST dest = SHBrowseForFolder(&info);
+		
+		SHGetPathFromIDList(dest, path);
+		CoTaskMemFree(dest);
+		
+		return path;
+	}
+	
 	namespace detail {
 		/* ----------------------------------------------------------------- */
 		/*
@@ -52,7 +95,7 @@ namespace cubeice {
 			if (IsDlgButtonChecked(handle, id) == BST_CHECKED) dest |= kind;
 			else dest &= ~kind;
 		}
-
+		
 		/* ---------------------------------------------------------------- */
 		/*
 		 *  archive_initdialog
@@ -60,25 +103,35 @@ namespace cubeice {
 		 *  「圧縮」タブおよび「解凍」タブの初期設定
 		 */
 		/* ---------------------------------------------------------------- */
-		static void archive_initdialog(HWND hWnd, user_setting::archive_type& prop) {
+		static void archive_initdialog(HWND hWnd, user_setting::archive_type& setting) {
 			// 「出力先フォルダ」グループ
-			if (prop.output_condition() & OUTPUT_SPECIFIC) {
-				CheckDlgButton(hWnd, IDC_SPECIFIC_CHECKBOX, BM_SETCHECK);
+			if (setting.output_condition() == OUTPUT_SPECIFIC) {
+				CheckDlgButton(hWnd, IDC_SPECIFIC_RADIO, BM_SETCHECK);
+				EnableWindow(GetDlgItem(hWnd, IDC_DEST_TEXTBOX), TRUE);
+				EnableWindow(GetDlgItem(hWnd, IDC_DEST_BUTTON), TRUE);
 			}
-			if (prop.output_condition() & OUTPUT_SOURCE) {
-				CheckDlgButton(hWnd, IDC_SOURCE_CHECKBOX, BM_SETCHECK);
+			else if (setting.output_condition() == OUTPUT_SOURCE) {
+				CheckDlgButton(hWnd, IDC_SOURCE_RADIO, BM_SETCHECK);
+				EnableWindow(GetDlgItem(hWnd, IDC_DEST_TEXTBOX), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_DEST_BUTTON), FALSE);
 			}
-			if (prop.output_condition() & OUTPUT_RUNTIME) {
-				CheckDlgButton(hWnd, IDC_RUNTIME_CHECKBOX, BM_SETCHECK);
+			else {
+				CheckDlgButton(hWnd, IDC_RUNTIME_RADIO, BM_SETCHECK);
+				EnableWindow(GetDlgItem(hWnd, IDC_DEST_TEXTBOX), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_DEST_BUTTON), FALSE);
 			}
-
+			
+			if (!setting.output_path().empty()) {
+				SetWindowText(GetDlgItem(hWnd, IDC_DEST_TEXTBOX), setting.output_path().c_str());
+			}
+			
 			// 「詳細」グループ
 			const flag_map& detail = detail_map();
 			for (flag_map::const_iterator pos = detail.begin(); pos != detail.end(); ++pos) {
-				if (prop.details() & pos->second) CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
+				if (setting.details() & pos->second) CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
 			}
 			
-			if ((prop.details() & DETAIL_OVERWRITE) == 0) {
+			if ((setting.details() & DETAIL_OVERWRITE) == 0) {
 				EnableWindow(GetDlgItem(hWnd, IDC_NEWER_CHECKBOX), FALSE);
 			}
 		}
@@ -187,13 +240,13 @@ namespace cubeice {
 					change_flag(Setting.compression().flags(), hWnd, pos->first, pos->second);
 					return TRUE;
 				}
-
+				
 				// 「コンテキストメニュー」グループ
 				const flag_map& context = context_map();
 				pos = context.find(parameter);
 				if (pos != context.end()) {
 					change_flag(Setting.context_flags(), hWnd, pos->first, pos->second);
-
+					
 					// 圧縮のサブ項目の有効/無効を変更する．
 					if (pos->first == IDC_COMPRESS_CHECKBOX) {
 						BOOL enabled = IsDlgButtonChecked(hWnd, IDC_COMPRESS_CHECKBOX);
@@ -203,7 +256,7 @@ namespace cubeice {
 					}
 					return TRUE;
 				}
-
+				
 				return common_dialogproc(hWnd, msg, wp, lp);
 			}
 			default:
@@ -219,35 +272,42 @@ namespace cubeice {
 		 *  compress_dialogproc(), decompress_dialogproc() 共通の処理．
 		 */
 		/* ---------------------------------------------------------------- */
-		static BOOL archive_dialogproc(user_setting::archive_type& prop, HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+		static BOOL archive_dialogproc(user_setting::archive_type& setting, HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			std::size_t parameter = LOWORD(wp);
+			
+			// 「出力先フォルダ」グループ
+			const flag_map& output = output_map();
+			flag_map::const_iterator pos = output.find(parameter);
+			if (pos != output.end()) {
+				setting.output_condition() = pos->second;
+				BOOL enabled = (setting.output_condition() == OUTPUT_SPECIFIC) ? TRUE : FALSE;
+				EnableWindow(GetDlgItem(hWnd, IDC_DEST_TEXTBOX), enabled);
+				EnableWindow(GetDlgItem(hWnd, IDC_DEST_BUTTON), enabled);
+				return TRUE;
+			}
+			
+			// 「詳細」グループ
 			const flag_map& detail = detail_map();
-			flag_map::const_iterator pos = detail.find(parameter);
+			pos = detail.find(parameter);
 			if (pos != detail.end()) {
-				change_flag(prop.details(), hWnd, pos->first, pos->second);
+				change_flag(setting.details(), hWnd, pos->first, pos->second);
 				if (pos->first == IDC_OVERWRITE_CHECKBOX) {
-					BOOL enabled = (prop.details() & DETAIL_OVERWRITE) ? TRUE : FALSE;
+					BOOL enabled = (setting.details() & DETAIL_OVERWRITE) ? TRUE : FALSE;
 					EnableWindow(GetDlgItem(hWnd, IDC_NEWER_CHECKBOX), enabled);
 				}
 				return TRUE;
 			}
-
-			switch(LOWORD(wp)) {
-			case IDC_SPECIFIC_CHECKBOX:
-				change_flag(prop.output_condition(), hWnd, IDC_SPECIFIC_CHECKBOX, OUTPUT_SPECIFIC);
-				return TRUE;
-			case IDC_SOURCE_CHECKBOX:
-				change_flag(prop.output_condition(), hWnd, IDC_SOURCE_CHECKBOX, OUTPUT_SOURCE);
-				return TRUE;
-			case IDC_RUNTIME_CHECKBOX:
-				change_flag(prop.output_condition(), hWnd, IDC_RUNTIME_CHECKBOX, OUTPUT_RUNTIME);
-				return TRUE;
-			default:
-				break;
+			
+			if (parameter == IDC_DEST_BUTTON) {
+				std::basic_string<TCHAR> dest = browsefolder(_T("保存先ディレクトリを選択して下さい。"));
+				if (!dest.empty()) {
+					setting.output_path() = dest;
+					SetWindowText(GetDlgItem(hWnd, IDC_DEST_TEXTBOX), dest.c_str());
+				}
 			}
 			return common_dialogproc(hWnd, msg, wp, lp);
 		}
-
+		
 		/* ----------------------------------------------------------------- */
 		//  compress_dialogproc
 		/* ----------------------------------------------------------------- */
