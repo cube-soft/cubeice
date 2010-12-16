@@ -35,6 +35,7 @@
 #ifndef CUBEICE_DIALOG_H
 #define CUBEICE_DIALOG_H
 
+#include <map>
 #include <windows.h>
 #include "resource.h"
 #include "user-setting.h"
@@ -46,6 +47,97 @@ extern cubeice::user_setting Setting;
 /* ------------------------------------------------------------------------- */
 namespace cubeice {
 	extern int create_propsheet(HWND parent);
+	
+	typedef std::map<std::size_t, std::size_t> flag_map;
+	/* ----------------------------------------------------------------- */
+	//  compress_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& compress_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_ADD_ZIP_CHECKBOX] = ZIP_FLAG;
+			dest[IDC_ADD_SEVENZIP_CHECKBOX] = SEVENZIP_FLAG;
+			dest[IDC_ADD_BZ2_CHECKBOX] = BZ2_FLAG;
+			dest[IDC_ADD_GZ_CHECKBOX] = GZ_FLAG;
+			initialized = true;
+		}
+		return dest;
+	}
+	
+	/* ----------------------------------------------------------------- */
+	//  decompress_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& decompress_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_ZIP_CHECKBOX] = ZIP_FLAG;
+			dest[IDC_LZH_CHECKBOX] = LZH_FLAG;
+			dest[IDC_RAR_CHECKBOX] = RAR_FLAG;
+			dest[IDC_TAR_CHECKBOX] = TAR_FLAG;
+			dest[IDC_GZ_CHECKBOX] = GZ_FLAG;
+			dest[IDC_SEVENZIP_CHECKBOX] = SEVENZIP_FLAG;
+			dest[IDC_ARJ_CHCKBOX] = ARJ_FLAG;
+			dest[IDC_BZ2_CHECKBOX] = BZ2_FLAG;
+			dest[IDC_CAB_CHECKBOX] = CAB_FLAG;
+			dest[IDC_CHM_CHECKBOX] = CHM_FLAG;
+			dest[IDC_CPIO_CHECKBOX] = CPIO_FLAG;
+			dest[IDC_DEB_CHECKBOX] = DEB_FLAG;
+			dest[IDC_DMG_CHECKBOX] = DMG_FLAG;
+			dest[IDC_ISO_CHECKBOX] = ISO_FLAG;
+			dest[IDC_RPM_CHECKBOX] = RPM_FLAG;
+			dest[IDC_TBZ_CHECKBOX] = TBZ_FLAG;
+			dest[IDC_TGZ_CHECKBOX] = TGZ_FLAG;
+			dest[IDC_WIM_CHECKBOX] = WIM_FLAG;
+			dest[IDC_XAR_CHECKBOX] = XAR_FLAG;
+			dest[IDC_XZ_CHECKBOX] = XZ_FLAG;
+			initialized = true;
+		}
+		return dest;
+	}
+	
+	/* ----------------------------------------------------------------- */
+	//  context_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& context_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_ARCHIVE_CHECKBOX] = ARCHIVE_FLAG;
+			dest[IDC_EXPAND_CHECKBOX] = EXPAND_FLAG;
+			dest[IDC_SETTING_CHECKBOX] = SETTING_FLAG;
+			initialized = true;
+		}
+		return dest;
+	}
+	
+	/* ----------------------------------------------------------------- */
+	//  output_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& output_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_SPECIFIC_CHECKBOX] = OUTPUT_SPECIFIC;
+			dest[IDC_SOURCE_CHECKBOX] = OUTPUT_SOURCE;
+			dest[IDC_RUNTIME_CHECKBOX] = OUTPUT_RUNTIME;
+		}
+		return dest;
+	}
+	
+	/* ----------------------------------------------------------------- */
+	//  output_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& overwrite_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_OVERWRITE_CHECKBOX] = OVERWRITE_NOTIFY;
+			dest[IDC_NEWER_CHECKBOX] = OVERWRITE_NEWER;
+		}
+		return dest;
+	}
 }
 
 #endif // CUBEICE_DIALOG_H
