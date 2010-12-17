@@ -122,8 +122,13 @@ namespace cubeice {
 						string_type::size_type pos = line.find(keyword);
 						if (pos != string_type::npos && line.size() > keyword.size()) {
 							string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
-							this->move(tmp, root, filename);
-							string_type message = root + _T("\n") + filename;
+							string_type message = root + _T("\n");
+							if ((setting_.decompression().details() & DETAIL_FILTER) &&
+								this->is_filter(filename, setting_.filters())) {
+								message += _T("Filtering: ");
+							}
+							else this->move(tmp, root, filename);
+							message += filename;
 							progress.text(message);
 							if (n > 0) progress += step;
 						}
@@ -292,6 +297,24 @@ namespace cubeice {
 			string_type dest = destdir + _T("\\") + filename;
 			if (PathIsDirectory(src.c_str())) CreateDirectory(dest.c_str(), NULL);
 			else MoveFile(src.c_str(), dest.c_str());
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  is_filter
+		 *
+		 *  ディレクトリ単位で区切り，それぞれに対してフィルタリング文字列
+		 *  に該当するかどうかをチェックする．
+		 *  TODO: ワイルドカードへの対応を考える．
+		 */
+		/* ----------------------------------------------------------------- */
+		bool is_filter(const string_type& src, const std::set<string_type>& filters) {
+			std::vector<string_type> v;
+			clx::split_if(src, v, clx::is_any_of(_T("\\")));
+			for (std::vector<string_type>::const_iterator pos = v.begin(); pos != v.end(); ++pos) {
+				if (filters.find(*pos) != filters.end()) return true;
+			}
+			return false;
 		}
 	};
 }
