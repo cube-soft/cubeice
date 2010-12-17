@@ -31,6 +31,10 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		template <class InputIterator>
 		void compress(InputIterator first, InputIterator last) {
+			// オプションを読み飛ばす．
+			//while (first != last && first->at(0) != _T('-')) ++first;
+			++first;
+			
 			// 保存先パスの決定
 			string_type dest = this->compress_path(setting_.compression(), *first, _T(".zip")); // .zip は暫定
 			if (dest.empty()) return;
@@ -52,7 +56,7 @@ namespace cubeice {
 			// コマンドラインの作成
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" a -tzip -bd -scsWIN -y \"") + dest + _T("\"");
-			while (++first != last) cmdline += _T(" \"") + *first + _T("\"");
+			for (; first != last; ++first) cmdline += _T(" \"") + *first + _T("\"");
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
 			
@@ -158,7 +162,8 @@ namespace cubeice {
 			string_type dest =  this->rootdir(setting, src);
 			if (dest.empty()) {
 				const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-				dest = cubeice::dialog::savefile(filter);
+				string_type init = src.substr(0, src.find_last_of(_T('.'))) + ext;
+				dest = cubeice::dialog::savefile(filter, init.c_str());
 			}
 			else {
 				string_type::size_type first = src.find_last_of(_T('\\'));
