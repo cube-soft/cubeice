@@ -196,10 +196,12 @@ namespace cubeice {
 			int len = GetWindowTextLength(GetDlgItem(hWnd, IDC_FILTER_TEXTBOX));
 			if (len < maxlen) {  
 				cubeice::user_setting::char_type buffer[maxlen] = {};
-				GetDlgItemText(hWnd, IDC_FILTER_TEXTBOX, (LPSTR)buffer,  sizeof(buffer));
-				cubeice::user_setting::string_type s(buffer);
-				Setting.filters().clear();
-				clx::split_if(s, Setting.filters(), clx::is_any_of("\r\n"));
+				std::size_t status = GetDlgItemText(hWnd, IDC_FILTER_TEXTBOX, (LPSTR)buffer,  sizeof(buffer));
+				if (status > 0 || GetLastError() == 0) {
+					cubeice::user_setting::string_type s(buffer);
+					Setting.filters().clear();
+					clx::split_if(s, Setting.filters(), clx::is_any_of("\r\n"));
+				}
 			}
 		}
 		
@@ -211,7 +213,6 @@ namespace cubeice {
 		 *  動作を記述する．
 		 */
 		/* ----------------------------------------------------------------- */
-		static void get_filter_text(HWND hWnd);
 		static BOOL CALLBACK common_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_DESTROY:
@@ -240,7 +241,7 @@ namespace cubeice {
 			switch (msg) {
 			case WM_INITDIALOG:
 				general_initdialog(hWnd);
-				break;
+				return TRUE;
 			case WM_COMMAND:
 			{
 				std::size_t parameter = LOWORD(wp);
@@ -276,13 +277,12 @@ namespace cubeice {
 					}
 					return TRUE;
 				}
-				
-				return common_dialogproc(hWnd, msg, wp, lp);
+				break;
 			}
 			default:
-				return common_dialogproc(hWnd, msg, wp, lp);
+				break;
 			}
-			return FALSE;
+			return common_dialogproc(hWnd, msg, wp, lp);
 		}
 		
 		/* ---------------------------------------------------------------- */
@@ -339,9 +339,9 @@ namespace cubeice {
 			case WM_COMMAND:
 				return archive_dialogproc(Setting.compression(), hWnd, msg, wp, lp);
 			default:
-				return common_dialogproc(hWnd, msg, wp, lp);
+				break;
 			}
-			return FALSE;
+			return common_dialogproc(hWnd, msg, wp, lp);
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -355,51 +355,30 @@ namespace cubeice {
 			case WM_COMMAND:
 				return archive_dialogproc(Setting.decompression(), hWnd, msg, wp, lp);
 			default:
-				return common_dialogproc(hWnd, msg, wp, lp);
+				break;
 			}
-			return FALSE;
+			return common_dialogproc(hWnd, msg, wp, lp);
 		}
 		
 		/* ----------------------------------------------------------------- */
 		//  filter_dialogproc
 		/* ----------------------------------------------------------------- */
-		// これのWM_NOTIFYのPSN_APPLYでfiltersのテキストボックスの文字列を取得する
 		static BOOL CALLBACK filter_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_INITDIALOG:
 				filter_initdialog(hWnd);
 				break;
-			case WM_COMMAND:
-				break;
-#if 0
-			case WM_NOTIFY:
-			{
-				NMHDR* nmhdr = (NMHDR *)lp;
-				if (nmhdr->code == PSN_APPLY) {
-					get_filter_text(hWnd);
-				}
-				break;
-			}
-#endif
 			default:
-				return common_dialogproc(hWnd, msg, wp, lp);
+				break;
 			}
-			return FALSE;
+			return common_dialogproc(hWnd, msg, wp, lp);
 		}
 		
 		/* ----------------------------------------------------------------- */
 		//  version_dialogproc
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK version_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
-			switch (msg) {
-			case WM_INITDIALOG:
-				break;
-			case WM_COMMAND:
-				break;
-			default:
-				return common_dialogproc(hWnd, msg, wp, lp);
-			}
-			return FALSE;
+			return common_dialogproc(hWnd, msg, wp, lp);
 		}
 	}
 	
