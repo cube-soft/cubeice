@@ -160,7 +160,7 @@ namespace cubeice {
 					CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
 				}
 			}
-
+			
 			// 「コンテキストメニュー」グループ
 			const flag_map& context = context_map();
 			for (flag_map::const_iterator pos = context.begin(); pos != context.end(); ++pos) {
@@ -180,14 +180,29 @@ namespace cubeice {
 		//  filter_initdialog
 		/* ---------------------------------------------------------------- */
 		static void filter_initdialog(HWND hWnd) {
-			// 未実装なので disable にしておく．
-			//HWND handle = GetDlgItem(hWnd, IDC_FILTER_TEXTBOX);
-			//EnableWindow(handle, false);
-			//SetWindowText(handle, "未実装");
+			if (!Setting.filters().empty()) {
+				std::basic_string<TCHAR> s;
+				clx::join(Setting.filters(), s, _T("\r\n"));
+				HWND handle = GetDlgItem(hWnd, IDC_FILTER_TEXTBOX);
+				SetWindowText(handle, s.c_str());
+			}
 		}
 		
+		/* ----------------------------------------------------------------- */
+		//  filter_gettext
+		/* ----------------------------------------------------------------- */
+		static void filter_gettext(HWND hWnd) {
+			const int maxlen = 64 * 1024;
+			int len = GetWindowTextLength(GetDlgItem(hWnd, IDC_FILTER_TEXTBOX));
+			if (len < maxlen) {  
+				cubeice::user_setting::char_type buffer[maxlen] = {};
+				GetDlgItemText(hWnd, IDC_FILTER_TEXTBOX, (LPSTR)buffer,  sizeof(buffer));
+				cubeice::user_setting::string_type s(buffer);
+				Setting.filters().clear();
+				clx::split_if(s, Setting.filters(), clx::is_any_of("\r\n"));
+			}
+		}
 		
-
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  common_dialogproc
@@ -196,6 +211,7 @@ namespace cubeice {
 		 *  動作を記述する．
 		 */
 		/* ----------------------------------------------------------------- */
+		static void get_filter_text(HWND hWnd);
 		static BOOL CALLBACK common_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_DESTROY:
@@ -206,6 +222,7 @@ namespace cubeice {
 			{
 				NMHDR* nmhdr = (NMHDR *)lp;
 				if (nmhdr->code == PSN_APPLY) {
+					filter_gettext(hWnd);
 					Setting.save();
 				}
 				break;
@@ -344,21 +361,6 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		// get_filter_text
-		/* ----------------------------------------------------------------- */
-		static void get_filter_text(HWND hWnd) {
-			int len = GetWindowTextLength(GetDlgItem(hWnd, IDC_FILTER_TEXTBOX));
-			// 常識的なサイズ以下しか相手にしないことにする
-			const int MAX_LEN = 64 * 1024;
-			if (len < MAX_LEN) {  
-				cubeice::user_setting::char_type buffer[MAX_LEN] = {};
-				GetDlgItemText(hWnd, IDC_FILTER_TEXTBOX, (LPSTR)buffer,  sizeof(buffer));
-				cubeice::user_setting::string_type str = buffer;
-				clx::split_if(str, Setting.filters(), clx::is_any_of("\r\n"));
-			}
-		}
-
-		/* ----------------------------------------------------------------- */
 		//  filter_dialogproc
 		/* ----------------------------------------------------------------- */
 		// これのWM_NOTIFYのPSN_APPLYでfiltersのテキストボックスの文字列を取得する
@@ -369,6 +371,7 @@ namespace cubeice {
 				break;
 			case WM_COMMAND:
 				break;
+#if 0
 			case WM_NOTIFY:
 			{
 				NMHDR* nmhdr = (NMHDR *)lp;
@@ -377,6 +380,7 @@ namespace cubeice {
 				}
 				break;
 			}
+#endif
 			default:
 				return common_dialogproc(hWnd, msg, wp, lp);
 			}
@@ -438,7 +442,7 @@ namespace cubeice {
 		
 		PROPSHEETHEADER psh = {};
 		psh.dwSize = sizeof (PROPSHEETHEADER);
-		psh.dwFlags = PSH_DEFAULT | PSH_USEHICON;
+		psh.dwFlags = PSH_DEFAULT | PSH_USEHICON  | PSH_NOAPPLYNOW;
 		psh.hwndParent = parent;
 		psh.hIcon = LoadIcon(page.hInstance, _T("IDC_APP"));
 		psh.pszCaption = _T("CubeICE 設定");
