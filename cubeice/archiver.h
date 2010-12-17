@@ -31,6 +31,8 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		template <class InputIterator>
 		void compress(InputIterator first, InputIterator last) {
+			static const string_type keyword = _T("Compressing");
+			
 			// オプションを読み飛ばす．
 			//while (first != last && first->at(0) != _T('-')) ++first;
 			++first;
@@ -62,14 +64,19 @@ namespace cubeice {
 			
 			// メイン処理
 			int status = 0;
-			string_type buffer;
-			while ((status = proc.gets(buffer)) >= 0) {
+			string_type line;
+			while ((status = proc.gets(line)) >= 0) {
 				if (status == 2) break; // pipe closed
-				else if (status == 1 && !buffer.empty()) {
-					progress.text(buffer);
-					if (step > 0) progress += step;
+				else if (status == 1 && !line.empty()) {
+					string_type::size_type pos = line.find(keyword);
+					if (pos != string_type::npos && line.size() > keyword.size()) {
+						string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
+						string_type message = dest + _T("\n") + filename;
+						progress.text(message);
+						if (n > 0) progress += step;
+					}
 				}
-				buffer.clear();
+				line.clear();
 				
 				progress.refresh();
 				if (progress.is_cancel()) {
@@ -93,7 +100,11 @@ namespace cubeice {
 		void decompress(InputIterator first, InputIterator last) {
 			static const string_type keyword = _T("Extracting");
 			
-			while (++first != last) {
+			// オプションを読み飛ばす．
+			//while (first != last && first->at(0) != _T('-')) ++first;
+			++first;
+			
+			for (; first != last; ++first) {
 				// 保存先パスの取得
 				string_type root = this->decompress_path(setting_.decompression(), *first);
 				if (root.empty()) break;
