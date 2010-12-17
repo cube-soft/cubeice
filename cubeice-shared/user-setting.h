@@ -41,6 +41,9 @@
 #include <string>
 #include <windows.h>
 #include <winreg.h>
+#include <shlobj.h>
+#include <clx/base64.h>
+#include <clx/split.h>
 
 /* ------------------------------------------------------------------------- */
 //  関連付けに関連するフラグ
@@ -270,9 +273,17 @@ namespace cubeice {
 				
 				dwSize = sizeof(flags_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&flags_, &dwSize);
-
+				
 				// フィルタリング文字列の読み込み．型は REG_MULTI_SZ
 				// 変数側の型は std::set<std::string>
+				char_type buffer[64 * 1024] = {};
+				dwSize = sizeof(buffer);
+				if (RegQueryValueEx(hkResult, CUBEICE_REG_FILTER, NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) {
+					string_type encoded(buffer);
+					string_type s = clx::base64::decode(encoded);
+					filters_.clear();
+					clx::split_if(s, filters_, clx::is_any_of(_T("\r\n")));
+				}
 			}
 		}
 		
@@ -288,11 +299,13 @@ namespace cubeice {
 			LONG lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
 			if (!lResult) {
 				RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
-
-				// フィルタリング文字列の書き込み．型は REG_MULTI_SZ
-				// 変数側の型は std::set<std::string>
-				// http://support.microsoft.com/kb/258545/ja
+				
+				string_type dest;
+				clx::join(filters_, dest, _T("\n"));
+				string_type encoded = clx::base64::encode(dest);
+				RegSetValueEx(hkResult, CUBEICE_REG_FILTER, 0, REG_SZ, (CONST BYTE*)encoded.c_str(), encoded.length() + 1);
 			}
+			this->associate(decomp_.flags());
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -337,6 +350,67 @@ namespace cubeice {
 		archive_type decomp_;
 		size_type flags_;
 		container_type filters_;
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  associate
+		 *
+		 *  NOTE: レジストリに登録する cubeice_* はインストーラを用いて
+		 *  あらかじめ登録しておくこと．
+		 */
+		/* ----------------------------------------------------------------- */
+		void associate(size_type flags) {
+			this->associate(_T(".zip"), _T("cubeice_zip"), (flags & ZIP_FLAG) != 0);
+			this->associate(_T(".lzh"), _T("cubeice_lzh"), (flags & LZH_FLAG) != 0);
+			this->associate(_T(".rar"), _T("cubeice_rar"), (flags & RAR_FLAG) != 0);
+			this->associate(_T(".tar"), _T("cubeice_tar"), (flags & TAR_FLAG) != 0);
+			this->associate(_T(".gz"),  _T("cubeice_gz"),  (flags & GZ_FLAG) != 0);
+			this->associate(_T(".7z"),  _T("cubeice_7z"),  (flags & SEVENZIP_FLAG) != 0);
+			this->associate(_T(".arj"), _T("cubeice_arj"), (flags & ARJ_FLAG) != 0);
+			this->associate(_T(".bz2"), _T("cubeice_bz2"), (flags & BZ2_FLAG) != 0);
+			this->associate(_T(".cab"), _T("cubeice_cab"), (flags & CAB_FLAG) != 0);
+			this->associate(_T(".chm"), _T("cubeice_chm"), (flags & CHM_FLAG) != 0);
+			this->associate(_T(".cpio"),_T("cubeice_cpio"),(flags & CPIO_FLAG) != 0);
+			this->associate(_T(".deb"), _T("cubeice_deb"), (flags & DEB_FLAG) != 0);
+			this->associate(_T(".dmg"), _T("cubeice_dmg"), (flags & DMG_FLAG) != 0);
+			this->associate(_T(".iso"), _T("cubeice_iso"), (flags & ISO_FLAG) != 0);
+			this->associate(_T(".rpm"), _T("cubeice_rpm"), (flags & RPM_FLAG) != 0);
+			this->associate(_T(".tbz"), _T("cubeice_tbz"), (flags & TBZ_FLAG) != 0);
+			this->associate(_T(".tgz"), _T("cubeice_tgz"), (flags & TGZ_FLAG) != 0);
+			this->associate(_T(".wim"), _T("cubeice_wim"), (flags & WIM_FLAG) != 0);
+			this->associate(_T(".xar"), _T("cubeice_xar"), (flags & XAR_FLAG) != 0);
+			this->associate(_T(".xz"),  _T("cubeice_xz"),  (flags & XZ_FLAG) != 0);
+			
+			SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  associate
+		 *
+		 *  flag が true の場合はレジストリに追加，false の場合で該当の
+		 *  キーが存在する場合はそのキーを削除する．
+		 */
+		/* ----------------------------------------------------------------- */
+		void associate(const string_type& key, const string_type& value, bool flag) {
+			HKEY subkey;
+			if (flag) {
+				DWORD disposition = 0;
+				LONG status = RegCreateKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
+				if (!status) RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)value.c_str(), value.size() + 1);
+			}
+			else {
+				LONG status = RegOpenKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, KEY_ALL_ACCESS, &subkey);
+				if (!status) {
+					char_type buffer[32] = {};
+					DWORD type = 0;
+					DWORD size = sizeof(buffer);
+					if (RegQueryValueEx(subkey, _T(""), NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS && string_type(buffer) == value) {
+						RegDeleteKey(HKEY_CLASSES_ROOT, key.c_str());
+					}
+				}
+			}
+		}
 	};
 }
 

@@ -82,7 +82,7 @@ namespace cubeice {
 			//  constructor
 			/* ------------------------------------------------------------- */
 			progressbar() :
-				handle_(NULL), pos_(0), min_(0), max_(1000), step_(1), cancel_(false) {
+				handle_(NULL), pos_(0.0), min_(0), max_(1000), cancel_(false) {
 				this->initialize();
 			}
 
@@ -90,12 +90,11 @@ namespace cubeice {
 			/*
 			 *  operator+=
 			 *
-			 *  プログレスバーを n ステップ進める．．
+			 *  プログレスバーを n 進める．．
 			 */
 			/* ------------------------------------------------------------- */
-			progressbar& operator+=(size_type n) {
-				this->position(pos_ + n * step_);
-				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
+			progressbar& operator+=(double n) {
+				this->position(pos_ + n);
 				return *this;
 			}
 			
@@ -103,25 +102,11 @@ namespace cubeice {
 			/*
 			 *  operator-=
 			 *
-			 *  プログレスバーを n ステップ戻す．
+			 *  プログレスバーを n 戻す．
 			 */
 			/* ------------------------------------------------------------- */
-			progressbar& operator-=(size_type n) {
-				this->position(pos_ - n * step_);
-				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
-				return *this;
-			}
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  operator++(int)
-			 *
-			 *  プログレスバーを 1 ステップ進める．
-			 */
-			/* ------------------------------------------------------------- */
-			progressbar& operator++(int) {
-				this->position(pos_ + step_);
-				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
+			progressbar& operator-=(double n) {
+				this->position(pos_ - n);
 				return *this;
 			}
 			
@@ -129,12 +114,23 @@ namespace cubeice {
 			/*
 			 *  operator++
 			 *
-			 *  プログレスバーを 1 ステップ進める．
+			 *  プログレスバーを 1 進める．
 			 */
 			/* ------------------------------------------------------------- */
 			progressbar& operator++() {
-				this->position(pos_ + step_);
-				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
+				this->position(pos_ + 1);
+				return *this;
+			}
+			
+			/* ------------------------------------------------------------- */
+			/*
+			 *  operator++(int)
+			 *
+			 *  プログレスバーを 1 進める．
+			 */
+			/* ------------------------------------------------------------- */
+			progressbar& operator++(int) {
+				this->position(pos_ + 1);
 				return *this;
 			}
 			
@@ -142,12 +138,11 @@ namespace cubeice {
 			/*
 			 *  operator--
 			 *
-			 *  プログレスバーを 1 ステップ戻す．
+			 *  プログレスバーを 1 戻す．
 			 */
 			/* ------------------------------------------------------------- */
 			progressbar& operator--() {
-				this->position(pos_ - step_);
-				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
+				this->position(pos_ - 1);
 				return *this;
 			}
 			
@@ -155,34 +150,34 @@ namespace cubeice {
 			/*
 			 *  operator--(int)
 			 *
-			 *  プログレスバーを 1 ステップ戻す．
+			 *  プログレスバーを 1 戻す．
 			 */
 			/* ------------------------------------------------------------- */
 			progressbar& operator--(int) {
-				this->position(pos_ - step_);
-				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, pos_, 0);
+				this->position(pos_ - 1);
 				return *this;
 			}
 			
 			/* ------------------------------------------------------------- */
 			//  position
 			/* ------------------------------------------------------------- */
-			size_type position() const { return pos_; }
+			double position() const { return pos_; }
 			
 			/* ------------------------------------------------------------- */
 			//  position
 			/* ------------------------------------------------------------- */
-			void position(size_type pos) {
-				if (pos < progressbar::minimum()) pos_ = progressbar::minimum();
-				else if (pos > progressbar::maximum()) pos_ = progressbar::maximum();
+			void position(double pos) {
+				if (pos < min_) pos_ = min_;
+				else if (pos > max_) pos_ = max_;
 				else pos_ = pos;
+				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, static_cast<int>(pos_), 0);
 			}
 			
 			/* ------------------------------------------------------------- */
 			//  minimum
 			/* ------------------------------------------------------------- */
 			size_type minimum() const { return min_; }
-
+			
 			/* ------------------------------------------------------------- */
 			//  minimum
 			/* ------------------------------------------------------------- */
@@ -208,23 +203,6 @@ namespace cubeice {
 					HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
 					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(min_, max_));
 				}
-			}
-
-			/* ------------------------------------------------------------- */
-			//  step
-			/* ------------------------------------------------------------- */
-			int step() const { return step_; }
-			
-			/* ------------------------------------------------------------- */
-			//  step
-			/* ------------------------------------------------------------- */
-			void step(size_type n) {
-				if (n < 1) step_ = 1;
-				else if (n > max_) step_ = progressbar::maximum();
-				else step_ = n;
-
-				HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
-				SendMessage(handle, PBM_SETSTEP, (WPARAM)step_, 0);
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -293,10 +271,9 @@ namespace cubeice {
 			
 		private:
 			HWND handle_;
-			size_type pos_;
+			double pos_;
 			size_type min_;
 			size_type max_;
-			size_type step_;
 			bool cancel_;
 			
 			/* ------------------------------------------------------------- */
