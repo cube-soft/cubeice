@@ -47,10 +47,11 @@ namespace cubeice {
 		 *  '\0' を使用しているため string は使用できない．
 		 */
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> openfile(const TCHAR* filter, const TCHAR* title) {
+		std::basic_string<TCHAR> openfile(const TCHAR* filter, const TCHAR* init, const TCHAR* title) {
 			typedef TCHAR char_type;
 			char_type path[CUBE_MAX_PATH] = {};
 			char_type filename[CUBE_MAX_PATH] = {};
+			if (init != NULL) _tcsncpy_s(path, CUBE_MAX_PATH, init, _tcslen(init));
 			
 			OPENFILENAME ofn = {};
 			ofn.lStructSize = sizeof(ofn);
@@ -69,10 +70,13 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  savefile
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* title) {
+		std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* init, const TCHAR* title) {
 			typedef TCHAR char_type;
+			typedef std::basic_string<TCHAR> string_type;
+			
 			char_type path[CUBE_MAX_PATH] = {};
 			char_type filename[CUBE_MAX_PATH] = {};
+			if (init != NULL) _tcsncpy_s(path, CUBE_MAX_PATH, init, _tcslen(init));
 			
 			OPENFILENAME ofn = {};
 			ofn.lStructSize = sizeof(ofn);
