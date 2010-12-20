@@ -1,12 +1,18 @@
 #ifndef CUBE_ARCHIVER_H
 #define CUBE_ARCHIVER_H
 
+// 粒度の細かいタイマーを使用する
+#ifndef CLX_USE_HIGH_PRECISION_TIMER
+#define CLX_USE_HIGH_PRECISION_TIMER
+#endif
+
 #include <string>
 #include <vector>
 #include <tchar.h>
 #include <shlwapi.h>
 #include <clx/strip.h>
 #include <clx/split.h>
+#include <clx/timer.h>
 #include "wpopen.h"
 #include "user-setting.h"
 
@@ -34,11 +40,12 @@ namespace cubeice {
 			static const string_type keyword = _T("Compressing");
 			
 			// オプションを読み飛ばす．
-			//while (first != last && first->at(0) != _T('/')) ++first;
-			++first;
+			if (first->compare(0, 3, _T("/c:")) != 0) return;
+			string_type filetype(first->substr(3));
+			while (first != last && first->at(0) == _T('/')) ++first;
 			
 			// 保存先パスの決定
-			string_type dest = this->compress_path(setting_.compression(), *first, _T(".zip")); // .zip は暫定
+			string_type dest = this->compress_path(setting_.compression(), *first, filetype);
 			if (dest.empty()) return;
 			
 			// 一時ファイルのパスを決定
@@ -53,13 +60,14 @@ namespace cubeice {
 			
 			// プログレスバーの設定
 			cubeice::dialog::progressbar progress;
-			size_type n = this->compress_size(first, last);
+			size_type n = this->compress_size(first, last, 5.0);
+			char msgbuf[32] = {};
 			double step = (n > 0) ? (progress.maximum() - progress.minimum()) / static_cast<double>(n) : 0.0;
 			if (n == 0) progress.marquee(true);
 			
 			// コマンドラインの作成
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
-			cmdline += _T(" a -tzip -bd -scsWIN -y \"") + tmp + _T("\"");
+			cmdline += _T(" a -t") + filetype + _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
 			for (; first != last; ++first) cmdline += _T(" \"") + *first + _T("\"");
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
@@ -110,8 +118,7 @@ namespace cubeice {
 			static const string_type keyword = _T("Extracting");
 			
 			// オプションを読み飛ばす．
-			//while (first != last && first->at(0) != _T('/')) ++first;
-			++first;
+			while (first != last && first->at(0) == _T('/')) ++first;
 			
 			for (; first != last; ++first) {
 				// 保存先パスの取得
@@ -126,7 +133,7 @@ namespace cubeice {
 				// プログレスバーの設定
 				cubeice::dialog::progressbar progress;
 				progress.text(root);
-				size_type n = this->decompress_size(*first);
+				size_type n = this->decompress_size(*first, 5.0);
 				double step = (n > 0) ? (progress.maximum() - progress.minimum()) / static_cast<double>(n) : 0.0;
 				if (n == 0) progress.marquee(true);
 				
@@ -190,11 +197,11 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  compress_path
 		/* ----------------------------------------------------------------- */
-		string_type compress_path(const setting_type::archive_type& setting, const string_type& src, const string_type& ext) {
+		string_type compress_path(const setting_type::archive_type& setting, const string_type& src, const string_type& filetype) {
 			string_type dest =  this->rootdir(setting, src);
 			if (dest.empty()) {
 				const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-				string_type init = src.substr(0, src.find_last_of(_T('.'))) + ext;
+				string_type init = src.substr(0, src.find_last_of(_T('.'))) + _T('.') + filetype;
 				dest = cubeice::dialog::savefile(filter, init.c_str());
 			}
 			else {
@@ -202,7 +209,7 @@ namespace cubeice {
 				if (first == string_type::npos) first = 0;
 				else ++first;
 				string_type filename = src.substr(first);
-				dest += _T('\\') + filename.substr(0, filename.find_last_of(_T('.'))) + ext;
+				dest += _T('\\') + filename.substr(0, filename.find_last_of(_T('.'))) + _T('.') + filetype;
 			}
 			return dest;
 		}
@@ -211,8 +218,39 @@ namespace cubeice {
 		//  compress_size
 		/* ----------------------------------------------------------------- */
 		template <class InputIterator>
-		size_type compress_size(InputIterator first, InputIterator last) {
-			return 0;
+		size_type compress_size(InputIterator first, InputIterator last, double timeout) {
+			size_type n = 0;
+			clx::timer t;
+			for (; first != last; ++first) {
+				if (PathIsDirectory(first->c_str())) n += compress_size_folder(*first);
+				else ++n;
+				if (t.elapsed() > timeout) return 0;
+			}
+			return n;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  compress_size_folder
+		/* ----------------------------------------------------------------- */
+		size_type compress_size_folder(const string_type& root) {
+			string_type path = root + _T("\\*.*");
+			WIN32_FIND_DATA wfd = {};
+			HANDLE handle = FindFirstFile(path.c_str(), &wfd);
+			if (handle == INVALID_HANDLE_VALUE) return 1;
+			
+			size_type n = 0;
+			do {
+				if (_tcscmp(wfd.cFileName, _T(".")) != 0 && _tcscmp(wfd.cFileName, _T("..")) != 0) {
+					if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+						string_type subdir = root + _T('\\') + wfd.cFileName;
+						n += this->compress_size_folder(subdir);
+					}
+					else ++n;
+				}
+			} while (FindNextFile(handle, &wfd));
+			FindClose(handle);
+			
+			return n;
 		}
 		
 	private: // decompress_xxx
@@ -237,11 +275,12 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  decompress_size
 		/* ----------------------------------------------------------------- */
-		size_type decompress_size(const string_type& path) {
+		size_type decompress_size(const string_type& path, double timeout) {
 			string_type cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" l ");
 			cmdline += path;
 			
+			clx::timer t;
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return 0;
 			string_type buffer, src;
@@ -250,6 +289,7 @@ namespace cubeice {
 				if (status == 2) break; // pipe closed
 				else if (status == 1 && !buffer.empty()) src = buffer;
 				buffer.clear();
+				if (t.elapsed() > timeout) return 0;
 			}
 			
 			std::vector<string_type> v;
