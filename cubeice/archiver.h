@@ -41,12 +41,14 @@ namespace cubeice {
 			string_type dest = this->compress_path(setting_.compression(), *first, _T(".zip")); // .zip は暫定
 			if (dest.empty()) return;
 			
+			// 一時ファイルのパスを決定
+			string_type tmp = tmpfile(_T("cubeice"));
+			if (tmp.empty()) return;
+			
 			// 上書きの確認
-			if ((setting_.compression().details() & DETAIL_OVERWRITE) &&
-				(setting_.compression().details() & OUTPUT_RUNTIME) == 0 &&
-				PathFileExists(dest.c_str())) {
-				string_type message = dest + _T("は既に存在します。上書きしますか？");
-				if (MessageBox(NULL, message.c_str(), _T("CubeICE"), MB_YESNO) == IDNO) return;
+			if (setting_.compression().output_condition() != OUTPUT_RUNTIME) {
+				int result = this->is_overwrite(dest, tmp, setting_.compression(), MB_YESNO | MB_ICONWARNING);
+				if (result != IDOK && result != IDYES) return;
 			}
 			
 			// プログレスバーの設定
@@ -57,7 +59,7 @@ namespace cubeice {
 			
 			// コマンドラインの作成
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
-			cmdline += _T(" a -tzip -bd -scsWIN -y \"") + dest + _T("\"");
+			cmdline += _T(" a -tzip -bd -scsWIN -y \"") + tmp + _T("\"");
 			for (; first != last; ++first) cmdline += _T(" \"") + *first + _T("\"");
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
@@ -66,31 +68,38 @@ namespace cubeice {
 			int status = 0;
 			string_type line;
 			while ((status = proc.gets(line)) >= 0) {
-				if (status == 2) break; // pipe closed
-				else if (status == 1 && !line.empty()) {
-					string_type::size_type pos = line.find(keyword);
-					if (pos != string_type::npos && line.size() > keyword.size()) {
-						string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
-						string_type message = dest + _T("\n") + filename;
-						progress.text(message);
-						if (n > 0) progress += step;
-					}
-				}
-				line.clear();
-				
 				progress.refresh();
 				if (progress.is_cancel()) {
 					proc.close();
 					break;
 				}
-				Sleep(10);
+				
+				if (status == 2) break; // pipe closed
+				else if (status == 0 || line.empty()) {
+					Sleep(10);
+					continue;
+				}
+				assert(status == 1);
+				
+				string_type::size_type pos = line.find(keyword);
+				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
+				
+				string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
+				string_type message = dest + _T("\n") + filename;
+				progress.text(message);
+				if (n > 0) progress += step;
 			}
 			
-			// フォルダを開く
-			if (setting_.compression().details() & DETAIL_OPEN) {
-				string_type root = dest.substr(0, dest.find_last_of(_T('\\')));
-				ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
+			if (status == 2) {
+				CopyFile(tmp.c_str(), dest.c_str(), FALSE);
+				
+				// フォルダを開く
+				if (setting_.compression().details() & DETAIL_OPEN) {
+					string_type root = dest.substr(0, dest.find_last_of(_T('\\')));
+					ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
+				}
 			}
+			DeleteFile(tmp.c_str());
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -130,32 +139,44 @@ namespace cubeice {
 				
 				// メイン処理
 				int status = 0;
+				bool yes_to_all = false;
 				string_type line;
 				while ((status = proc.gets(line)) >= 0) {
-					if (status == 2) break; // pipe closed
-					else if (status == 1 && !line.empty()) {
-						string_type::size_type pos = line.find(keyword);
-						if (pos != string_type::npos && line.size() > keyword.size()) {
-							string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
-							string_type message = root + _T("\n");
-							if ((setting_.decompression().details() & DETAIL_FILTER) &&
-								this->is_filter(filename, setting_.filters())) {
-								message += _T("Filtering: ");
-							}
-							else this->move(tmp, root, filename);
-							message += filename;
-							progress.text(message);
-							if (n > 0) progress += step;
-						}
-					}
-					line.clear();
-					
 					progress.refresh();
 					if (progress.is_cancel()) {
 						proc.close();
 						break;
 					}
-					Sleep(10);
+					
+					if (status == 2) break; // pipe closed
+					else if (status == 0 || line.empty()) {
+						Sleep(10);
+						continue;
+					}
+					assert(status == 1);
+					
+					string_type::size_type pos = line.find(keyword);
+					if (pos == string_type::npos || line.size() <= keyword.size()) continue;
+					
+					string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
+					
+					// 上書きの確認
+					if (!yes_to_all) {
+						int result = this->is_overwrite(root + _T('\\') + filename, tmp + _T('\\') + filename,
+							setting_.decompression(), MB_YESNOCANCEL | MB_ICONWARNING);
+						if (result == IDCANCEL) break;
+						else if (result == IDNO) continue;
+						else if (result == IDYES) yes_to_all = true; // TODO: 「全てはい」のボタンを表示させる．
+					}
+					
+					string_type message = root + _T("\n");
+					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
+						message += _T("Filtering: ");
+					}
+					else this->move(tmp, root, filename);
+					message += filename;
+					progress.text(message);
+					if (n > 0) progress += step;
 				}
 				
 				// フォルダを開く
@@ -253,21 +274,34 @@ namespace cubeice {
 		
 		/* ----------------------------------------------------------------- */
 		/*
+		 *  tmpfile
+		 *
+		 *  ランダムな一時ファイルを生成してパスを返す．
+		 */
+		/* ----------------------------------------------------------------- */
+		string_type tmpfile(const string_type& prefix) {
+			char_type dir[1024] = {};
+			if (GetTempPath(1024, dir) == 0) return string_type();
+			char_type path[2048] = {};
+			if (GetTempFileName(dir, prefix.c_str(), 0, path) == 0) return string_type();
+			
+			// 一時ファイルが生成されているので削除する．
+			if (PathFileExists(path)) DeleteFile(path);
+			return string_type(path);
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/*
 		 *  tmpdir
 		 *
 		 *  ラインダムな一時ディレクトリを生成してパスを返す．
 		 */
 		/* ----------------------------------------------------------------- */
 		string_type tmpdir(const string_type& prefix) {
-			char_type dir[1024] = {};
-			if (GetTempPath(1024, dir) == 0) return string_type();
-			char_type path[2048] = {};
-			if (GetTempFileName(dir, prefix.c_str(), 0, path) == 0) return string_type();
-			
-			// 一時ファイルが生成されているので，ディレクトリに変更する．
-			if (PathFileExists(path)) DeleteFile(path);
-			if (CreateDirectory(path, NULL) == 0) return string_type();
-			return string_type(path);
+			string_type path = tmpfile(prefix);
+			if (path.empty()) return path;
+			if (CreateDirectory(path.c_str(), NULL) == 0) return string_type();
+			return path;
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -331,6 +365,51 @@ namespace cubeice {
 				if (filters.find(*pos) != filters.end()) return true;
 			}
 			return false;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  is_older
+		 *
+		 *  ファイルの更新日時を比較する．
+		 +/
+		/* ----------------------------------------------------------------- */
+		bool is_older(const string_type& target, const string_type& compared) {
+			HANDLE h = CreateFile(target.c_str(), 0, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (h == INVALID_HANDLE_VALUE) return false;
+			FILETIME t1 = {};
+			BOOL status = GetFileTime(h, NULL, NULL, &t1);
+			CloseHandle(h);
+			if (status == FALSE) return false;
+			
+			h = CreateFile(compared.c_str(), 0, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (h == INVALID_HANDLE_VALUE) return false;
+			FILETIME t2 = {};
+			status = GetFileTime(h, NULL, NULL, &t2);
+			if (status == FALSE) return false;
+			
+			if (CompareFileTime(&t1, &t2) < 0) return true;
+			return false;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  is_overwrite
+		 *
+		 *  ファイルの上書きを行うかどうかを確認する．作成先に該当ファイル
+		 *  が存在しない場合は IDOK を返す．
+		 */
+		/* ----------------------------------------------------------------- */
+		int is_overwrite(const string_type& target, const string_type& compared, const setting_type::archive_type& setting, UINT type) {
+			MessageBox(NULL, target.c_str(), _T("info"), MB_OK);
+			if ((setting.details() & DETAIL_OVERWRITE) && PathFileExists(target.c_str())) {
+				if ((setting.details() & DETAIL_IGNORE_NEWER) && !is_older(target, compared)) return IDYES;
+				else {
+					string_type message = target + _T(" は既に存在します。上書きしますか？");
+					return MessageBox(NULL, message.c_str(), _T("上書きの確認"), type);
+				}
+			}
+			return IDOK;
 		}
 	};
 }
