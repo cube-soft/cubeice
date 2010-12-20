@@ -339,4 +339,6 @@ namespace cubeice {
 	}
 }
 
+#include "password.h"
+
 #endif // CUBE_DIALOG_H

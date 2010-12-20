@@ -15,6 +15,7 @@
 #include <clx/timer.h>
 #include "wpopen.h"
 #include "user-setting.h"
+#include "dialog.h"
 
 #define CUBEICE_ENGINE _T("7z.exe")
 
@@ -124,6 +125,12 @@ namespace cubeice {
 				// 保存先パスの取得
 				string_type root = this->decompress_path(setting_.decompression(), *first);
 				if (root.empty()) break;
+				
+				// パスワードの設定
+				bool pass = this->is_password(*first);
+				if (pass && password_dialog() == IDCANCEL) break;
+				
+				// フォルダの作成
 				if (!PathFileExists(root.c_str()) && CreateDirectory(root.c_str(), NULL) == 0) break;
 				
 				// 一時フォルダの作成
@@ -139,7 +146,9 @@ namespace cubeice {
 				
 				// コマンドラインの生成
 				string_type cmdline = CUBEICE_ENGINE;
-				cmdline += _T(" x -bd -scsWIN -y -o\"") + tmp + _T("\"");
+				cmdline += _T(" x -bd -scsWIN -y");
+				if (pass) cmdline += _T(" -p") + cubeice::password();
+				cmdline += _T(" -o\"") + tmp + _T("\"");
 				cmdline += _T(" \"") + *first + _T("\"");
 				cube::popen proc;
 				if (!proc.open(cmdline.c_str(), _T("r"))) return;
@@ -266,8 +275,8 @@ namespace cubeice {
 			// フォルダの作成
 			if (setting.details() & DETAIL_CREATE_FOLDER) {
 				string_type::size_type pos = src.find_last_of('\\');
-				string_type filename = (pos == string_type::npos) ? src : src.substr(pos);
-				root += _T("\\") + filename.substr(0, filename.find_last_of(_T('.')));
+				string_type filename = (pos == string_type::npos) ? src : src.substr(++pos);
+				root += _T('\\') + filename.substr(0, filename.find_last_of(_T('.')));
 			}
 			return root;
 		}
@@ -387,7 +396,11 @@ namespace cubeice {
 			string_type src = srcdir + _T("\\") + filename;
 			string_type dest = destdir + _T("\\") + filename;
 			if (PathIsDirectory(src.c_str())) CreateDirectory(dest.c_str(), NULL);
-			else MoveFile(src.c_str(), dest.c_str());
+			else {
+				string_type branch(dest.substr(0, dest.find_last_of(_T('\\'))));
+				if (!PathFileExists(branch.c_str())) CreateDirectory(branch.c_str(), NULL);
+				MoveFile(src.c_str(), dest.c_str());
+			}
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -450,6 +463,42 @@ namespace cubeice {
 				}
 			}
 			return IDOK;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  is_password
+		 *
+		 *  アーカイブファイルにパスワードが設定されているかどうかを
+		 *  判定する．
+		 */
+		/* ----------------------------------------------------------------- */
+		bool is_password(const string_type& path) {
+			static const string_type keyword(_T("Enter password"));
+			static const string_type pass(_T("Testing"));
+			
+			string_type cmdline = CUBEICE_ENGINE;
+			cmdline += _T(" t \"") + path + _T("\"");
+			cube::popen proc;
+			if (!proc.open(cmdline.c_str(), _T("r"))) return false;
+			
+			int n = 0;
+			int status = 0;
+			string_type line;
+			while ((status = proc.gets(line)) >= 0) {
+				if (status == 2) break; // closed pipe
+				else if (status == 0 || line.empty()) {
+					Sleep(10);
+					continue;
+				}
+				assert(status == 1);
+				if (line.find(keyword) != string_type::npos) return true;
+				else if (line.find(pass) != string_type::npos) {
+					if (++n >= 10) break;
+				}
+			}
+			
+			return false;
 		}
 	};
 }
