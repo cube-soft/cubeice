@@ -9,8 +9,8 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 	cubeice::cmdline::splitter::iterator pos = args.begin();
 
 	cubeice::archiver ar(UserSetting);
-	if (pos != args.end() && *pos == _T("-c")) ar.compress(pos, args.end());
-	else if (pos != args.end() && *pos == _T("-x")) ar.decompress(pos, args.end());
+	if (pos != args.end() && *pos == _T("/c:zip")) ar.compress(pos, args.end());
+	else if (pos != args.end() && *pos == _T("/x")) ar.decompress(pos, args.end());
 	else return -1;
 
 	return 0;

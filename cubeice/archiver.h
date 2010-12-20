@@ -34,7 +34,7 @@ namespace cubeice {
 			static const string_type keyword = _T("Compressing");
 			
 			// オプションを読み飛ばす．
-			//while (first != last && first->at(0) != _T('-')) ++first;
+			//while (first != last && first->at(0) != _T('/')) ++first;
 			++first;
 			
 			// 保存先パスの決定
@@ -110,7 +110,7 @@ namespace cubeice {
 			static const string_type keyword = _T("Extracting");
 			
 			// オプションを読み飛ばす．
-			//while (first != last && first->at(0) != _T('-')) ++first;
+			//while (first != last && first->at(0) != _T('/')) ++first;
 			++first;
 			
 			for (; first != last; ++first) {
@@ -201,7 +201,8 @@ namespace cubeice {
 				string_type::size_type first = src.find_last_of(_T('\\'));
 				if (first == string_type::npos) first = 0;
 				else ++first;
-				dest += _T('\\') + src.substr(first, src.find_last_of(_T('.'))) + ext;
+				string_type filename = src.substr(first);
+				dest += _T('\\') + filename.substr(0, filename.find_last_of(_T('.'))) + ext;
 			}
 			return dest;
 		}
@@ -401,7 +402,6 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		int is_overwrite(const string_type& target, const string_type& compared, const setting_type::archive_type& setting, UINT type) {
-			MessageBox(NULL, target.c_str(), _T("info"), MB_OK);
 			if ((setting.details() & DETAIL_OVERWRITE) && PathFileExists(target.c_str())) {
 				if ((setting.details() & DETAIL_IGNORE_NEWER) && !is_older(target, compared)) return IDYES;
 				else {
