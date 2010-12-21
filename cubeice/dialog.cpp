@@ -43,7 +43,7 @@ namespace cubeice {
 		/*
 		 *  openfile
 		 *
-		 *  MEMO: filter (OPENFILENAME.lpstrFilter) は区切り文字として
+		 *  NOTE: filter (OPENFILENAME.lpstrFilter) は区切り文字として
 		 *  '\0' を使用しているため string は使用できない．
 		 */
 		/* ----------------------------------------------------------------- */

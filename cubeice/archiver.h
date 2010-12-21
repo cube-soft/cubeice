@@ -1,3 +1,37 @@
+/* ------------------------------------------------------------------------- */
+/*
+ *  archiver.h
+ *
+ *  Copyright (c) 2010 CubeSoft.
+ *
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ *
+ *    - Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ *    - Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ *    - No names of its contributors may be used to endorse or promote
+ *      products derived from this software without specific prior written
+ *      permission.
+ *
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+ *  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+ *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ *  Last-modified: Tue 21 Dec 2010 11:59:00 JST
+ */
+/* ------------------------------------------------------------------------- */
 #ifndef CUBE_ARCHIVER_H
 #define CUBE_ARCHIVER_H
 
@@ -20,6 +54,9 @@
 #define CUBEICE_ENGINE _T("7z.exe")
 
 namespace cubeice {
+	/* --------------------------------------------------------------------- */
+	//  archiver
+	/* --------------------------------------------------------------------- */
 	class archiver {
 	public:
 		typedef TCHAR char_type;
@@ -118,7 +155,12 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  decompress
+		/*
+		 *  decompress
+		 *
+		 *  NOTE: 複数の圧縮ファイルが指定された場合は，1ファイルずつ
+		 *  解凍処理を実行する．
+		 */
 		/* ----------------------------------------------------------------- */
 		template <class InputIterator>
 		void decompress(InputIterator first, InputIterator last) {
@@ -128,12 +170,14 @@ namespace cubeice {
 			while (first != last && first->at(0) == _T('/')) ++first;
 			
 			for (; first != last; ++first) {
+				string_type src = *first;
+				
 				// 保存先パスの取得
-				string_type root = this->decompress_path(setting_.decompression(), *first);
+				string_type root = this->decompress_path(setting_.decompression(), src);
 				if (root.empty()) break;
 				
 				// パスワードの設定
-				bool pass = this->is_password(*first);
+				bool pass = this->is_password(src);
 				if (pass && password_dialog() == IDCANCEL) break;
 				
 				// フォルダの作成
@@ -143,10 +187,15 @@ namespace cubeice {
 				string_type tmp = tmpdir(_T("cubeice"));
 				if (tmp.empty()) break;
 				
-				// プログレスバーの設定
+				// プログレスバーの初期化
 				cubeice::dialog::progressbar progress;
 				progress.text(root);
-				size_type n = this->decompress_size(*first, 5.0);
+				
+				// *.tar 系の処理
+				if (this->is_tar(src)) src = this->decompress_tar(src, tmp, pass);
+				
+				// プログレスバーの進行度の設定
+				size_type n = this->decompress_size(src, 5.0);
 				double step = (n > 0) ? (progress.maximum() - progress.minimum()) / static_cast<double>(n) : 0.0;
 				if (n == 0) progress.marquee(true);
 				
@@ -155,7 +204,7 @@ namespace cubeice {
 				cmdline += _T(" x -bd -scsWIN -y");
 				if (pass) cmdline += _T(" -p") + cubeice::password();
 				cmdline += _T(" -o\"") + tmp + _T("\"");
-				cmdline += _T(" \"") + *first + _T("\"");
+				cmdline += _T(" \"") + src + _T("\"");
 				cube::popen proc;
 				if (!proc.open(cmdline.c_str(), _T("r"))) return;
 				
@@ -343,6 +392,39 @@ namespace cubeice {
 			return 0;
 		}
 		
+		/* ----------------------------------------------------------------- */
+		//  decompress_tar
+		/* ----------------------------------------------------------------- */
+		string_type decompress_tar(const string_type& src, const string_type& root, bool pass) {
+			static const string_type keyword = _T("Extracting");
+			
+			string_type cmdline = CUBEICE_ENGINE;
+			cmdline += _T(" x -bd -scsWIN -y");
+			if (pass) cmdline += _T(" -p") + cubeice::password();
+			cmdline += _T(" -o\"") + root + _T("\"");
+			cmdline += _T(" \"") + src + _T("\"");
+			cube::popen proc;
+			if (!proc.open(cmdline.c_str(), _T("r"))) return src;
+			
+			int status = 0;
+			string_type filename;
+			string_type line;
+			while ((status = proc.gets(line)) >= 0) {
+				if (status == 2) break; // pipe closed
+				else if (status == 0 || line.empty()) {
+					Sleep(10);
+					continue;
+				}
+				assert(status == 1);
+				
+				string_type::size_type pos = line.find(keyword);
+				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
+				filename = clx::strip_copy(line.substr(pos + keyword.size()));
+			}
+			
+			return root + _T('\\') + filename;
+		}
+		
 	private: // others
 		const setting_type& setting_;
 		
@@ -528,6 +610,22 @@ namespace cubeice {
 				}
 			}
 			
+			return false;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  is_tar
+		 *
+		 *  *.tar 系の圧縮ファイルかどうかを判定する．現状チェックしている
+		 *  拡張子は，*.tar.gz, *.tar.bz2, *.tgz, *.tbz の 4種類．
+		 */
+		/* ----------------------------------------------------------------- */
+		bool is_tar(const string_type& path) {
+			string_type::size_type pos = path.find_last_of(_T('.'));
+			if (pos == string_type::npos) return false;
+			string_type ext = path.substr(pos);
+			if (ext == _T(".gz") || ext == _T(".bz2") || ext == _T(".tgz") || ext == _T(".tbz")) return true;
 			return false;
 		}
 	};
