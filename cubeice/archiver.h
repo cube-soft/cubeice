@@ -100,7 +100,12 @@ namespace cubeice {
 			}
 			
 			if (status == 2) {
-				CopyFile(tmp.c_str(), dest.c_str(), FALSE);
+				MoveFile(tmp.c_str(), dest.c_str());
+				
+				// フィルタリング
+				if ((setting_.compression().details() & DETAIL_FILTER) && !setting_.filters().empty()) {
+					this->compress_filter(dest, setting_.filters());
+				}
 				
 				// フォルダを開く
 				if (setting_.compression().details() & DETAIL_OPEN) {
@@ -108,7 +113,8 @@ namespace cubeice {
 					ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
 				}
 			}
-			DeleteFile(tmp.c_str());
+			
+			if (PathFileExists(tmp.c_str())) DeleteFile(tmp.c_str());
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -260,6 +266,30 @@ namespace cubeice {
 			FindClose(handle);
 			
 			return n;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  compress_filter
+		/* ----------------------------------------------------------------- */
+		void compress_filter(const string_type& path, const std::set<string_type>& filters) {
+			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
+			cmdline += _T(" d -r -bd -scsWIN -y \"") + path + _T("\"");
+			for (std::set<string_type>::const_iterator pos = filters.begin(); pos != filters.end(); ++pos) {
+				cmdline += _T(" \"") + *pos + _T("\"");
+			}
+			
+			cube::popen proc;
+			if (!proc.open(cmdline.c_str(), _T("r"))) return;
+			int status = 0;
+			string_type line;
+			while ((status = proc.gets(line)) >= 0) {
+				if (status == 2) break; // closed pipe.
+				else if (status == 0 || line.empty()) {
+					Sleep(10);
+					continue;
+				}
+				assert(status == 1);
+			}
 		}
 		
 	private: // decompress_xxx
