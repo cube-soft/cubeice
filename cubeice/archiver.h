@@ -147,7 +147,9 @@ namespace cubeice {
 				// フォルダを開く
 				if (setting_.compression().details() & DETAIL_OPEN) {
 					string_type root = dest.substr(0, dest.find_last_of(_T('\\')));
-					ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
+					if ((setting_.compression().details() & DETAIL_SKIP_DESKTOP) == 0 || !this->is_desktop(root)) {
+						ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
+					}
 				}
 			}
 			
@@ -252,7 +254,9 @@ namespace cubeice {
 				
 				// フォルダを開く
 				if (setting_.decompression().details() & DETAIL_OPEN) {
-					ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
+					if ((setting_.decompression().details() & DETAIL_SKIP_DESKTOP) == 0 || !this->is_desktop(root)) {
+						ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
+					}
 				}
 			}
 		}
@@ -626,6 +630,31 @@ namespace cubeice {
 			if (pos == string_type::npos) return false;
 			string_type ext = path.substr(pos);
 			if (ext == _T(".gz") || ext == _T(".bz2") || ext == _T(".tgz") || ext == _T(".tbz")) return true;
+			return false;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  is_desktop
+		 *
+		 *  指定されたパスがデスクトップかどうかを判定する．
+		 */
+		/* ----------------------------------------------------------------- */
+		bool is_desktop(const string_type& path) {
+			IMalloc* p = NULL;
+			SHGetMalloc(&p);
+			
+			LPITEMIDLIST item = NULL;
+			if(SUCCEEDED(SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOPDIRECTORY, &item))) {
+				char_type buffer[CUBE_MAX_PATH] = {};
+				SHGetPathFromIDList(item, buffer);
+				p->Free(item);
+				p->Release();
+				return path == string_type(buffer);
+			}
+			
+			// not fouond
+			p->Release();
 			return false;
 		}
 	};
