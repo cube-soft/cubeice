@@ -100,6 +100,7 @@
 #define DETAIL_CREATE_FOLDER  0x0008  // フォルダを作成する
 #define DETAIL_CHARCODE       0x0010  // 文字コードを変換する
 #define DETAIL_FILTER         0x0020  // フィルタリングを行う
+#define DETAIL_SKIP_DESKTOP   0x0040  // デスクトップの場合は開かない
 
 /* ------------------------------------------------------------------------- */
 //  レジストリに関する情報

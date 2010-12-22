@@ -60,16 +60,23 @@
 #define IDC_XAR_CHECKBOX            2119 // XAR_FLAG
 #define IDC_XZ_CHECKBOX             2120 // XZ_FLAG
 
-#define IDC_CONTEXT_GROUP           2200
-#define IDC_COMPRESS_CHECKBOX       2201 // COMPRESS_FLAG
-#define IDC_DECOMPRESS_CHECKBOX     2202 // DECOMPRESS_FLAG
-#define IDC_SETTING_CHECKBOX        2203 // SETTING_FLAG
+#define IDC_CONTEXT_GROUP           2200 // 追加するコンテキストメニュー
+#define IDC_CT_COMPRESS_CHECKBOX    2201 // COMPRESS_FLAG
+#define IDC_CT_DECOMPRESS_CHECKBOX  2202 // DECOMPRESS_FLAG
+#define IDC_CT_SETTING_CHECKBOX     2203 // SETTING_FLAG
 
+#define IDC_SHORTCUT_GROUP          2300 // デスクトップに作成するショートカット
+#define IDC_SC_COMPRESS_CHECKBOX    2301 // COMPRESS_FLAG
+#define IDC_SC_DECOMPRESS_CHECKBOX  2302 // DECOMPRESS_FLAG
+#define IDC_SC_SETTING_CHECKBOX     2303 // SETTING_FLAG
+
+#ifdef nouse
 #define IDC_ADD_ZIP_CHECKBOX        2204 // ZIP_FLAG
 #define IDC_ADD_SEVENZIP_CHECKBOX   2205 // SEVENZIP_FLAG
 #define IDC_ADD_BZ2_CHECKBOX        2206 // BZ2_FLAG
 #define IDC_ADD_GZ_CHECKBOX         2207 // GZ_FLAG
 #define IDC_ADD_EXE_CHECKBOX        2208 // EXE_FLAG
+#endif
 
 /* ------------------------------------------------------------------------- */
 //  「圧縮/解凍」タブ
@@ -87,13 +94,16 @@
 #define IDC_CREATE_FOLDER_CHECKBOX  3103 // フォルダを自動生成する
 #define IDC_CHARCODE_CHECKBOX       3104 // ファイル名の文字コードを変換する
 #define IDC_FILTER_CHECKBOX         3105 // ファイルのフィルタんリングを行う
-#define IDC_POSTOPEN_CHECKBOX       3106 // 保存先フォルダを開く
+#define IDC_POSTOPEN_CHECKBOX       3106 // 保存先フォルダを開
+#define IDC_SKIP_DESKTOP_CHECKBOX   3107 // デスクトップの場合は開かない
 
 /* ------------------------------------------------------------------------- */
 //  「フィルタリング」タブ
 /* ------------------------------------------------------------------------- */
-#define IDC_FILTER_LABEL            4000
 #define IDC_FILTER_TEXTBOX          4001
+#define IDC_FILTER_LABEL1           4002
+#define IDC_FILTER_LABEL2           4003
+#define IDC_FILTER_LABEL3           4004
 
 /* ------------------------------------------------------------------------- */
 //  「バージョン情報」タブ

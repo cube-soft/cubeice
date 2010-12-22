@@ -58,11 +58,13 @@ namespace cubeice {
 		static bool initialized = false;
 		static flag_map dest;
 		if (!initialized) {
+#ifdef nouse
 			dest[IDC_ADD_ZIP_CHECKBOX] = ZIP_FLAG;
 			dest[IDC_ADD_SEVENZIP_CHECKBOX] = SEVENZIP_FLAG;
 			dest[IDC_ADD_BZ2_CHECKBOX] = BZ2_FLAG;
 			dest[IDC_ADD_GZ_CHECKBOX] = GZ_FLAG;
 			dest[IDC_ADD_EXE_CHECKBOX] = EXE_FLAG;
+#endif
 			initialized = true;
 		}
 		return dest;
@@ -107,9 +109,9 @@ namespace cubeice {
 		static bool initialized = false;
 		static flag_map dest;
 		if (!initialized) {
-			dest[IDC_COMPRESS_CHECKBOX] = COMPRESS_FLAG;
-			dest[IDC_DECOMPRESS_CHECKBOX] = DECOMPRESS_FLAG;
-			dest[IDC_SETTING_CHECKBOX] = SETTING_FLAG;
+			dest[IDC_CT_COMPRESS_CHECKBOX] = COMPRESS_FLAG;
+			dest[IDC_CT_DECOMPRESS_CHECKBOX] = DECOMPRESS_FLAG;
+			dest[IDC_CT_SETTING_CHECKBOX] = SETTING_FLAG;
 			initialized = true;
 		}
 		return dest;
@@ -126,6 +128,7 @@ namespace cubeice {
 			dest[IDC_NEWER_CHECKBOX] = DETAIL_IGNORE_NEWER;
 			dest[IDC_POSTOPEN_CHECKBOX] = DETAIL_OPEN;
 			dest[IDC_CREATE_FOLDER_CHECKBOX] = DETAIL_CREATE_FOLDER;
+			dest[IDC_SKIP_DESKTOP_CHECKBOX] = DETAIL_SKIP_DESKTOP;
 			dest[IDC_CHARCODE_CHECKBOX] = DETAIL_CHARCODE;
 			dest[IDC_FILTER_CHECKBOX] = DETAIL_FILTER;
 		}
