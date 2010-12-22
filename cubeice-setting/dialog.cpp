@@ -135,6 +135,10 @@ namespace cubeice {
 			if ((setting.details() & DETAIL_OVERWRITE) == 0) {
 				EnableWindow(GetDlgItem(hWnd, IDC_NEWER_CHECKBOX), FALSE);
 			}
+			
+			if ((setting.details() & DETAIL_OPEN) == 0) {
+				EnableWindow(GetDlgItem(hWnd, IDC_SKIP_DESKTOP_CHECKBOX), FALSE);
+			}
 		}
 
 		/* ---------------------------------------------------------------- */
@@ -255,12 +259,14 @@ namespace cubeice {
 				}
 				
 				// コンテキストメニューの圧縮のサブ項目
+#ifdef nouse
 				const flag_map& comp = compress_map();
 				pos = comp.find(parameter);
 				if (pos != comp.end()) {
 					change_flag(Setting.compression().flags(), hWnd, pos->first, pos->second);
 					return TRUE;
 				}
+#endif
 				
 				// 「コンテキストメニュー」グループ
 				const flag_map& context = context_map();
@@ -269,12 +275,14 @@ namespace cubeice {
 					change_flag(Setting.context_flags(), hWnd, pos->first, pos->second);
 					
 					// 圧縮のサブ項目の有効/無効を変更する．
-					if (pos->first == IDC_COMPRESS_CHECKBOX) {
-						BOOL enabled = IsDlgButtonChecked(hWnd, IDC_COMPRESS_CHECKBOX);
+#ifdef nouse
+					if (pos->first == IDC_CT_COMPRESS_CHECKBOX) {
+						BOOL enabled = IsDlgButtonChecked(hWnd, IDC_CT_COMPRESS_CHECKBOX);
 						for (flag_map::const_iterator subpos = comp.begin(); subpos != comp.end(); ++subpos) {
 							EnableWindow(GetDlgItem(hWnd, subpos->first), enabled);
 						}
 					}
+#endif
 					return TRUE;
 				}
 				break;
@@ -315,6 +323,12 @@ namespace cubeice {
 					BOOL enabled = (setting.details() & DETAIL_OVERWRITE) ? TRUE : FALSE;
 					EnableWindow(GetDlgItem(hWnd, IDC_NEWER_CHECKBOX), enabled);
 				}
+				
+				if (pos->first == IDC_POSTOPEN_CHECKBOX) {
+					BOOL enabled = (setting.details() & DETAIL_OPEN) ? TRUE : FALSE;
+					EnableWindow(GetDlgItem(hWnd, IDC_SKIP_DESKTOP_CHECKBOX), enabled);
+				}
+				
 				return TRUE;
 			}
 			
@@ -423,7 +437,7 @@ namespace cubeice {
 		psh.dwSize = sizeof (PROPSHEETHEADER);
 		psh.dwFlags = PSH_DEFAULT | PSH_USEHICON  | PSH_NOAPPLYNOW;
 		psh.hwndParent = parent;
-		psh.hIcon = LoadIcon(page.hInstance, _T("IDC_APP"));
+		psh.hIcon = LoadIcon(page.hInstance, _T("IDI_APP"));
 		psh.pszCaption = _T("CubeICE 設定");
 		psh.nPages = pagenum;
 		psh.phpage = ref;
