@@ -249,7 +249,8 @@ namespace cubeice {
 					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
 						message += _T("Filtering: ");
 					}
-					else this->move(tmp, root, filename);
+					else this->move(tmp + _T('\\') + filename, root + _T('\\') + filename);
+					// TODO: ここの root + _T('\\') + filename の方の filename を文字コード変換する．
 					message += filename;
 					progress.text(message);
 					if (n > 0) progress += step;
@@ -522,9 +523,7 @@ namespace cubeice {
 		 *  代わりに同名のディレクトリを移動先に作成する．
 		 */
 		/* ----------------------------------------------------------------- */
-		void move(const string_type& srcdir, const string_type& destdir, const string_type& filename) {
-			string_type src = srcdir + _T("\\") + filename;
-			string_type dest = destdir + _T("\\") + filename;
+		void move(const string_type& src, const string_type& dest) {
 			if (PathIsDirectory(src.c_str())) CreateDirectory(dest.c_str(), NULL);
 			else {
 				string_type branch(dest.substr(0, dest.find_last_of(_T('\\'))));
