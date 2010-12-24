@@ -105,7 +105,10 @@ namespace cubeice {
 			
 			// コマンドラインの作成
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
-			cmdline += _T(" a -t") + filetype + _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
+			cmdline += _T(" a");
+			if (filetype == _T("exe")) cmdline += _T(" -sfx7z.sfx");
+			else cmdline += _T(" -t") + filetype;
+			cmdline += _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
 			for (; first != last; ++first) cmdline += _T(" \"") + *first + _T("\"");
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
@@ -269,7 +272,7 @@ namespace cubeice {
 			string_type dest =  this->rootdir(setting, src);
 			if (dest.empty()) {
 				const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-				string_type init = src.substr(0, src.find_last_of(_T('.'))) + _T('.') + filetype;
+				string_type init = src.substr(0, src.find_last_of(_T('.'))) + this->extension(filetype);
 				dest = cubeice::dialog::savefile(filter, init.c_str());
 			}
 			else {
@@ -277,7 +280,7 @@ namespace cubeice {
 				if (first == string_type::npos) first = 0;
 				else ++first;
 				string_type filename = src.substr(first);
-				dest += _T('\\') + filename.substr(0, filename.find_last_of(_T('.'))) + _T('.') + filetype;
+				dest += _T('\\') + filename.substr(0, filename.find_last_of(_T('.'))) + this->extension(filetype);
 			}
 			return dest;
 		}
@@ -437,6 +440,17 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		archiver(const archiver& cp);
 		archiver& operator=(const archiver& cp);
+		
+		/* ----------------------------------------------------------------- */
+		//  extension
+		/* ----------------------------------------------------------------- */
+		string_type extension(const string_type& filetype) {
+			string_type ext = _T(".");
+			if (filetype == _T("gzip")) ext += _T("gz");
+			else if (filetype == _T("bzip2")) ext += _T("bz2");
+			else ext += filetype;
+			return ext;
+		}
 		
 		/* ----------------------------------------------------------------- */
 		/*
