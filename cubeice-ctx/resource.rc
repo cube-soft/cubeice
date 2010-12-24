@@ -1,0 +1,7 @@
+#include <windows.h>
+#include "resource.h"
+
+//
+// Bitmap resources
+//
+IDB_LOGO           BITMAP         ".\logo.bmp"
