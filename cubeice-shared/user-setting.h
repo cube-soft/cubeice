@@ -105,15 +105,15 @@
 /* ------------------------------------------------------------------------- */
 //  レジストリに関する情報
 /* ------------------------------------------------------------------------- */
-#define CUBEICE_REG_ROOT                "Software\\CubeSoft\\CubeICE"
-#define CUBEICE_REG_COMPRESS            "Compress"
-#define CUBEICE_REG_DECOMPRESS          "Decompress"
-#define CUBEICE_REG_FLAGS               "Flags"
-#define CUBEICE_REG_DETAILS	            "Details"
-#define CUBEICE_REG_OUTPUT_CONDITION    "OutputCondition"
-#define CUBEICE_REG_OUTPUT_PATH         "OutputPath"
-#define CUBEICE_REG_CONTEXT             "ContextFlags"
-#define CUBEICE_REG_FILTER              "Filter"
+#define CUBEICE_REG_ROOT                _T("Software\\CubeSoft\\CubeICE")
+#define CUBEICE_REG_COMPRESS            _T("Compress")
+#define CUBEICE_REG_DECOMPRESS          _T("Decompress")
+#define CUBEICE_REG_FLAGS               _T("Flags")
+#define CUBEICE_REG_DETAILS	            _T("Details")
+#define CUBEICE_REG_OUTPUT_CONDITION    _T("OutputCondition")
+#define CUBEICE_REG_OUTPUT_PATH         _T("OutputPath")
+#define CUBEICE_REG_CONTEXT             _T("ContextFlags")
+#define CUBEICE_REG_FILTER              _T("Filter")
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */
@@ -171,7 +171,7 @@ namespace cubeice {
 			HKEY hkResult; // キーのハンドル
 			DWORD dwDisposition; // 処理結果を受け取る
 			LONG lResult; // 関数の戻り値を格納する
-			lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
+			lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
 			if (!lResult) {
 				RegSetValueEx(hkResult, CUBEICE_REG_FLAGS, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
 				RegSetValueEx(hkResult, CUBEICE_REG_DETAILS, 0, REG_DWORD, (CONST BYTE*)&details_, sizeof(details_));
@@ -245,16 +245,16 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		user_setting() :
 			root_(CUBEICE_REG_ROOT),
-			comp_(string_type(CUBEICE_REG_ROOT) + '\\' + CUBEICE_REG_COMPRESS),
-			decomp_(string_type(CUBEICE_REG_ROOT) + '\\' + CUBEICE_REG_DECOMPRESS),
+			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
+			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
 			flags_(0), filters_() {
 			this->load();	
 		}
 		
 		explicit user_setting(const string_type& root) :
 			root_(root),
-			comp_(root + '\\' + CUBEICE_REG_COMPRESS),
-			decomp_(root + '\\' + CUBEICE_REG_DECOMPRESS),
+			comp_(root + _T('\\') + CUBEICE_REG_COMPRESS),
+			decomp_(root + _T('\\') + CUBEICE_REG_DECOMPRESS),
 			flags_(0), filters_() {
 			this->load();
 		}
@@ -275,6 +275,7 @@ namespace cubeice {
 				dwSize = sizeof(flags_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&flags_, &dwSize);
 				
+#if !defined(_UNICODE) && !defined(UNICODE)
 				// フィルタリング文字列の読み込み．型は REG_MULTI_SZ
 				// 変数側の型は std::set<std::string>
 				char_type buffer[64 * 1024] = {};
@@ -285,6 +286,7 @@ namespace cubeice {
 					filters_.clear();
 					clx::split_if(s, filters_, clx::is_any_of(_T("\r\n")));
 				}
+#endif
 			}
 		}
 		
@@ -297,14 +299,16 @@ namespace cubeice {
 			
 			HKEY hkResult;
 			DWORD dwDisposition;
-			LONG lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
+			LONG lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
 			if (!lResult) {
 				RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
 				
+#if !defined(_UNICODE) && !defined(UNICODE)
 				string_type dest;
 				clx::join(filters_, dest, _T("\n"));
 				string_type encoded = clx::base64::encode(dest);
 				RegSetValueEx(hkResult, CUBEICE_REG_FILTER, 0, REG_SZ, (CONST BYTE*)encoded.c_str(), encoded.length() + 1);
+#endif
 			}
 			this->associate(decomp_.flags());
 		}
@@ -397,7 +401,7 @@ namespace cubeice {
 			HKEY subkey;
 			if (flag) {
 				DWORD disposition = 0;
-				LONG status = RegCreateKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
+				LONG status = RegCreateKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
 				if (!status) RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)value.c_str(), value.size() + 1);
 			}
 			else {

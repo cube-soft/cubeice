@@ -50,9 +50,9 @@ const SUB_MENU_ITEM		SubMenuDecompress[] = {
 };
 
 const SUB_MENU_ITEM		MenuItem[] = {
-	{ COMPRESS_FLAG,	IDB_LOGO,		MAKE_AWSTRING( "CubeICEで圧縮" ),		SubMenuCompress,	MAKE_AWSTRING( "圧縮を行う" ),			NULL },
-	{ DECOMPRESS_FLAG,	IDB_LOGO,		MAKE_AWSTRING( "CubeICEで展開" ),		SubMenuDecompress,	MAKE_AWSTRING( "展開を行う" ),			NULL },
-	{ SETTING_FLAG,		IDB_LOGO,		MAKE_AWSTRING( "CubeICEの設定" ),		NULL,				MAKE_AWSTRING( "設定を行う" ),			TEXT( "" ) },
+	{ COMPRESS_FLAG,	IDB_LOGO,		MAKE_AWSTRING( "圧縮" ),				SubMenuCompress,	MAKE_AWSTRING( "圧縮を行う" ),			NULL },
+	{ DECOMPRESS_FLAG,	IDB_LOGO,		MAKE_AWSTRING( "展開" ),				SubMenuDecompress,	MAKE_AWSTRING( "展開を行う" ),			NULL },
+	{ SETTING_FLAG,		IDB_LOGO,		MAKE_AWSTRING( "設定" ),				NULL,				MAKE_AWSTRING( "設定を行う" ),			TEXT( "" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
 
