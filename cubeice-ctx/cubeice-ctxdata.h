@@ -43,15 +43,15 @@ const SUB_MENU_ITEM		SubMenuCompress[] = {
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
 const SUB_MENU_ITEM		SubMenuDecompress[] = {
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "ここに展開" ),			NULL,				MAKE_AWSTRING( "この場所に展開" ),		TEXT( "/x:here" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "デスクトップに展開" ),	NULL,				MAKE_AWSTRING( "デスクトップに展開" ),	TEXT( "/x:desktop" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "場所を指定して展開" ),	NULL,				MAKE_AWSTRING( "場所を指定して展開" ),	TEXT( "/x:specified" ) },
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "ここに解凍" ),			NULL,				MAKE_AWSTRING( "この場所に展開" ),		TEXT( "/x:here" ) },
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "デスクトップに解凍" ),	NULL,				MAKE_AWSTRING( "デスクトップに展開" ),	TEXT( "/x:desktop" ) },
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "場所を指定して解凍" ),	NULL,				MAKE_AWSTRING( "場所を指定して展開" ),	TEXT( "/x:specified" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
 
 const SUB_MENU_ITEM		MenuItem[] = {
 	{ COMPRESS_FLAG,	IDB_LOGO,		MAKE_AWSTRING( "圧縮" ),				SubMenuCompress,	MAKE_AWSTRING( "圧縮を行う" ),			NULL },
-	{ DECOMPRESS_FLAG,	IDB_LOGO,		MAKE_AWSTRING( "展開" ),				SubMenuDecompress,	MAKE_AWSTRING( "展開を行う" ),			NULL },
+	{ DECOMPRESS_FLAG,	IDB_LOGO,		MAKE_AWSTRING( "解凍" ),				SubMenuDecompress,	MAKE_AWSTRING( "展開を行う" ),			NULL },
 	{ SETTING_FLAG,		IDB_LOGO,		MAKE_AWSTRING( "設定" ),				NULL,				MAKE_AWSTRING( "設定を行う" ),			TEXT( "" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
