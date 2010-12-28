@@ -44,7 +44,7 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 
 	cubeice::archiver ar(UserSetting);
 	if (pos != args.end() && pos->compare(0, 3, _T("/c:")) == 0) ar.compress(pos, args.end());
-	else if (pos != args.end() && pos->compare(0, 3, _T("/x:")) == 0) ar.decompress(pos, args.end());
+	else if (pos != args.end() && pos->compare(0, 2, _T("/x")) == 0) ar.decompress(pos, args.end());
 	else {
 		// デフォルトは設定画面を開く．
 		OSVERSIONINFO ovi = {};

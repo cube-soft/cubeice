@@ -116,6 +116,21 @@ namespace cubeice {
 		}
 		return dest;
 	}
+
+	/* ----------------------------------------------------------------- */
+	//  shortcut_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& shortcut_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_SC_COMPRESS_CHECKBOX] = COMPRESS_FLAG;
+			dest[IDC_SC_DECOMPRESS_CHECKBOX] = DECOMPRESS_FLAG;
+			dest[IDC_SC_SETTING_CHECKBOX] = SETTING_FLAG;
+			initialized = true;
+		}
+		return dest;
+	}
 	
 	/* ----------------------------------------------------------------- */
 	//  detail_map

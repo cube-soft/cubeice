@@ -113,6 +113,7 @@
 #define CUBEICE_REG_OUTPUT_CONDITION    _T("OutputCondition")
 #define CUBEICE_REG_OUTPUT_PATH         _T("OutputPath")
 #define CUBEICE_REG_CONTEXT             _T("ContextFlags")
+#define CUBEICE_REG_SHORTCUT            _T("ShortcutFlags")
 #define CUBEICE_REG_FILTER              _T("Filter")
 
 namespace cubeice {
@@ -247,7 +248,7 @@ namespace cubeice {
 			root_(CUBEICE_REG_ROOT),
 			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			flags_(0), filters_() {
+			ctx_flags_(0), sc_flags_(0), filters_() {
 			this->load();	
 		}
 		
@@ -255,7 +256,7 @@ namespace cubeice {
 			root_(root),
 			comp_(root + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(root + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			flags_(0), filters_() {
+			ctx_flags_(0), sc_flags_(0), filters_() {
 			this->load();
 		}
 		
@@ -272,8 +273,11 @@ namespace cubeice {
 				DWORD dwType;
 				DWORD dwSize;
 				
-				dwSize = sizeof(flags_);
-				RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&flags_, &dwSize);
+				dwSize = sizeof(ctx_flags_);
+				RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
+				
+				dwSize = sizeof(sc_flags_);
+				RegQueryValueEx(hkResult, CUBEICE_REG_SHORTCUT, NULL, &dwType, (LPBYTE)&sc_flags_, &dwSize);
 				
 #if !defined(_UNICODE) && !defined(UNICODE)
 				// フィルタリング文字列の読み込み．型は REG_MULTI_SZ
@@ -301,7 +305,20 @@ namespace cubeice {
 			DWORD dwDisposition;
 			LONG lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
 			if (!lResult) {
-				RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
+				RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&ctx_flags_, sizeof(ctx_flags_));
+				
+				// ショートカットの処理．
+				RegSetValueEx(hkResult, CUBEICE_REG_SHORTCUT, 0, REG_DWORD, (CONST BYTE*)&sc_flags_, sizeof(sc_flags_));
+				char buffer[2048] ={};
+				GetModuleFileNameA(GetModuleHandle(NULL), buffer, 2048);
+				std::basic_string<char> tmp = buffer;
+				std::basic_string<char> current = tmp.substr(0, tmp.find_last_of('\\'));
+				if ((sc_flags_ & COMPRESS_FLAG)) this->create_shortcut(current + "\\cubeice.exe", "/c:zip", "CubeICE 圧縮.lnk", 1);
+				else this->remove_shortcut("CubeICE 圧縮.lnk");
+				if ((sc_flags_ & DECOMPRESS_FLAG)) this->create_shortcut(current + "\\cubeice.exe", "/x", "CubeICE 解凍.lnk", 2);
+				else this->remove_shortcut("CubeICE 解凍.lnk");
+				if ((sc_flags_ & SETTING_FLAG)) this->create_shortcut(current + "\\cubeice-setting.exe", "", "CubeICE 設定.lnk", 0);
+				else this->remove_shortcut("CubeICE 設定.lnk");
 				
 #if !defined(_UNICODE) && !defined(UNICODE)
 				string_type dest;
@@ -340,8 +357,18 @@ namespace cubeice {
 		 *  コンテキストメニューに表示させるもの．
 		 */
 		/* ----------------------------------------------------------------- */
-		size_type& context_flags() { return flags_; }
-		const size_type& context_flags() const { return flags_; }
+		size_type& context_flags() { return ctx_flags_; }
+		const size_type& context_flags() const { return ctx_flags_; }
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  shortcut_flags
+		 *
+		 *  ショートカットを表示させるかどうか．
+		 */
+		/* ----------------------------------------------------------------- */
+		size_type& shortcut_flags() { return sc_flags_; }
+		const size_type& shortcut_flags() const { return sc_flags_; }
 		
 		/* ----------------------------------------------------------------- */
 		//  filters
@@ -353,7 +380,8 @@ namespace cubeice {
 		string_type root_;
 		archive_type comp_;
 		archive_type decomp_;
-		size_type flags_;
+		size_type ctx_flags_;
+		size_type sc_flags_;
 		container_type filters_;
 		
 		/* ----------------------------------------------------------------- */
@@ -415,6 +443,77 @@ namespace cubeice {
 					}
 				}
 			}
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  create_shortcut
+		 *
+		 *  ショートカットを作成する．
+		 *  see also: http://support.microsoft.com/kb/179904/ja
+		 */
+		/* ----------------------------------------------------------------- */
+		void create_shortcut(const std::basic_string<char>& path, const std::basic_string<char>& args, const std::basic_string<char>& link, int icon) {
+			IShellLink *psl = NULL;
+			HRESULT hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl);
+			if (FAILED(hres)) goto cleanup;
+			
+			IPersistFile *pPf = NULL;
+			hres = psl->QueryInterface(IID_IPersistFile, (LPVOID*)&pPf);
+			if (FAILED(hres)) goto cleanup;
+			
+			hres = psl->SetPath(path.c_str());
+			if (FAILED(hres)) goto cleanup;
+			
+			if (!args.empty()) {
+				hres = psl->SetArguments(args.c_str());
+				if (FAILED(hres)) goto cleanup;
+			}
+			
+			//place the shortcut on the desktop
+			LPITEMIDLIST pidl;
+			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl);
+			
+			char buf[2048] = {};
+			SHGetPathFromIDList(pidl, buf);
+			lstrcat(buf, "\\");
+			lstrcat(buf, link.c_str());
+			
+			WORD wsz[2048] = {};
+			MultiByteToWideChar(CP_ACP, 0, buf, -1, (LPWSTR)wsz, 2048);
+			hres = pPf->Save((LPCOLESTR)wsz, TRUE);
+			if (FAILED(hres)) goto cleanup;
+			
+			hres = psl->SetIconLocation(path.c_str(), icon);
+			if (FAILED(hres)) goto cleanup;
+			
+			int id = 0;
+			hres = psl->GetIconLocation(buf, 256, &id);
+			if (FAILED(hres)) goto cleanup;
+			
+			pPf->Save((LPCOLESTR)wsz, TRUE);
+cleanup:
+			if (pPf) pPf->Release();
+			if (psl) psl->Release();
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  create_shortcut
+		 *
+		 *  ショートカットを削除する．
+		 */
+		/* ----------------------------------------------------------------- */
+		void remove_shortcut(const std::basic_string<char>& link) {
+			LPITEMIDLIST pidl;
+			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl);
+			
+			char buf[2048] = {};
+			SHGetPathFromIDList(pidl, buf);
+			lstrcat(buf, "\\");
+			lstrcat(buf, link.c_str());
+			
+			DeleteFile(buf);
 		}
 	};
 }
