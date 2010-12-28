@@ -45,7 +45,22 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 	cubeice::archiver ar(UserSetting);
 	if (pos != args.end() && pos->compare(0, 3, _T("/c:")) == 0) ar.compress(pos, args.end());
 	else if (pos != args.end() && pos->compare(0, 3, _T("/x:")) == 0) ar.decompress(pos, args.end());
-	else return -1;
-
+	else {
+		// デフォルトは設定画面を開く．
+		OSVERSIONINFO ovi = {};
+		ovi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+		GetVersionEx(&ovi);
+		
+		// 設定プログラムのパスを取得．
+		TCHAR buffer[CUBE_MAX_PATH] ={};
+		GetModuleFileName(hInst, buffer, CUBE_MAX_PATH);
+		std::basic_string<TCHAR> tmp = buffer;
+		std::basic_string<TCHAR> path = tmp.substr(0, tmp.find_last_of(_T('\\'))) + _T("\\cubeice-setting.exe");
+		
+		HINSTANCE proc = ShellExecute(NULL, _T("runas"), path.c_str(), NULL, NULL, SW_SHOWNORMAL);
+		DWORD result = (DWORD)proc;
+		if (result <= 32) return -1;
+	}
+	
 	return 0;
 }
