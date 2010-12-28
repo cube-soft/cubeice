@@ -298,6 +298,10 @@ namespace cubeice {
 				switch (msg) {
 				case WM_INITDIALOG:
 				{
+					// アイコンの設定
+					HICON icon = LoadIcon(GetModuleHandle(NULL), _T("IDI_APP"));
+					SendMessage(hWnd, WM_SETICON, 0, LPARAM(icon));
+					
 					// 画面中央に表示
 					RECT rect = {};
 					GetWindowRect(hWnd, (LPRECT)&rect);
