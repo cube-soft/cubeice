@@ -115,6 +115,8 @@
 #define CUBEICE_REG_CONTEXT             _T("ContextFlags")
 #define CUBEICE_REG_SHORTCUT            _T("ShortcutFlags")
 #define CUBEICE_REG_FILTER              _T("Filter")
+#define CUBEICE_REG_INSTALL             _T("InstallDirectory")
+#define CUBEICE_REG_VERSION             _T("Version")
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */

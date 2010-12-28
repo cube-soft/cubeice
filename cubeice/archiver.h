@@ -257,6 +257,7 @@ namespace cubeice {
 					if (result == IDCANCEL) break;
 					else if (result == IDNO) continue;
 					
+					// フィルタリング
 					string_type message = root + _T("\n");
 					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
 						message += _T("Filtering: ");
