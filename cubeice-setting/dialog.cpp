@@ -408,6 +408,35 @@ namespace cubeice {
 		//  version_dialogproc
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK version_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+			switch (msg) {
+			case WM_INITDIALOG:
+			{
+				// アイコン
+				HANDLE logo = LoadImage(GetModuleHandle(NULL), _T("IDI_APP"), IMAGE_ICON, 48, 48, LR_DEFAULTCOLOR | LR_SHARED | LR_VGACOLOR);
+				HWND pic = GetDlgItem(hWnd, IDC_LOGO_PICTUREBOX);
+				SendMessage(pic, STM_SETIMAGE, IMAGE_ICON, LPARAM(logo));
+				
+				// バージョン
+				HKEY subkey;
+				LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, CUBEICE_REG_ROOT, 0, KEY_READ, &subkey);
+				if (!result) {
+					TCHAR buffer[1024] = {};
+					DWORD type = 0;
+					DWORD size = 1024;
+					if (RegQueryValueEx(subkey, CUBEICE_REG_VERSION, NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS) {
+						std::basic_string<TCHAR> message = "Version: ";
+						message += buffer;
+						if (sizeof(INT_PTR) == 4) message += " (x86)";
+						else message += " (x64)";
+						SetWindowText(GetDlgItem(hWnd, IDC_VERSION_LABEL), message.c_str());
+					}
+				}
+				
+				break;
+			}
+			default:
+				break;
+			}
 			return common_dialogproc(hWnd, msg, wp, lp);
 		}
 	}
