@@ -412,9 +412,11 @@ namespace cubeice {
 			
 			// ÉtÉHÉãÉ_ÇÃçÏê¨
 			if (setting.details() & DETAIL_CREATE_FOLDER) {
-				string_type::size_type pos = src.find_last_of('\\');
+				string_type::size_type pos = src.find_last_of(_T('\\'));
 				string_type filename = (pos == string_type::npos) ? src : src.substr(++pos);
 				root += _T('\\') + filename.substr(0, filename.find_last_of(_T('.')));
+				pos = root.find_last_of(_T('.'));
+				if (pos != string_type::npos && root.substr(pos) == _T(".tar")) root.erase(pos);
 			}
 			return root;
 		}
