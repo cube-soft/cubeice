@@ -77,14 +77,21 @@ namespace cubeice {
 		void compress(InputIterator first, InputIterator last) {
 			static const string_type keyword = _T("Compressing");
 			
+			bool pass = false;
+			
 			// オプションを読み飛ばす．
 			if (first->compare(0, 3, _T("/c:")) != 0) return;
 			string_type filetype(first->substr(3));
-			while (first != last && first->at(0) == _T('/')) ++first;
+			for (;first != last && first->at(0) == _T('/'); ++first) {
+				if (first->compare(0, 2, _T("/p")) == 0) pass = true;
+			}
 			
 			// 保存先パスの決定
 			string_type dest = this->compress_path(setting_.compression(), *first, filetype);
 			if (dest.empty()) return;
+			
+			// パスワードの設定．
+			if (pass && password_dialog() == IDCANCEL) return;
 			
 			// 一時ファイルのパスを決定
 			string_type tmp = tmpfile(_T("cubeice"));
@@ -108,6 +115,7 @@ namespace cubeice {
 			cmdline += _T(" a");
 			if (filetype == _T("exe")) cmdline += _T(" -sfx7z.sfx");
 			else cmdline += _T(" -t") + filetype;
+			if (pass) cmdline += _T(" -p") + cubeice::password();
 			cmdline += _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
 			for (; first != last; ++first) cmdline += _T(" \"") + *first + _T("\"");
 			cube::popen proc;
@@ -171,6 +179,10 @@ namespace cubeice {
 		void decompress(InputIterator first, InputIterator last) {
 			static const string_type keyword = _T("Extracting");
 			
+			// レジストリの設定を無視するコマンドかどうか．
+			string_type force;
+			if (first->compare(0, 3, _T("/x:")) == 0) force = first->substr(3);
+			
 			// オプションを読み飛ばす．
 			while (first != last && first->at(0) == _T('/')) ++first;
 			
@@ -178,7 +190,7 @@ namespace cubeice {
 				string_type src = *first;
 				
 				// 保存先パスの取得
-				string_type root = this->decompress_path(setting_.decompression(), src);
+				string_type root = this->decompress_path(setting_.decompression(), src, force);
 				if (root.empty()) break;
 				
 				// パスワードの設定
@@ -353,9 +365,9 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  decompress_path
 		/* ----------------------------------------------------------------- */
-		string_type decompress_path(const setting_type::archive_type& setting, const string_type& src) {
+		string_type decompress_path(const setting_type::archive_type& setting, const string_type& src, string_type force) {
 			// 保存先パスの決定
-			string_type root = this->rootdir(setting, src);
+			string_type root = this->rootdir(setting, src, force);
 			if (root.empty()) root = cubeice::dialog::browsefolder(_T("解凍するフォルダを指定して下さい。"));
 			if (root.empty()) return root;
 			
@@ -492,26 +504,31 @@ namespace cubeice {
 		 *  ユーザ設定の値を元に出力先ディレクトリを取得する．特定の
 		 *  ディレクトリを指定がチェックされており，かつ出力先が
 		 *  空白の場合はデスクトップのパスを返す．
+		 *
+		 *  force に指定される可能性のあるものは以下の通り．
+		 *   - runtime: 実行時に指定
+		 *   - desktop: デスクトップ
+		 *   - source: ソースファイルと同じ場所
 		 */
 		/* ----------------------------------------------------------------- */
-		string_type rootdir(const setting_type::archive_type& setting, const string_type& src) {
-			string_type dest;
-			if (setting.output_condition() == OUTPUT_SPECIFIC) {
-				if (!setting.output_path().empty()) return setting.output_path();
-				else { // デスクトップのパスを取得
-					LPITEMIDLIST item;
-					SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &item);
-					
-					char_type buffer[CUBE_MAX_PATH] = {};
-					SHGetPathFromIDList(item, buffer);
-					return string_type(buffer);
-				}
-			}
-			else if (setting.output_condition() == OUTPUT_SOURCE) {
+		string_type rootdir(const setting_type::archive_type& setting, const string_type& src, const string_type& force = _T("")) {
+			// デスクトップのパスを取得しておく．
+			LPITEMIDLIST item;
+			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &item);
+			char_type buffer[CUBE_MAX_PATH] = {};
+			SHGetPathFromIDList(item, buffer);
+			string_type desktop = buffer;
+			
+			if (force == _T("runtime")) return string_type();
+			if (force == _T("desktop")) return desktop;
+			else if (force == _T("source") || setting.output_condition() == OUTPUT_SOURCE) {
 				// TODO: 相対パスの場合どうするか．
 				return src.substr(0, src.find_last_of(_T('\\')));
 			}
-			
+			else if (setting.output_condition() == OUTPUT_SPECIFIC) {
+				if (!setting.output_path().empty()) return setting.output_path();
+				else return desktop;
+			}
 			return string_type();
 		}
 		
