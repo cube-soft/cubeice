@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------- */
 /*
- *  password.h
+ *  overwrite.h
  *
  *  Copyright (c) 2010 CubeSoft.
  *
@@ -29,39 +29,39 @@
  *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  Last-modified: Mon 20 Dec 2010 22:05:00 JST
+ *  Last-modified: Tue 28 Dec 2010 22:04:00 JST
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_PASSWORD_H
-#define CUBEICE_PASSWORD_H
+#ifndef CUBEICE_OVERWRITE_H
+#define CUBEICE_OVERWRITE_H
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */
 	/*
-	 *  password
+	 *  overwrite
 	 *
-	 *  NOTE: 現状は，全てのパスワードダイアログが一つのパスワード記憶
-	 *  領域を共有している．
+	 *  NOTE: 現状は，全てのイアログが一つのテキスト領域を共有している．
 	 */
 	/* --------------------------------------------------------------------- */
-	inline std::basic_string<TCHAR>& password() {
-		static std::basic_string<TCHAR> pass;
-		return pass;
+	inline std::basic_string<TCHAR>& overwrite() {
+		static std::basic_string<TCHAR> text;
+		return text;
 	}
 	
 	/* --------------------------------------------------------------------- */
-	//  password_wndproc
+	//  overwrite_wndproc
 	/* --------------------------------------------------------------------- */
-	static BOOL CALLBACK password_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+	static BOOL CALLBACK overwrite_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 		switch (msg) {
 		case WM_INITDIALOG:
 		{
 			// アイコン
-			HICON app = LoadIcon(GetModuleHandle(NULL), _T("IDI_APP"));
-			SendMessage(hWnd, WM_SETICON, 0, LPARAM(app));
-			HICON info = LoadIcon(NULL, IDI_INFORMATION);
+			HICON info = LoadIcon(NULL, IDI_WARNING);
 			HWND pic = GetDlgItem(hWnd, IDC_ICON_PICTUREBOX);
 			SendMessage(pic, STM_SETIMAGE, IMAGE_ICON, LPARAM(info));
+			
+			// テキスト
+			SetWindowText(GetDlgItem(hWnd, IDC_INFO_LABEL), overwrite().c_str());
 			
 			// 画面中央に表示
 			RECT rect = {};
@@ -73,12 +73,16 @@ namespace cubeice {
 		}
 		case WM_COMMAND:
 			switch (LOWORD(wp)) {
-			case IDOK:
+			case IDYES:
 			{
-				TCHAR buffer[256] = {};
-				GetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, buffer, 256);
-				cubeice::password() = buffer;
-				EndDialog(hWnd, IDOK);
+				int to_all = IsDlgButtonChecked(hWnd, IDC_ALL_CHECKBOX) ? ID_TO_ALL : 0;
+				EndDialog(hWnd, IDOK | to_all);
+				break;
+			}
+			case IDNO:
+			{
+				int to_all = IsDlgButtonChecked(hWnd, IDC_ALL_CHECKBOX) ? ID_TO_ALL : 0;
+				EndDialog(hWnd, IDNO | to_all);
 				break;
 			}
 			case IDCANCEL:
@@ -98,9 +102,9 @@ namespace cubeice {
 	/* --------------------------------------------------------------------- */
 	//  password_dialog
 	/* --------------------------------------------------------------------- */
-	inline INT_PTR password_dialog() {
-		return DialogBox(GetModuleHandle(NULL), _T("IDD_PASSWORD"), NULL, password_wndproc);
+	inline INT_PTR overwrite_dialog() {
+		return DialogBox(GetModuleHandle(NULL), _T("IDD_OVERWRITE"), NULL, overwrite_wndproc);
 	}
 }
 
-#endif // CUBEICE_PASSWORD_H
+#endif // CUBEICE_OVERWRITE_H
