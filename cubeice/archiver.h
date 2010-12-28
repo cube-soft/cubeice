@@ -114,6 +114,7 @@ namespace cubeice {
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" a");
 			if (filetype == _T("exe")) cmdline += _T(" -sfx7z.sfx");
+			else if (filetype == _T("gzip") || filetype == _T("bzip2")) cmdline += _T(" -ttar");
 			else cmdline += _T(" -t") + filetype;
 			if (pass) cmdline += _T(" -p") + cubeice::password();
 			cmdline += _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
@@ -148,7 +149,8 @@ namespace cubeice {
 			}
 			
 			if (status == 2) {
-				MoveFile(tmp.c_str(), dest.c_str());
+				if (filetype == _T("gzip") || filetype == _T("bzip2")) this->compress_tar(tmp, dest, filetype, pass);
+				else MoveFile(tmp.c_str(), dest.c_str());
 				
 				// フィルタリング
 				if ((setting_.compression().details() & DETAIL_FILTER) && !setting_.filters().empty()) {
@@ -314,6 +316,43 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
+		//  decompress_tar
+		/* ----------------------------------------------------------------- */
+		void compress_tar(const string_type& src, const string_type& dest, const string_type& filetype, bool pass) {
+			static const string_type keyword = _T("Compressing");
+			
+			string_type tar;
+			string_type ext = dest.substr(dest.find_last_of(_T('.')));
+			tar = dest.substr(0, dest.find_last_of(_T('.')));
+			if (ext != _T(".gz") && ext != _T(".bz2")) tar += _T(".tar");
+			if (!MoveFile(src.c_str(), tar.c_str())) return;
+			
+			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
+			cmdline += _T(" a -t") + filetype;
+			if (pass) cmdline += _T(" -p") + cubeice::password();
+			cmdline += _T(" -bd -scsWIN -y \"") + dest + _T("\"");
+			cmdline += _T(" \"") + tar + _T("\"");
+			cube::popen proc;
+			if (!proc.open(cmdline.c_str(), _T("r"))) return;
+			
+			int status = 0;
+			string_type line;
+			while ((status = proc.gets(line)) >= 0) {
+				if (status == 2) break; // pipe closed
+				else if (status == 0 || line.empty()) {
+					Sleep(10);
+					continue;
+				}
+				assert(status == 1);
+				
+				string_type::size_type pos = line.find(keyword);
+				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
+			}
+			
+			DeleteFile(tar.c_str());
+		}
+		
+		/* ----------------------------------------------------------------- */
 		//  compress_size_folder
 		/* ----------------------------------------------------------------- */
 		size_type compress_size_folder(const string_type& root) {
@@ -455,12 +494,16 @@ namespace cubeice {
 		archiver& operator=(const archiver& cp);
 		
 		/* ----------------------------------------------------------------- */
-		//  extension
+		/*
+		 *  extension
+		 *
+		 *  NOTE: gzip, bz2 の場合は *.tar で返す．
+		 */
 		/* ----------------------------------------------------------------- */
 		string_type extension(const string_type& filetype) {
 			string_type ext = _T(".");
-			if (filetype == _T("gzip")) ext += _T("gz");
-			else if (filetype == _T("bzip2")) ext += _T("bz2");
+			if (filetype == _T("gzip")) ext += _T("tar.gz");
+			else if (filetype == _T("bzip2")) ext += _T("tar.bz2");
 			else ext += filetype;
 			return ext;
 		}

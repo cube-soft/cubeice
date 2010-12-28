@@ -276,10 +276,10 @@ namespace cubeice {
 				dwSize = sizeof(ctx_flags_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
 				
+#if !defined(_UNICODE) && !defined(UNICODE)
 				dwSize = sizeof(sc_flags_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_SHORTCUT, NULL, &dwType, (LPBYTE)&sc_flags_, &dwSize);
 				
-#if !defined(_UNICODE) && !defined(UNICODE)
 				// フィルタリング文字列の読み込み．型は REG_MULTI_SZ
 				// 変数側の型は std::set<std::string>
 				char_type buffer[64 * 1024] = {};
@@ -307,6 +307,7 @@ namespace cubeice {
 			if (!lResult) {
 				RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&ctx_flags_, sizeof(ctx_flags_));
 				
+#if !defined(_UNICODE) && !defined(UNICODE)
 				// ショートカットの処理．
 				RegSetValueEx(hkResult, CUBEICE_REG_SHORTCUT, 0, REG_DWORD, (CONST BYTE*)&sc_flags_, sizeof(sc_flags_));
 				char buffer[2048] ={};
@@ -320,7 +321,6 @@ namespace cubeice {
 				if ((sc_flags_ & SETTING_FLAG)) this->create_shortcut(current + "\\cubeice-setting.exe", "", "CubeICE 設定.lnk", 0);
 				else this->remove_shortcut("CubeICE 設定.lnk");
 				
-#if !defined(_UNICODE) && !defined(UNICODE)
 				string_type dest;
 				clx::join(filters_, dest, _T("\n"));
 				string_type encoded = clx::base64::encode(dest);
@@ -445,6 +445,7 @@ namespace cubeice {
 			}
 		}
 		
+#if !defined(_UNICODE) && !defined(UNICODE)
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  create_shortcut
@@ -515,6 +516,7 @@ cleanup:
 			
 			DeleteFile(buf);
 		}
+#endif
 	};
 }
 
