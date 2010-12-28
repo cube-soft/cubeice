@@ -38,5 +38,9 @@
 #define IDC_PROGRESS            1000
 #define IDC_INFO_LABEL          1001
 #define IDC_PASSWORD_TEXTBOX    1002
+#define IDC_ICON_PICTUREBOX     1003
+#define IDC_ALL_CHECKBOX        1004
+
+#define ID_TO_ALL               0x100
 
 #endif // CUBEICE_RESOURCE_H

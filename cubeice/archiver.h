@@ -2,34 +2,22 @@
 /*
  *  archiver.h
  *
- *  Copyright (c) 2010 CubeSoft.
+ *  Copyright (c) 2010 CubeSoft Inc. All rights reserved.
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *    - Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *    - Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in the
- *      documentation and/or other materials provided with the distribution.
- *    - No names of its contributors may be used to endorse or promote
- *      products derived from this software without specific prior written
- *      permission.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
- *  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  *
- *  Last-modified: Tue 21 Dec 2010 11:59:00 JST
+ *  Last-modified: Tue 28 Dec 2010 20:42:00 JST
  */
 /* ------------------------------------------------------------------------- */
 #ifndef CUBE_ARCHIVER_H
@@ -101,7 +89,8 @@ namespace cubeice {
 			
 			// 上書きの確認
 			if (setting_.compression().output_condition() != OUTPUT_RUNTIME) {
-				int result = this->is_overwrite(dest, tmp, setting_.compression(), MB_YESNO | MB_ICONWARNING);
+				int result = this->is_overwrite(dest, tmp, setting_.compression(), 0);
+				result &= ~ID_TO_ALL;
 				if (result != IDOK && result != IDYES) return;
 			}
 			
@@ -125,6 +114,7 @@ namespace cubeice {
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
 			
 			// メイン処理
+			int interval = 1;
 			int status = 0;
 			string_type line;
 			while ((status = proc.gets(line)) >= 0) {
@@ -136,10 +126,12 @@ namespace cubeice {
 				
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
-					Sleep(10);
+					Sleep(interval);
+					if (interval < 100) interval *= 2;
 					continue;
 				}
 				assert(status == 1);
+				interval = 1;
 				
 				string_type::size_type pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
@@ -231,8 +223,9 @@ namespace cubeice {
 				if (!proc.open(cmdline.c_str(), _T("r"))) return;
 				
 				// メイン処理
+				int interval = 1;
 				int status = 0;
-				bool yes_to_all = false;
+				int to_all = 0; // 全ての項目に適用する処理
 				string_type line;
 				while ((status = proc.gets(line)) >= 0) {
 					progress.refresh();
@@ -243,10 +236,12 @@ namespace cubeice {
 					
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
-						Sleep(10);
+						Sleep(interval);
+						if (interval < 100) interval *= 2;
 						continue;
 					}
 					assert(status == 1);
+					interval = 1;
 					
 					string_type::size_type pos = line.find(keyword);
 					if (pos == string_type::npos || line.size() <= keyword.size()) continue;
@@ -254,13 +249,13 @@ namespace cubeice {
 					string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
 					
 					// 上書きの確認
-					if (!yes_to_all) {
-						int result = this->is_overwrite(root + _T('\\') + filename, tmp + _T('\\') + filename,
-							setting_.decompression(), MB_YESNOCANCEL | MB_ICONWARNING);
-						if (result == IDCANCEL) break;
-						else if (result == IDNO) continue;
-						else if (result == IDYES) yes_to_all = true; // TODO: 「全てはい」のボタンを表示させる．
+					int result = this->is_overwrite(root + _T('\\') + filename, tmp + _T('\\') + filename, setting_.decompression(), to_all);
+					if ((result & ID_TO_ALL)) {
+						result &= ~ID_TO_ALL;
+						to_all = result;
 					}
+					if (result == IDCANCEL) break;
+					else if (result == IDNO) continue;
 					
 					string_type message = root + _T("\n");
 					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
@@ -649,12 +644,13 @@ namespace cubeice {
 		 *  が存在しない場合は IDOK を返す．
 		 */
 		/* ----------------------------------------------------------------- */
-		int is_overwrite(const string_type& target, const string_type& compared, const setting_type::archive_type& setting, UINT type) {
+		int is_overwrite(const string_type& target, const string_type& compared, const setting_type::archive_type& setting, int force) {
 			if ((setting.details() & DETAIL_OVERWRITE) && PathFileExists(target.c_str())) {
 				if ((setting.details() & DETAIL_IGNORE_NEWER) && !is_older(target, compared)) return IDYES;
+				else if (force > 0) return force;
 				else {
-					string_type message = target + _T(" は既に存在します。上書きしますか？");
-					return MessageBox(NULL, message.c_str(), _T("上書きの確認"), type);
+					cubeice::overwrite() = target + _T(" は既に存在します。\r\n上書きしますか？");
+					return cubeice::overwrite_dialog();
 				}
 			}
 			return IDOK;
