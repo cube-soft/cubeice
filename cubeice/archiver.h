@@ -44,9 +44,11 @@
 #include <vector>
 #include <tchar.h>
 #include <shlwapi.h>
+#include <clx/hexdump.h>
 #include <clx/strip.h>
 #include <clx/split.h>
 #include <clx/timer.h>
+#include <babel/babel.h>
 #include "wpopen.h"
 #include "user-setting.h"
 #include "dialog.h"
@@ -180,6 +182,7 @@ namespace cubeice {
 		template <class InputIterator>
 		void decompress(InputIterator first, InputIterator last) {
 			static const string_type keyword = _T("Extracting");
+			babel::init_babel();
 			
 			// レジストリの設定を無視するコマンドかどうか．
 			string_type force;
@@ -264,6 +267,7 @@ namespace cubeice {
 						message += _T("Filtering: ");
 					}
 					else this->move(tmp + _T('\\') + filename, root + _T('\\') + filename);
+					
 					// TODO: ここの root + _T('\\') + filename の方の filename を文字コード変換する．
 					message += filename;
 					progress.text(message);

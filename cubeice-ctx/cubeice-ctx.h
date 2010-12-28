@@ -275,6 +275,7 @@ namespace cube {
 					lists_.insert(_T(".zip"));
 					lists_.insert(_T(".lzh"));
 					lists_.insert(_T(".rar"));
+					lists_.insert(_T(".tar"));
 					lists_.insert(_T(".gz"));
 					lists_.insert(_T(".7z"));
 					lists_.insert(_T(".arj"));
@@ -285,12 +286,16 @@ namespace cube {
 					lists_.insert(_T(".deb"));
 					lists_.insert(_T(".dmg"));
 					lists_.insert(_T(".iso"));
+					lists_.insert(_T(".msi"));
 					lists_.insert(_T(".rpm"));
 					lists_.insert(_T(".tbz"));
 					lists_.insert(_T(".tgz"));
+					lists_.insert(_T(".udf"));
+					lists_.insert(_T(".vhd"));
 					lists_.insert(_T(".wim"));
 					lists_.insert(_T(".xar"));
 					lists_.insert(_T(".xz"));
+					lists_.insert(_T(".z"));
 				}
 				
 				for( ; first != last; ++first ) {

@@ -56,6 +56,11 @@ namespace cubeice {
 		switch (msg) {
 		case WM_INITDIALOG:
 		{
+			// アイコン
+			HICON icon = LoadIcon(NULL, IDI_INFORMATION);
+			HWND hPic = GetDlgItem(hWnd, 1003);
+			SendMessage(hPic, STM_SETIMAGE, IMAGE_ICON, LPARAM(icon));
+			
 			// 画面中央に表示
 			RECT rect = {};
 			GetWindowRect(hWnd, (LPRECT)&rect);
