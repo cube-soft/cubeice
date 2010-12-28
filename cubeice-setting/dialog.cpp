@@ -178,6 +178,14 @@ namespace cubeice {
 					}
 				}
 			}
+
+			// 「ショートカット」グループ
+			const flag_map& shortcut = shortcut_map();
+			for (flag_map::const_iterator pos = shortcut.begin(); pos != shortcut.end(); ++pos) {
+				if (Setting.shortcut_flags() & pos->second) {
+					CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
+				}
+			}
 		}
 		
 		/* ---------------------------------------------------------------- */
@@ -283,6 +291,14 @@ namespace cubeice {
 						}
 					}
 #endif
+					return TRUE;
+				}
+				
+				// 「コンテキストメニュー」グループ
+				const flag_map& shortcut = shortcut_map();
+				pos = shortcut.find(parameter);
+				if (pos != shortcut.end()) {
+					change_flag(Setting.shortcut_flags(), hWnd, pos->first, pos->second);
 					return TRUE;
 				}
 				break;
