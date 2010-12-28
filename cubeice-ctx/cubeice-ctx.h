@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <string>
 #include <vector>
+#include <set>
 #include "user-setting.h"
 #include "cubeice-ctxdata.h"
 
@@ -61,6 +62,9 @@ namespace cube {
 
 				for( unsigned int i = 0 ; MenuItem[i].stringA ; ++i ) {
 					if( MenuItem[i].dispSetting && !( ctxSetting & MenuItem[i].dispSetting ) )
+						continue;
+					
+					if( MenuItem[i].dispSetting == DECOMPRESS_FLAG && !this->is_decompress(fileList.begin(), fileList.end()))
 						continue;
 
 					MENUITEMINFO		miinfo;
@@ -262,7 +266,41 @@ namespace cube {
 
 				return;
 			}
-
+			
+			template <class InputIterator>
+			bool is_decompress(InputIterator first, InputIterator last) {
+				static bool init_ = false;
+				std::set<tstring> lists_;
+				if (!init_) {
+					lists_.insert(_T(".zip"));
+					lists_.insert(_T(".lzh"));
+					lists_.insert(_T(".rar"));
+					lists_.insert(_T(".gz"));
+					lists_.insert(_T(".7z"));
+					lists_.insert(_T(".arj"));
+					lists_.insert(_T(".bz2"));
+					lists_.insert(_T(".cab"));
+					lists_.insert(_T(".chm"));
+					lists_.insert(_T(".cpio"));
+					lists_.insert(_T(".deb"));
+					lists_.insert(_T(".dmg"));
+					lists_.insert(_T(".iso"));
+					lists_.insert(_T(".rpm"));
+					lists_.insert(_T(".tbz"));
+					lists_.insert(_T(".tgz"));
+					lists_.insert(_T(".wim"));
+					lists_.insert(_T(".xar"));
+					lists_.insert(_T(".xz"));
+				}
+				
+				for( ; first != last; ++first ) {
+					tstring src = *first;
+					tstring::size_type pos = src.find_last_of(_T("."));
+					if( pos != tstring::npos && lists_.find(src.substr(pos)) != lists_.end() ) return true;
+				}
+				return false;
+			}
+			
 			std::vector<tstring>				fileList;
 			cubeice::user_setting::size_type	ctxSetting;
 			ULONG								refCount;
