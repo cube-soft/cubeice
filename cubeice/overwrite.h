@@ -56,6 +56,8 @@ namespace cubeice {
 		case WM_INITDIALOG:
 		{
 			// ÉAÉCÉRÉì
+			HICON app = LoadIcon(GetModuleHandle(NULL), _T("IDI_APP"));
+			SendMessage(hWnd, WM_SETICON, 0, LPARAM(app));
 			HICON info = LoadIcon(NULL, IDI_WARNING);
 			HWND pic = GetDlgItem(hWnd, IDC_ICON_PICTUREBOX);
 			SendMessage(pic, STM_SETIMAGE, IMAGE_ICON, LPARAM(info));

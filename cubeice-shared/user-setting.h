@@ -517,8 +517,11 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void create_shortcut(const std::basic_string<char>& path, const std::basic_string<char>& args, const std::basic_string<char>& link, int icon) {
+			HRESULT hres = CoInitialize(NULL);
+			if (FAILED(hres)) return;
+			
 			IShellLink *psl = NULL;
-			HRESULT hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl);
+			hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl);
 			if (FAILED(hres)) goto cleanup;
 			
 			IPersistFile *pPf = NULL;
@@ -558,6 +561,7 @@ namespace cubeice {
 cleanup:
 			if (pPf) pPf->Release();
 			if (psl) psl->Release();
+			CoUninitialize();
 		}
 		
 		/* ----------------------------------------------------------------- */
