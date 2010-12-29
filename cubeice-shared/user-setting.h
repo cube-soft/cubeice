@@ -141,6 +141,21 @@ namespace cubeice {
 			this->load();
 		}
 		
+		bool is_associated(const string_type& key, const string_type& value) {
+			HKEY subkey;
+			DWORD disposition = 0;
+			LONG status = RegCreateKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
+			if (!status) { 
+				char_type buffer[32] = {};
+				DWORD type = 0;
+				DWORD size = sizeof(buffer);
+				if (RegQueryValueEx(subkey, _T(""), NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS && string_type(buffer) == value) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		/* ----------------------------------------------------------------- */
 		//  load
 		/* ----------------------------------------------------------------- */
@@ -151,8 +166,8 @@ namespace cubeice {
 				DWORD dwType;
 				DWORD dwSize;
 				
-				dwSize = sizeof(flags_);
-				RegQueryValueEx(hkResult, CUBEICE_REG_FLAGS, NULL, &dwType, (LPBYTE)&flags_, &dwSize);
+				//dwSize = sizeof(flags_);
+				//RegQueryValueEx(hkResult, CUBEICE_REG_FLAGS, NULL, &dwType, (LPBYTE)&flags_, &dwSize);
 				
 				dwSize = sizeof(details_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_DETAILS, NULL, &dwType, (LPBYTE)&details_, &dwSize);
@@ -166,7 +181,32 @@ namespace cubeice {
 					output_path_ = buffer;
 				}
 			}
+
+			// (変更) Flagsはレジストリに置かない
+			// それぞれの拡張子のキーの既定値がcubeice_XXXになっているか見て判断
+			flags_ = 0;
+			if (this->is_associated(_T(".zip"), _T("cubeice_zip")))  flags_ |= ZIP_FLAG;
+			if (this->is_associated(_T(".lzh"), _T("cubeice_lzh")))  flags_ |= LZH_FLAG;
+			if (this->is_associated(_T(".rar"), _T("cubeice_rar")))  flags_ |= RAR_FLAG;
+			if (this->is_associated(_T(".tar"), _T("cubeice_tar")))  flags_ |= TAR_FLAG;
+			if (this->is_associated(_T(".gz"),  _T("cubeice_gz")))   flags_ |= GZ_FLAG;
+			if (this->is_associated(_T(".7z"),  _T("cubeice_7z")))   flags_ |= SEVENZIP_FLAG;
+			if (this->is_associated(_T(".arj"), _T("cubeice_arj")))  flags_ |= ARJ_FLAG;
+			if (this->is_associated(_T(".bz2"), _T("cubeice_bz2")))  flags_ |= BZ2_FLAG;
+			if (this->is_associated(_T(".cab"), _T("cubeice_cab")))  flags_ |= CAB_FLAG;
+			if (this->is_associated(_T(".chm"), _T("cubeice_chm")))  flags_ |= CHM_FLAG;
+			if (this->is_associated(_T(".cpio"),_T("cubeice_cpio"))) flags_ |= CPIO_FLAG;
+			if (this->is_associated(_T(".deb"), _T("cubeice_deb")))  flags_ |= DEB_FLAG;
+			if (this->is_associated(_T(".dmg"), _T("cubeice_dmg")))  flags_ |= DMG_FLAG;
+			if (this->is_associated(_T(".iso"), _T("cubeice_iso")))  flags_ |= ISO_FLAG;
+			if (this->is_associated(_T(".rpm"), _T("cubeice_rpm")))  flags_ |= RPM_FLAG;
+			if (this->is_associated(_T(".tbz"), _T("cubeice_tbz")))  flags_ |= TBZ_FLAG;
+			if (this->is_associated(_T(".tgz"), _T("cubeice_tgz")))  flags_ |= TGZ_FLAG;
+			if (this->is_associated(_T(".wim"), _T("cubeice_wim")))  flags_ |= WIM_FLAG;
+			if (this->is_associated(_T(".xar"), _T("cubeice_xar")))  flags_ |= XAR_FLAG;
+			if (this->is_associated(_T(".xz"),  _T("cubeice_xz")))   flags_ |= XZ_FLAG;
 		}
+		
 		
 		/* ----------------------------------------------------------------- */
 		//  save
