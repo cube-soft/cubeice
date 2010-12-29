@@ -97,33 +97,23 @@ namespace cubeice {
 		std::basic_string<Ch, Tr> tmp_src;
 		if (*src.begin() != separator) tmp_src += separator;
 		tmp_src += src;
-		
-		typename std::basic_string<Ch, Tr>::const_iterator pos = tmp_src.begin();
-		typename std::basic_string<Ch, Tr>::const_iterator last = tmp_src.end();
-		pos = std::find(pos, last, separator);
-		pos = std::find(pos, last, extension);
-		if (pos == tmp_src.end() && *src.rbegin() != separator) tmp_src += separator;
+		if (*src.rbegin() != separator) tmp_src += separator;
 		
 		// ワイルドカードの整形
 		std::basic_string<Ch, Tr> tmp_wildcard;
-		pos = wildcard.begin();
 		
+		typename std::basic_string<Ch, Tr>::const_iterator pos = wildcard.begin();
 		if (!(*pos == asterisk && ++pos != wildcard.end() && *pos == separator)) {
 			tmp_wildcard += asterisk;
 			tmp_wildcard += separator;
 		}
+		
 		tmp_wildcard += wildcard;
 		
-		pos = tmp_wildcard.begin();
-		last = tmp_wildcard.end();
-		pos = std::find(pos, last, separator);
-		pos = std::find(pos, last, extension);
-		if (pos == tmp_wildcard.end()) {
-			typename std::basic_string<Ch, Tr>::const_reverse_iterator rpos = wildcard.rbegin();
-			if (*rpos != asterisk && ++rpos != wildcard.rend() && *rpos != separator) {
-				tmp_wildcard += separator;
-				tmp_wildcard += asterisk;
-			}
+		typename std::basic_string<Ch, Tr>::const_reverse_iterator rpos = wildcard.rbegin();
+		if (*rpos != asterisk && ++rpos != wildcard.rend() && *rpos != separator) {
+			tmp_wildcard += separator;
+			tmp_wildcard += asterisk;
 		}
 		
 		return match(tmp_src, tmp_wildcard);
