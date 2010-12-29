@@ -61,6 +61,5 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 		DWORD result = (DWORD)proc;
 		if (result <= 32) return -1;
 	}
-	
 	return 0;
 }
