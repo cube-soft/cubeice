@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
 <assemblyIdentity
-    version="1.0.0.0"
+    version="0.2.1.0"
     processorArchitecture="X86"
-    name="CompanyName.ProductName.YourApp"
+    name="CubeSoft.CubeICE-Setting"
     type="win32"
 />
-<description>アプリケーションの説明</description>
+<description>CubeICE の設定用アプリケーション</description>
 <dependency>
     <dependentAssembly>
         <assemblyIdentity
