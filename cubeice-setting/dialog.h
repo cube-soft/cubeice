@@ -37,8 +37,8 @@
 
 #include <map>
 #include <windows.h>
+#include <user-setting.h>
 #include "resource.h"
-#include "user-setting.h"
 
 #ifndef CUBE_MAX_PATH
 #define CUBE_MAX_PATH 2048
