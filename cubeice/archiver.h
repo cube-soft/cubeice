@@ -77,6 +77,8 @@ namespace cubeice {
 				if (first->compare(0, 2, _T("/p")) == 0) pass = true;
 			}
 			
+			cubeice::dialog::progressbar progress;
+			
 			// 保存先パスの決定
 			string_type dest = this->compress_path(setting_.compression(), *first, filetype);
 			if (dest.empty()) return;
@@ -96,7 +98,6 @@ namespace cubeice {
 			}
 			
 			// プログレスバーの設定
-			cubeice::dialog::progressbar progress;
 			size_type n = this->compress_size(first, last, 5.0);
 			char msgbuf[32] = {};
 			double step = (n > 0) ? (progress.maximum() - progress.minimum()) / static_cast<double>(n) : 0.0;
@@ -186,10 +187,12 @@ namespace cubeice {
 			
 			for (; first != last; ++first) {
 				string_type src = *first;
+				cubeice::dialog::progressbar progress;
 				
 				// 保存先パスの取得
 				string_type root = this->decompress_path(setting_.decompression(), src, force);
 				if (root.empty()) break;
+				progress.text(root);
 				
 				// パスワードの設定
 				bool pass = this->is_password(src);
@@ -201,10 +204,6 @@ namespace cubeice {
 				// 一時フォルダの作成
 				string_type tmp = tmpdir(_T("cubeice"));
 				if (tmp.empty()) break;
-				
-				// プログレスバーの初期化
-				cubeice::dialog::progressbar progress;
-				progress.text(root);
 				
 				// *.tar 系の処理
 				if (this->is_tar(src)) src = this->decompress_tar(src, tmp, pass);
