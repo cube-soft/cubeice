@@ -213,6 +213,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\pathmatch.h"
+				>
+			</File>
+			<File
 				RelativePath=".\resource.h"
 				>
 			</File>
