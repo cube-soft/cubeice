@@ -120,6 +120,37 @@
 #define CUBEICE_REG_PREVARCHIVER        _T("PrevArchiver")
 
 namespace cubeice {
+
+	typedef std::map<std::basic_string<TCHAR>, std::pair<std::basic_string<TCHAR>, std::size_t> > ext_list;
+	
+	inline ext_list& extensions() {
+		static bool init = false;
+		static ext_list exts;
+		if (!init) {
+			exts[_T(".zip")] = std::make_pair(_T("cubeice_zip"), ZIP_FLAG);
+			exts[_T(".lzh")] = std::make_pair(_T("cubeice_lzh"), LZH_FLAG);
+			exts[_T(".rar")] = std::make_pair(_T("cubeice_rar"), RAR_FLAG);
+			exts[_T(".tar")] = std::make_pair(_T("cubeice_tar"), TAR_FLAG);
+			exts[_T(".gz")]  = std::make_pair(_T("cubeice_gz"),  GZ_FLAG);
+			exts[_T(".7z")]  = std::make_pair(_T("cubeice_7z"),  SEVENZIP_FLAG);
+			exts[_T(".arj")] = std::make_pair(_T("cubeice_arj"), ARJ_FLAG);
+			exts[_T(".bz2")] = std::make_pair(_T("cubeice_bz2"), BZ2_FLAG);
+			exts[_T(".cab")] = std::make_pair(_T("cubeice_cab"), CAB_FLAG);
+			exts[_T(".chm")] = std::make_pair(_T("cubeice_chm"), CHM_FLAG);
+			exts[_T(".cpio")]= std::make_pair(_T("cubeice_cpio"),CPIO_FLAG);
+			exts[_T(".deb")] = std::make_pair(_T("cubeice_deb"), DEB_FLAG);
+			exts[_T(".dmg")] = std::make_pair(_T("cubeice_dmg"), DMG_FLAG);
+			exts[_T(".iso")] = std::make_pair(_T("cubeice_iso"), ISO_FLAG);
+			exts[_T(".rpm")] = std::make_pair(_T("cubeice_rpm"), RPM_FLAG);
+			exts[_T(".tbz")] = std::make_pair(_T("cubeice_tbz"), TBZ_FLAG);
+			exts[_T(".tgz")] = std::make_pair(_T("cubeice_tgz"), TGZ_FLAG);
+			exts[_T(".wim")] = std::make_pair(_T("cubeice_wim"), WIM_FLAG);
+			exts[_T(".xar")] = std::make_pair(_T("cubeice_xar"), XAR_FLAG);
+			exts[_T(".xz")]  = std::make_pair( _T("cubeice_xz"),  XZ_FLAG);
+		}
+		return exts;
+	}
+
 	/* --------------------------------------------------------------------- */
 	/*
 	 *  archive_setting
@@ -185,26 +216,10 @@ namespace cubeice {
 			// (変更) Flagsはレジストリに置かない
 			// それぞれの拡張子のキーの既定値がcubeice_XXXになっているか見て判断
 			flags_ = 0;
-			if (this->is_associated(_T(".zip"), _T("cubeice_zip")))  flags_ |= ZIP_FLAG;
-			if (this->is_associated(_T(".lzh"), _T("cubeice_lzh")))  flags_ |= LZH_FLAG;
-			if (this->is_associated(_T(".rar"), _T("cubeice_rar")))  flags_ |= RAR_FLAG;
-			if (this->is_associated(_T(".tar"), _T("cubeice_tar")))  flags_ |= TAR_FLAG;
-			if (this->is_associated(_T(".gz"),  _T("cubeice_gz")))   flags_ |= GZ_FLAG;
-			if (this->is_associated(_T(".7z"),  _T("cubeice_7z")))   flags_ |= SEVENZIP_FLAG;
-			if (this->is_associated(_T(".arj"), _T("cubeice_arj")))  flags_ |= ARJ_FLAG;
-			if (this->is_associated(_T(".bz2"), _T("cubeice_bz2")))  flags_ |= BZ2_FLAG;
-			if (this->is_associated(_T(".cab"), _T("cubeice_cab")))  flags_ |= CAB_FLAG;
-			if (this->is_associated(_T(".chm"), _T("cubeice_chm")))  flags_ |= CHM_FLAG;
-			if (this->is_associated(_T(".cpio"),_T("cubeice_cpio"))) flags_ |= CPIO_FLAG;
-			if (this->is_associated(_T(".deb"), _T("cubeice_deb")))  flags_ |= DEB_FLAG;
-			if (this->is_associated(_T(".dmg"), _T("cubeice_dmg")))  flags_ |= DMG_FLAG;
-			if (this->is_associated(_T(".iso"), _T("cubeice_iso")))  flags_ |= ISO_FLAG;
-			if (this->is_associated(_T(".rpm"), _T("cubeice_rpm")))  flags_ |= RPM_FLAG;
-			if (this->is_associated(_T(".tbz"), _T("cubeice_tbz")))  flags_ |= TBZ_FLAG;
-			if (this->is_associated(_T(".tgz"), _T("cubeice_tgz")))  flags_ |= TGZ_FLAG;
-			if (this->is_associated(_T(".wim"), _T("cubeice_wim")))  flags_ |= WIM_FLAG;
-			if (this->is_associated(_T(".xar"), _T("cubeice_xar")))  flags_ |= XAR_FLAG;
-			if (this->is_associated(_T(".xz"),  _T("cubeice_xz")))   flags_ |= XZ_FLAG;
+			ext_list exts = extensions();
+			for (ext_list::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
+				if (this->is_associated(pos->first, pos->second.first)) flags_ |= pos->second.second;
+			}
 		}
 		
 		
@@ -436,27 +451,10 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void associate(size_type flags) {
-			this->associate(_T(".zip"), _T("cubeice_zip"), (flags & ZIP_FLAG) != 0);
-			this->associate(_T(".lzh"), _T("cubeice_lzh"), (flags & LZH_FLAG) != 0);
-			this->associate(_T(".rar"), _T("cubeice_rar"), (flags & RAR_FLAG) != 0);
-			this->associate(_T(".tar"), _T("cubeice_tar"), (flags & TAR_FLAG) != 0);
-			this->associate(_T(".gz"),  _T("cubeice_gz"),  (flags & GZ_FLAG) != 0);
-			this->associate(_T(".7z"),  _T("cubeice_7z"),  (flags & SEVENZIP_FLAG) != 0);
-			this->associate(_T(".arj"), _T("cubeice_arj"), (flags & ARJ_FLAG) != 0);
-			this->associate(_T(".bz2"), _T("cubeice_bz2"), (flags & BZ2_FLAG) != 0);
-			this->associate(_T(".cab"), _T("cubeice_cab"), (flags & CAB_FLAG) != 0);
-			this->associate(_T(".chm"), _T("cubeice_chm"), (flags & CHM_FLAG) != 0);
-			this->associate(_T(".cpio"),_T("cubeice_cpio"),(flags & CPIO_FLAG) != 0);
-			this->associate(_T(".deb"), _T("cubeice_deb"), (flags & DEB_FLAG) != 0);
-			this->associate(_T(".dmg"), _T("cubeice_dmg"), (flags & DMG_FLAG) != 0);
-			this->associate(_T(".iso"), _T("cubeice_iso"), (flags & ISO_FLAG) != 0);
-			this->associate(_T(".rpm"), _T("cubeice_rpm"), (flags & RPM_FLAG) != 0);
-			this->associate(_T(".tbz"), _T("cubeice_tbz"), (flags & TBZ_FLAG) != 0);
-			this->associate(_T(".tgz"), _T("cubeice_tgz"), (flags & TGZ_FLAG) != 0);
-			this->associate(_T(".wim"), _T("cubeice_wim"), (flags & WIM_FLAG) != 0);
-			this->associate(_T(".xar"), _T("cubeice_xar"), (flags & XAR_FLAG) != 0);
-			this->associate(_T(".xz"),  _T("cubeice_xz"),  (flags & XZ_FLAG) != 0);
-			
+			ext_list exts = extensions();
+			for (ext_list::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
+				this->associate(pos->first, pos->second.first, ((flags & pos->second.second) != 0));
+			}
 			SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
 		}
 		
@@ -501,7 +499,7 @@ namespace cubeice {
 							RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)buffer, strlen(buffer) + 1);
 						} else {
 							//OutputDebugString("start reg delete value");
-							RegDeleteValue(HKEY_CLASSES_ROOT, key.c_str());
+							RegDeleteKey(HKEY_CLASSES_ROOT, key.c_str());
 						}
 					}
 				}
