@@ -38,6 +38,7 @@
 #include <clx/timer.h>
 #include <babel/babel.h>
 #include "wpopen.h"
+#include "pathmatch.h"
 #include "user-setting.h"
 #include "dialog.h"
 
@@ -595,19 +596,11 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		/*
-		 *  is_filter
-		 *
-		 *  ディレクトリ単位で区切り，それぞれに対してフィルタリング文字列
-		 *  に該当するかどうかをチェックする．
-		 *  TODO: ワイルドカードへの対応を考える．
-		 */
+		//  is_filter
 		/* ----------------------------------------------------------------- */
 		bool is_filter(const string_type& src, const std::set<string_type>& filters) {
-			std::vector<string_type> v;
-			clx::split_if(src, v, clx::is_any_of(_T("\\")));
-			for (std::vector<string_type>::const_iterator pos = v.begin(); pos != v.end(); ++pos) {
-				if (filters.find(*pos) != filters.end()) return true;
+			for (std::set<string_type>::const_iterator pos = filters.begin(); pos != filters.end(); ++pos) {
+				if (cubeice::pathmatch(src, *pos)) return true;
 			}
 			return false;
 		}
