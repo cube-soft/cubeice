@@ -117,7 +117,7 @@
 #define CUBEICE_REG_FILTER              _T("Filter")
 #define CUBEICE_REG_INSTALL             _T("InstallDirectory")
 #define CUBEICE_REG_VERSION             _T("Version")
-#define CUBEICE_REG_PREVARCHIVER        _T("PrevArchvier")
+#define CUBEICE_REG_PREVARCHIVER        _T("PrevArchiver")
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */
@@ -426,6 +426,9 @@ namespace cubeice {
 		 *
 		 *  flag が true の場合はレジストリに追加，false の場合で該当の
 		 *  キーが存在する場合はそのキーを削除する．
+		 *  // 変更 (2010/12/29)
+		 *  flag が true の場合、レジストリにもvalue以外のキーが設定されていた場合、そのキーをPREV_ARCHIVERに保存
+		 *  flag が false の場合、レジストリのCUBEICE_REG_PREVARCHIVERがあれば、その値を取得し、既定のキーとする
 		 */
 		/* ----------------------------------------------------------------- */
 		void associate(const string_type& key, const string_type& value, bool flag) {
@@ -433,7 +436,16 @@ namespace cubeice {
 			if (flag) {
 				DWORD disposition = 0;
 				LONG status = RegCreateKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
-				if (!status) RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)value.c_str(), value.size() + 1);
+				if (!status) { 
+					char_type buffer[32] = {};
+					DWORD type = 0;
+					DWORD size = sizeof(buffer);
+					if (RegQueryValueEx(subkey, _T(""), NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS && string_type(buffer) != value) {
+						// 現在のキーをCUBEICE_REG_PREVARCHIVERに保存
+						RegSetValueEx(subkey, CUBEICE_REG_PREVARCHIVER, 0, REG_SZ, (CONST BYTE*)buffer, strlen(buffer) + 1);
+					}
+					RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)value.c_str(), value.size() + 1);
+				}
 			}
 			else {
 				LONG status = RegOpenKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, KEY_ALL_ACCESS, &subkey);
@@ -442,7 +454,15 @@ namespace cubeice {
 					DWORD type = 0;
 					DWORD size = sizeof(buffer);
 					if (RegQueryValueEx(subkey, _T(""), NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS && string_type(buffer) == value) {
-						RegDeleteKey(HKEY_CLASSES_ROOT, key.c_str());
+						char_type buffer[32] = {}; // bufferを再利用するとうまくいかなかったので、新たに作成
+						DWORD type = 0;
+						DWORD size = sizeof(buffer);
+						if (RegQueryValueEx(subkey, CUBEICE_REG_PREVARCHIVER, NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS) {
+							RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)buffer, strlen(buffer) + 1);
+						} else {
+							//OutputDebugString("start reg delete value");
+							RegDeleteValue(HKEY_CLASSES_ROOT, key.c_str());
+						}
 					}
 				}
 			}
