@@ -116,7 +116,6 @@ namespace cubeice {
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
 			
 			// メイン処理
-			int interval = 1;
 			int status = 0;
 			string_type line;
 			while ((status = proc.gets(line)) >= 0) {
@@ -128,12 +127,10 @@ namespace cubeice {
 				
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
-					Sleep(interval);
-					if (interval < 100) interval *= 2;
+					Sleep(10);
 					continue;
 				}
 				assert(status == 1);
-				interval = 1;
 				
 				string_type::size_type pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
@@ -223,7 +220,6 @@ namespace cubeice {
 				if (!proc.open(cmdline.c_str(), _T("r"))) return;
 				
 				// メイン処理
-				int interval = 1;
 				int status = 0;
 				int to_all = 0; // 全ての項目に適用する処理
 				string_type line;
@@ -236,12 +232,10 @@ namespace cubeice {
 					
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
-						Sleep(interval);
-						if (interval < 100) interval *= 2;
+						Sleep(10);
 						continue;
 					}
 					assert(status == 1);
-					interval = 1;
 					
 					string_type::size_type pos = line.find(keyword);
 					if (pos == string_type::npos || line.size() <= keyword.size()) continue;
