@@ -472,6 +472,7 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void associate(const string_type& key, const string_type& value, bool flag) {
+#if !defined(_UNICODE) && !defined(UNICODE)
 			HKEY subkey;
 			if (flag) {
 				DWORD disposition = 0;
@@ -481,8 +482,7 @@ namespace cubeice {
 					DWORD type = 0;
 					DWORD size = sizeof(buffer);
 					if (RegQueryValueEx(subkey, _T(""), NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS && string_type(buffer) != value) {
-						// åªç›ÇÃÉLÅ[ÇCUBEICE_REG_PREVARCHIVERÇ…ï€ë∂
-						RegSetValueEx(subkey, CUBEICE_REG_PREVARCHIVER, 0, REG_SZ, (CONST BYTE*)buffer, strlen(buffer) + 1);
+						RegSetValueEx(subkey, CUBEICE_REG_PREVARCHIVER, 0, REG_SZ, (CONST BYTE*)buffer, _tcslen(buffer) + 1);
 					}
 					RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)value.c_str(), value.size() + 1);
 				}
@@ -504,6 +504,7 @@ namespace cubeice {
 					}
 				}
 			}
+#endif
 		}
 		
 #if !defined(_UNICODE) && !defined(UNICODE)
