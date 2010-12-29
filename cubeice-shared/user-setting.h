@@ -121,12 +121,12 @@
 
 namespace cubeice {
 
-	typedef std::map<std::basic_string<TCHAR>, std::pair<std::basic_string<TCHAR>, std::size_t> > ext_list;
+	typedef std::map<std::basic_string<TCHAR>, std::pair<std::basic_string<TCHAR>, std::size_t> > ext_map;
 	
-	inline ext_list& extensions() {
-		static bool init = false;
-		static ext_list exts;
-		if (!init) {
+	inline ext_map& extensions() {
+		static bool initialized = false;
+		static ext_map exts;
+		if (!initialized) {
 			exts[_T(".zip")] = std::make_pair(_T("cubeice_zip"), ZIP_FLAG);
 			exts[_T(".lzh")] = std::make_pair(_T("cubeice_lzh"), LZH_FLAG);
 			exts[_T(".rar")] = std::make_pair(_T("cubeice_rar"), RAR_FLAG);
@@ -147,6 +147,7 @@ namespace cubeice {
 			exts[_T(".wim")] = std::make_pair(_T("cubeice_wim"), WIM_FLAG);
 			exts[_T(".xar")] = std::make_pair(_T("cubeice_xar"), XAR_FLAG);
 			exts[_T(".xz")]  = std::make_pair( _T("cubeice_xz"),  XZ_FLAG);
+			initialized = true;
 		}
 		return exts;
 	}
@@ -172,6 +173,9 @@ namespace cubeice {
 			this->load();
 		}
 		
+		/* ----------------------------------------------------------------- */
+		//  is_associated
+		/* ----------------------------------------------------------------- */
 		bool is_associated(const string_type& key, const string_type& value) {
 			HKEY subkey;
 			DWORD disposition = 0;
@@ -197,9 +201,6 @@ namespace cubeice {
 				DWORD dwType;
 				DWORD dwSize;
 				
-				//dwSize = sizeof(flags_);
-				//RegQueryValueEx(hkResult, CUBEICE_REG_FLAGS, NULL, &dwType, (LPBYTE)&flags_, &dwSize);
-				
 				dwSize = sizeof(details_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_DETAILS, NULL, &dwType, (LPBYTE)&details_, &dwSize);
 
@@ -213,11 +214,10 @@ namespace cubeice {
 				}
 			}
 
-			// (変更) Flagsはレジストリに置かない
-			// それぞれの拡張子のキーの既定値がcubeice_XXXになっているか見て判断
+			// Flagsはレジストリに置かず，それぞれの拡張子のキーの既定値が cubeice_XXX かどうかで判断
 			flags_ = 0;
-			ext_list exts = extensions();
-			for (ext_list::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
+			const ext_map& exts = extensions();
+			for (ext_map::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
 				if (this->is_associated(pos->first, pos->second.first)) flags_ |= pos->second.second;
 			}
 		}
@@ -338,7 +338,6 @@ namespace cubeice {
 				dwSize = sizeof(sc_flags_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_SHORTCUT, NULL, &dwType, (LPBYTE)&sc_flags_, &dwSize);
 				
-				// フィルタリング文字列の読み込み．型は REG_MULTI_SZ
 				// 変数側の型は std::set<std::string>
 				char_type buffer[64 * 1024] = {};
 				dwSize = sizeof(buffer);
@@ -451,8 +450,8 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void associate(size_type flags) {
-			ext_list exts = extensions();
-			for (ext_list::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
+			const ext_map& exts = extensions();
+			for (ext_map::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
 				this->associate(pos->first, pos->second.first, ((flags & pos->second.second) != 0));
 			}
 			SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
@@ -464,9 +463,12 @@ namespace cubeice {
 		 *
 		 *  flag が true の場合はレジストリに追加，false の場合で該当の
 		 *  キーが存在する場合はそのキーを削除する．
-		 *  // 変更 (2010/12/29)
-		 *  flag が true の場合、レジストリにもvalue以外のキーが設定されていた場合、そのキーをPREV_ARCHIVERに保存
-		 *  flag が false の場合、レジストリのCUBEICE_REG_PREVARCHIVERがあれば、その値を取得し、既定のキーとする
+		 *
+		 *  2010/12/29 変更:
+		 *   - flag が true の場合、レジストリにも value 以外のキーが設定
+		 *     されていた場合、そのキーを PREV_ARCHIVER に保存
+		 *   - flag が false の場合、レジストリの CUBEICE_REG_PREVARCHIVER
+		 *     があれば、その値を取得し、既定のキーとする
 		 */
 		/* ----------------------------------------------------------------- */
 		void associate(const string_type& key, const string_type& value, bool flag) {
@@ -492,15 +494,13 @@ namespace cubeice {
 					DWORD type = 0;
 					DWORD size = sizeof(buffer);
 					if (RegQueryValueEx(subkey, _T(""), NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS && string_type(buffer) == value) {
-						char_type buffer[32] = {}; // bufferを再利用するとうまくいかなかったので、新たに作成
-						DWORD type = 0;
-						DWORD size = sizeof(buffer);
-						if (RegQueryValueEx(subkey, CUBEICE_REG_PREVARCHIVER, NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS) {
-							RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)buffer, strlen(buffer) + 1);
-						} else {
-							//OutputDebugString("start reg delete value");
-							RegDeleteKey(HKEY_CLASSES_ROOT, key.c_str());
+						char_type prev[32] = {}; // bufferを再利用するとうまくいかなかったので、新たに作成
+						type = 0;
+						size = sizeof(prev);
+						if (RegQueryValueEx(subkey, CUBEICE_REG_PREVARCHIVER, NULL, &type, (LPBYTE)prev, &size) == ERROR_SUCCESS) {
+							RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)prev, strlen(prev) + 1);
 						}
+						else RegDeleteKey(HKEY_CLASSES_ROOT, key.c_str());
 					}
 				}
 			}
