@@ -35,7 +35,9 @@
 #include <clx/hexdump.h>
 #include <clx/strip.h>
 #include <clx/split.h>
+#include <clx/replace.h>
 #include <clx/timer.h>
+#include <clx/unzip.h>
 #include <babel/babel.h>
 #include "wpopen.h"
 #include "pathmatch.h"
@@ -234,6 +236,8 @@ namespace cubeice {
 				int to_all = 0; // 「全てはい」or「全ていいえ」
 				string_type line;
 				clx::timer watch;
+				clx::unzip uz(src, cubeice::password());
+				clx::unzip::iterator uzpos = uz.begin();
 				while ((status = proc.gets(line)) >= 0) {
 					progress.refresh();
 					if (progress.is_cancel()) {
@@ -273,7 +277,12 @@ namespace cubeice {
 					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
 						message += _T("Filtering: ");
 					}
-					else this->move(tmp + _T('\\') + filename, root + _T('\\') + filename);
+					else {
+						string_type encoded = babel::utf8_to_sjis(uzpos->path());
+						//this->move(tmp + _T('\\') + filename, root + _T('\\') + filename);
+						this->move(tmp + _T('\\') + filename, root + _T('\\') + encoded);
+					}
+					++uzpos;
 					
 					// TODO: ここの root + _T('\\') + filename の方の filename を文字コード変換する．
 					message += filename;
