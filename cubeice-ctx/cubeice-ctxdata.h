@@ -35,8 +35,8 @@ const WORD		ICON_NOT_USED = -1;
 
 const SUB_MENU_ITEM		SubMenuCompress[] = {
 	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "zip" ),					NULL,				MAKE_AWSTRING( "zipà≥èk" ),				TEXT( "/c:zip" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "zip(pass)" ),			NULL,				MAKE_AWSTRING( "zipà≥èk(ÉpÉX)" ),		TEXT( "/c:zip /p" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "7-zip" ),				NULL,				MAKE_AWSTRING( "7-zipà≥èk" ),			TEXT( "/c:7z" ) },
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "zip (ÉpÉXÉèÅ[Éhït)" ),	NULL,				MAKE_AWSTRING( "zipà≥èk(ÉpÉX)" ),		TEXT( "/c:zip /p" ) },
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "7z" ),					NULL,				MAKE_AWSTRING( "7-zipà≥èk" ),			TEXT( "/c:7z" ) },
 	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "bzip2" ),				NULL,				MAKE_AWSTRING( "bzip2à≥èk" ),			TEXT( "/c:bzip2" ) },
 	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "gzip" ),				NULL,				MAKE_AWSTRING( "gzipà≥èk" ),			TEXT( "/c:gzip" ) },
 //	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "é©å»âìÄå`éÆ" ),		TEXT( "/c:exe" ) },
