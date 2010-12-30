@@ -73,9 +73,10 @@ namespace cubeice {
 			// オプションを読み飛ばす．
 			if (first->compare(0, 3, _T("/c:")) != 0) return;
 			string_type filetype(first->substr(3));
-			for (;first != last && first->at(0) == _T('/'); ++first) {
+			for (; first != last && first->at(0) == _T('/'); ++first) {
 				if (first->compare(0, 2, _T("/p")) == 0) pass = true;
 			}
+			if (first == last) return;
 			
 			// 保存先パスの決定
 			string_type dest = this->compress_path(setting_.compression(), *first, filetype);
@@ -188,9 +189,15 @@ namespace cubeice {
 			
 			// オプションを読み飛ばす．
 			while (first != last && first->at(0) == _T('/')) ++first;
+			if (first == last) return;
 			
 			for (; first != last; ++first) {
 				string_type src = *first;
+				if (!this->is_decompressable(src)) {
+					string_type message = src + _T(" は未対応のファイル形式のため解凍できません。");
+					MessageBox(NULL, message.c_str(), _T("CubeICE 解凍エラー"), MB_OK | MB_ICONERROR);
+					return;
+				}
 				
 				// 保存先パスの取得
 				string_type root = this->decompress_path(setting_.decompression(), src, force);
@@ -794,6 +801,43 @@ namespace cubeice {
 			// not fouond
 			p->Release();
 			return false;
+		}
+
+		/* ----------------------------------------------------------------- */
+		//  is_decompressable
+		/* ----------------------------------------------------------------- */
+		bool is_decompressable(const string_type& path) {
+			static bool init_ = false;
+			static std::set<string_type> lists_;
+			
+			if (!init_) {
+				lists_.insert(_T(".zip"));
+				lists_.insert(_T(".lzh"));
+				lists_.insert(_T(".rar"));
+				lists_.insert(_T(".tar"));
+				lists_.insert(_T(".gz"));
+				lists_.insert(_T(".7z"));
+				lists_.insert(_T(".arj"));
+				lists_.insert(_T(".bz2"));
+				lists_.insert(_T(".cab"));
+				lists_.insert(_T(".chm"));
+				lists_.insert(_T(".cpio"));
+				lists_.insert(_T(".deb"));
+				lists_.insert(_T(".dmg"));
+				lists_.insert(_T(".iso"));
+				lists_.insert(_T(".rpm"));
+				lists_.insert(_T(".tbz"));
+				lists_.insert(_T(".tgz"));
+				lists_.insert(_T(".wim"));
+				lists_.insert(_T(".xar"));
+				lists_.insert(_T(".xz"));
+				
+				init_ = true;
+			}
+			
+			string_type::size_type pos = path.find_last_of(_T('.'));
+			if (pos == string_type::npos || lists_.find(path.substr(pos)) == lists_.end()) return false;
+			return true;
 		}
 	};
 }
