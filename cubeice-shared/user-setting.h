@@ -35,6 +35,8 @@
 #ifndef CUBEICE_USER_SETTING_H
 #define CUBEICE_USER_SETTING_H
 
+#define CLX_USE_WCHAR
+
 #include <tchar.h>
 #include <cstdlib>
 #include <set>
@@ -334,7 +336,6 @@ namespace cubeice {
 				dwSize = sizeof(ctx_flags_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
 				
-#if !defined(_UNICODE) && !defined(UNICODE)
 				dwSize = sizeof(sc_flags_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_SHORTCUT, NULL, &dwType, (LPBYTE)&sc_flags_, &dwSize);
 				
@@ -342,12 +343,10 @@ namespace cubeice {
 				char_type buffer[64 * 1024] = {};
 				dwSize = sizeof(buffer);
 				if (RegQueryValueEx(hkResult, CUBEICE_REG_FILTER, NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) {
-					string_type encoded(buffer);
-					string_type s = clx::base64::decode(encoded);
+					string_type s(buffer);
 					filters_.clear();
-					clx::split_if(s, filters_, clx::is_any_of(_T("\r\n")));
+					clx::split_if(s, filters_, clx::is_any_of(_T("<>")));
 				}
-#endif
 			}
 		}
 		
@@ -364,25 +363,22 @@ namespace cubeice {
 			if (!lResult) {
 				RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&ctx_flags_, sizeof(ctx_flags_));
 				
-#if !defined(_UNICODE) && !defined(UNICODE)
 				// ショートカットの処理．
 				RegSetValueEx(hkResult, CUBEICE_REG_SHORTCUT, 0, REG_DWORD, (CONST BYTE*)&sc_flags_, sizeof(sc_flags_));
 				char buffer[2048] ={};
 				GetModuleFileNameA(GetModuleHandle(NULL), buffer, 2048);
 				std::basic_string<char> tmp = buffer;
 				std::basic_string<char> current = tmp.substr(0, tmp.find_last_of('\\'));
-				if ((sc_flags_ & COMPRESS_FLAG)) this->create_shortcut(current + "\\cubeice.exe", "/c:zip", "CubeICE 圧縮.lnk", 1);
-				else this->remove_shortcut("CubeICE 圧縮.lnk");
+				if ((sc_flags_ & COMPRESS_FLAG)) this->create_shortcut(current + "\\cubeice.exe", "/c:zip", "CubeICE Zip圧縮.lnk", 1);
+				else this->remove_shortcut("CubeICE Zip圧縮.lnk");
 				if ((sc_flags_ & DECOMPRESS_FLAG)) this->create_shortcut(current + "\\cubeice.exe", "/x", "CubeICE 解凍.lnk", 2);
 				else this->remove_shortcut("CubeICE 解凍.lnk");
 				if ((sc_flags_ & SETTING_FLAG)) this->create_shortcut(current + "\\cubeice-setting.exe", "", "CubeICE 設定.lnk", 0);
 				else this->remove_shortcut("CubeICE 設定.lnk");
 				
 				string_type dest;
-				clx::join(filters_, dest, _T("\n"));
-				string_type encoded = clx::base64::encode(dest);
-				RegSetValueEx(hkResult, CUBEICE_REG_FILTER, 0, REG_SZ, (CONST BYTE*)encoded.c_str(), encoded.length() + 1);
-#endif
+				clx::join(filters_, dest, _T("<>"));
+				RegSetValueEx(hkResult, CUBEICE_REG_FILTER, 0, REG_SZ, (CONST BYTE*)dest.c_str(), dest.length() + 1);
 			}
 			this->associate(decomp_.flags());
 		}
@@ -472,7 +468,6 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void associate(const string_type& key, const string_type& value, bool flag) {
-#if !defined(_UNICODE) && !defined(UNICODE)
 			HKEY subkey;
 			if (flag) {
 				DWORD disposition = 0;
@@ -494,20 +489,18 @@ namespace cubeice {
 					DWORD type = 0;
 					DWORD size = sizeof(buffer);
 					if (RegQueryValueEx(subkey, _T(""), NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS && string_type(buffer) == value) {
-						char_type prev[32] = {}; // bufferを再利用するとうまくいかなかったので、新たに作成
+						char_type prev[32] = {};
 						type = 0;
 						size = sizeof(prev);
 						if (RegQueryValueEx(subkey, CUBEICE_REG_PREVARCHIVER, NULL, &type, (LPBYTE)prev, &size) == ERROR_SUCCESS) {
-							RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)prev, strlen(prev) + 1);
+							RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)prev, _tcslen(prev) + 1);
 						}
 						else RegDeleteKey(HKEY_CLASSES_ROOT, key.c_str());
 					}
 				}
 			}
-#endif
 		}
 		
-#if !defined(_UNICODE) && !defined(UNICODE)
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  create_shortcut
@@ -517,6 +510,7 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void create_shortcut(const std::basic_string<char>& path, const std::basic_string<char>& args, const std::basic_string<char>& link, int icon) {
+#if !defined(_UNICODE) && !defined(UNICODE)
 			HRESULT hres = CoInitialize(NULL);
 			if (FAILED(hres)) return;
 			
@@ -562,6 +556,7 @@ cleanup:
 			if (pPf) pPf->Release();
 			if (psl) psl->Release();
 			CoUninitialize();
+#endif
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -572,6 +567,7 @@ cleanup:
 		 */
 		/* ----------------------------------------------------------------- */
 		void remove_shortcut(const std::basic_string<char>& link) {
+#if !defined(_UNICODE) && !defined(UNICODE)
 			LPITEMIDLIST pidl;
 			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl);
 			
@@ -581,8 +577,8 @@ cleanup:
 			lstrcat(buf, link.c_str());
 			
 			DeleteFile(buf);
-		}
 #endif
+		}
 	};
 }
 
