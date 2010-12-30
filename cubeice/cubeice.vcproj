@@ -115,7 +115,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
-				AdditionalIncludeDirectories="C:\bin\GnuWin32\include;&quot;..\cubeice-shared\&quot;"
+				AdditionalIncludeDirectories="&quot;..\cubeice-shared\&quot;"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_SCL_SECURE_NO_WARNINGS"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
@@ -134,7 +134,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib shlwapi.lib zlib.lib"
+				AdditionalDependencies="comctl32.lib shlwapi.lib"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
 				SubSystem="2"
@@ -174,10 +174,6 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath="..\cubeice-shared\babel\babel.cpp"
-				>
-			</File>
 			<File
 				RelativePath=".\cubeice.cpp"
 				>

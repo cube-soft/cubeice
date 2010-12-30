@@ -37,8 +37,6 @@
 #include <clx/split.h>
 #include <clx/replace.h>
 #include <clx/timer.h>
-#include <clx/unzip.h>
-#include <babel/babel.h>
 #include "wpopen.h"
 #include "pathmatch.h"
 #include "user-setting.h"
@@ -183,7 +181,6 @@ namespace cubeice {
 		template <class InputIterator>
 		void decompress(InputIterator first, InputIterator last) {
 			static const string_type keyword = _T("Extracting");
-			babel::init_babel();
 			
 			// レジストリの設定を無視するコマンドかどうか．
 			string_type force;
@@ -236,8 +233,6 @@ namespace cubeice {
 				int to_all = 0; // 「全てはい」or「全ていいえ」
 				string_type line;
 				clx::timer watch;
-				clx::unzip uz(src, cubeice::password());
-				clx::unzip::iterator uzpos = uz.begin();
 				while ((status = proc.gets(line)) >= 0) {
 					progress.refresh();
 					if (progress.is_cancel()) {
@@ -277,14 +272,7 @@ namespace cubeice {
 					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
 						message += _T("Filtering: ");
 					}
-					else {
-						string_type encoded = babel::utf8_to_sjis(uzpos->path());
-						//this->move(tmp + _T('\\') + filename, root + _T('\\') + filename);
-						this->move(tmp + _T('\\') + filename, root + _T('\\') + encoded);
-					}
-					++uzpos;
-					
-					// TODO: ここの root + _T('\\') + filename の方の filename を文字コード変換する．
+					else this->move(tmp + _T('\\') + filename, root + _T('\\') + filename);
 					message += filename;
 					progress.text(message);
 				}
@@ -295,6 +283,8 @@ namespace cubeice {
 						ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
 					}
 				}
+				
+				if (!this->remove(tmp.c_str())) MessageBox(NULL, "failed to delete temp.", "info", MB_OK);
 			}
 		}
 		
@@ -615,6 +605,54 @@ namespace cubeice {
 			}
 		}
 		
+		/* ----------------------------------------------------------------- */
+		//  remove
+		/* ----------------------------------------------------------------- */
+		bool remove(LPCTSTR lpPathName, bool bReadOnly = TRUE) {
+			if (lpPathName == NULL) return false;
+			
+			TCHAR szPathName[_MAX_PATH] = {};
+			_tcscpy(szPathName, lpPathName);
+			_tcscat(szPathName, _T("\\*.*"));
+			
+			WIN32_FIND_DATA wfd;
+			HANDLE handle = FindFirstFile(szPathName, &wfd);
+			if(handle == INVALID_HANDLE_VALUE) return false;
+			
+			do {
+				if (_tcscmp(wfd.cFileName, _T(".")) != 0 && _tcscmp(wfd.cFileName, _T("..")) != 0) {
+					TCHAR szFileName[_MAX_PATH] = {};
+					_tcscpy(szFileName, lpPathName);
+					_tcscat(szFileName, _T("\\") );
+					_tcscat(szFileName, wfd.cFileName);
+					if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+						this->remove(szFileName, bReadOnly);
+					}
+					else {
+						if (bReadOnly == TRUE) {
+							DWORD dwFileAttributes;
+							dwFileAttributes = GetFileAttributes(szFileName);
+							dwFileAttributes &= ~FILE_ATTRIBUTE_READONLY;
+							SetFileAttributes(szFileName, dwFileAttributes);
+						}
+						
+						DeleteFile(szFileName);
+					}
+				}
+			} while (FindNextFile(handle, &wfd));
+			FindClose(handle);
+			
+			if (bReadOnly == TRUE) {
+				DWORD dwFileAttributes;
+				dwFileAttributes = GetFileAttributes(lpPathName);
+				dwFileAttributes &= ~FILE_ATTRIBUTE_READONLY;
+				SetFileAttributes(lpPathName, dwFileAttributes);
+			}
+			BOOL bResult = RemoveDirectory(lpPathName);
+
+			return (bResult == TRUE);
+		}
+
 		/* ----------------------------------------------------------------- */
 		//  is_filter
 		/* ----------------------------------------------------------------- */
