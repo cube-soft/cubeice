@@ -242,8 +242,9 @@ namespace cubeice {
 				::SetWindowLongPtr(handle, GWL_STYLE, style);
 				
 				if (enable) SendMessage(handle, PBM_SETMARQUEE, (WPARAM)TRUE, (LPARAM)speed);
+				else SendMessage(handle, PBM_SETMARQUEE, (WPARAM)FALSE, (LPARAM)0);
 			}
-
+			
 			/* ------------------------------------------------------------- */
 			//  refresh
 			/* ------------------------------------------------------------- */
@@ -312,7 +313,6 @@ namespace cubeice {
 					HWND handle = GetDlgItem(hWnd, IDC_PROGRESS);
 					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(0, 10000));
 					SendMessage(handle, PBM_SETSTEP, 1, 0);
-					
 					return TRUE;
 				}
 				case WM_COMMAND:
