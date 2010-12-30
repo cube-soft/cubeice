@@ -211,8 +211,21 @@ end;
 
 
 // ------------------------------------------------------------------------- //
-//
+//  helper procedures for unintalling
 // ------------------------------------------------------------------------- //
+procedure getbackPrevValue(extension, srcKey, archivedKey: string);
+var
+  prevValue: string;
+begin
+  if RegValueExists(HKCR, extension, archivedKey) then begin
+    if (RegQueryStringValue(HKCR, extension, archivedKey, prevValue)) then begin
+      RegWriteStringValue(HKCR, extension, srcKey, prevValue);
+      RegDeleteValue(HKCR, extension ,archivedKey);
+    end;
+  end else begin
+     RegDeleteValue(HKCR, extension, srcKey);
+  end;
+end;
 
 // ------------------------------------------------------------------------- //
 //  CurUninstallStepChanged
@@ -224,7 +237,26 @@ begin
 		DeleteFile(ExpandConstant('{userdesktop}')+'\CubeICE âìÄ.lnk');
 		DeleteFile(ExpandConstant('{userdesktop}')+'\CubeICE ê›íË.lnk');
 		
-		
+		getbackPrevValue('.zip', '', PREV_ARCHIVER);
+    getbackPrevValue('.lzh', '', PREV_ARCHIVER);
+    getbackPrevValue('.rar', '', PREV_ARCHIVER);
+    getbackPrevValue('.tar', '', PREV_ARCHIVER);
+    getbackPrevValue('.gz', '', PREV_ARCHIVER);
+    getbackPrevValue('.7z', '', PREV_ARCHIVER);
+    getbackPrevValue('.arj', '', PREV_ARCHIVER);
+    getbackPrevValue('.bz2', '', PREV_ARCHIVER);
+    getbackPrevValue('.cab', '', PREV_ARCHIVER);
+    getbackPrevValue('.chm', '', PREV_ARCHIVER);
+    getbackPrevValue('.cpio', '', PREV_ARCHIVER);
+    getbackPrevValue('.deb', '', PREV_ARCHIVER);
+    getbackPrevValue('.dmg', '', PREV_ARCHIVER);
+    getbackPrevValue('.iso', '', PREV_ARCHIVER);
+    getbackPrevValue('.rpm', '', PREV_ARCHIVER);
+    getbackPrevValue('.tbz', '', PREV_ARCHIVER);
+    getbackPrevValue('.tgz', '', PREV_ARCHIVER);
+    getbackPrevValue('.wim', '', PREV_ARCHIVER);
+    getbackPrevValue('.xar', '', PREV_ARCHIVER);
+    getbackPrevValue('.xz', '', PREV_ARCHIVER);
 		SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
 	end;
 end;
