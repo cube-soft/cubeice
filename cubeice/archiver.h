@@ -438,7 +438,7 @@ namespace cubeice {
 		size_type decompress_size(const string_type& path, double timeout) {
 			string_type cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" l ");
-			cmdline += path;
+			cmdline += _T("\"") + path + _T("\"");
 			
 			clx::timer t;
 			cube::popen proc;
