@@ -596,13 +596,21 @@ namespace cubeice {
 		 *  代わりに同名のディレクトリを移動先に作成する．
 		 */
 		/* ----------------------------------------------------------------- */
-		void move(const string_type& src, const string_type& dest) {
-			if (PathIsDirectory(src.c_str())) CreateDirectory(dest.c_str(), NULL);
+		bool move(const string_type& src, const string_type& dest) {
+			BOOL status = FALSE;
+			
+			if (PathIsDirectory(src.c_str())) status = CreateDirectory(dest.c_str(), NULL);
 			else {
 				string_type branch(dest.substr(0, dest.find_last_of(_T('\\'))));
 				if (!PathFileExists(branch.c_str())) CreateDirectory(branch.c_str(), NULL);
-				MoveFile(src.c_str(), dest.c_str());
+				else if (!PathIsDirectory(branch.c_str())) {
+					DeleteFile(branch.c_str());
+					CreateDirectory(branch.c_str(), NULL);
+				}
+				status = MoveFile(src.c_str(), dest.c_str());
 			}
+			
+			return status == TRUE;
 		}
 		
 		/* ----------------------------------------------------------------- */
