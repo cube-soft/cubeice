@@ -176,7 +176,9 @@ procedure SHChangeNotify(wEventId, uFlags, dwItem1, dwItem2: Integer);
 	external 'SHChangeNotify@shell32.dll stdcall';
 
 
-
+// -------------------------------------------------------------------------- //
+// helper procedures for writing registory when installing
+// -------------------------------------------------------------------------- //
 procedure savePrevRegValue(extension, srcKey, destKey, filterValue: string);
 var
   prevValue:string;
@@ -201,10 +203,16 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
 	if CurStep = ssDone then begin
 	  saveAndWriteValue('.zip', '', PREV_ARCHIVER, 'cubeice_zip');
-	
+	  saveAndWriteValue('.7z', '', PREV_ARCHIVER, 'cubeice_7z');
+	  saveAndWriteValue('.lzh', '', PREV_ARCHIVER, 'cubeice_lzh');
 		SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
 	end;
 end;
+
+
+// ------------------------------------------------------------------------- //
+//
+// ------------------------------------------------------------------------- //
 
 // ------------------------------------------------------------------------- //
 //  CurUninstallStepChanged
@@ -215,6 +223,8 @@ begin
 		DeleteFile(ExpandConstant('{userdesktop}')+'\CubeICE à≥èk.lnk');
 		DeleteFile(ExpandConstant('{userdesktop}')+'\CubeICE âìÄ.lnk');
 		DeleteFile(ExpandConstant('{userdesktop}')+'\CubeICE ê›íË.lnk');
+		
+		
 		SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
 	end;
 end;
