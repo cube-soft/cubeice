@@ -82,7 +82,7 @@ namespace cubeice {
 			//  constructor
 			/* ------------------------------------------------------------- */
 			progressbar() :
-				handle_(NULL), pos_(0.0), min_(0), max_(1000), cancel_(false) {
+				handle_(NULL), pos_(0.0), min_(0), max_(10000), cancel_(false) {
 				this->initialize();
 			}
 
@@ -237,12 +237,11 @@ namespace cubeice {
 				HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
 				
 				LONG_PTR style = ::GetWindowLongPtr(handle, GWL_STYLE);
-				if (enable) style |= PBM_SETMARQUEE;
-				else style &= ~PBM_SETMARQUEE;
-				::SetWindowLongPtr(handle, GWL_STYLE, style | PBS_MARQUEE);
+				if (enable) style |= PBS_MARQUEE;
+				else style &= ~PBS_MARQUEE;
+				::SetWindowLongPtr(handle, GWL_STYLE, style);
 				
-				BOOL wp = enable ? TRUE : FALSE;
-				SendMessage(handle, PBM_SETMARQUEE, (WPARAM)wp, (LPARAM)speed);
+				if (enable) SendMessage(handle, PBM_SETMARQUEE, (WPARAM)TRUE, (LPARAM)speed);
 			}
 
 			/* ------------------------------------------------------------- */
@@ -311,7 +310,7 @@ namespace cubeice {
 					
 					// プログレスバーの min, max, step の初期値を登録
 					HWND handle = GetDlgItem(hWnd, IDC_PROGRESS);
-					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(0, 1000));
+					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(0, 10000));
 					SendMessage(handle, PBM_SETSTEP, 1, 0);
 					
 					return TRUE;
