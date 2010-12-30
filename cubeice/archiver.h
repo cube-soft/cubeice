@@ -78,6 +78,7 @@ namespace cubeice {
 			}
 			
 			cubeice::dialog::progressbar progress;
+			progress.marquee(true);
 			
 			// 保存先パスの決定
 			string_type dest = this->compress_path(setting_.compression(), *first, filetype);
@@ -102,6 +103,7 @@ namespace cubeice {
 			char msgbuf[32] = {};
 			double step = (n > 0) ? (progress.maximum() - progress.minimum()) / static_cast<double>(n) : 0.0;
 			if (n == 0) progress.marquee(true);
+			else progress.marquee(false);
 			
 			// コマンドラインの作成
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
@@ -118,6 +120,7 @@ namespace cubeice {
 			// メイン処理
 			int status = 0;
 			string_type line;
+			clx::timer watch;
 			while ((status = proc.gets(line)) >= 0) {
 				progress.refresh();
 				if (progress.is_cancel()) {
@@ -127,10 +130,16 @@ namespace cubeice {
 				
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
-					Sleep(10);
+					Sleep(100);
 					continue;
 				}
 				assert(status == 1);
+				
+				if (n > 0) {
+					double interval = watch.total_elapsed() * 1000.0;
+					if (progress.position() > interval) Sleep(static_cast<DWORD>(std::min(progress.position() - interval, 10.0)));
+					progress += step;
+				}
 				
 				string_type::size_type pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
@@ -138,11 +147,10 @@ namespace cubeice {
 				string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
 				string_type message = dest + _T("\n") + filename;
 				progress.text(message);
-				if (n > 0) progress += step;
 			}
 			
 			if (status == 2) {
-				if (filetype == _T("gzip") || filetype == _T("bzip2")) this->compress_tar(tmp, dest, filetype, pass);
+				if (filetype == _T("gzip") || filetype == _T("bzip2")) this->compress_tar(tmp, dest, filetype, pass, progress);
 				else MoveFile(tmp.c_str(), dest.c_str());
 				
 				// フィルタリング
@@ -185,6 +193,7 @@ namespace cubeice {
 			for (; first != last; ++first) {
 				string_type src = *first;
 				cubeice::dialog::progressbar progress;
+				progress.marquee(true);
 				
 				// 保存先パスの取得
 				string_type root = this->decompress_path(setting_.decompression(), src, force);
@@ -203,12 +212,13 @@ namespace cubeice {
 				if (tmp.empty()) break;
 				
 				// *.tar 系の処理
-				if (this->is_tar(src)) src = this->decompress_tar(src, tmp, pass);
+				if (this->is_tar(src)) src = this->decompress_tar(src, tmp, pass, progress);
 				
 				// プログレスバーの進行度の設定
 				size_type n = this->decompress_size(src, 5.0);
 				double step = (n > 0) ? (progress.maximum() - progress.minimum()) / static_cast<double>(n) : 0.0;
 				if (n == 0) progress.marquee(true);
+				else progress.marquee(false);
 				
 				// コマンドラインの生成
 				string_type cmdline = CUBEICE_ENGINE;
@@ -221,8 +231,9 @@ namespace cubeice {
 				
 				// メイン処理
 				int status = 0;
-				int to_all = 0; // 全ての項目に適用する処理
+				int to_all = 0; // 「全てはい」or「全ていいえ」
 				string_type line;
+				clx::timer watch;
 				while ((status = proc.gets(line)) >= 0) {
 					progress.refresh();
 					if (progress.is_cancel()) {
@@ -236,6 +247,12 @@ namespace cubeice {
 						continue;
 					}
 					assert(status == 1);
+					
+					if (n > 0) {
+						double interval = watch.total_elapsed() * 1000.0;
+						if (progress.position() > interval) Sleep(static_cast<DWORD>(std::min(progress.position() - interval, 10.0)));
+						progress += step;
+					}
 					
 					string_type::size_type pos = line.find(keyword);
 					if (pos == string_type::npos || line.size() <= keyword.size()) continue;
@@ -261,7 +278,6 @@ namespace cubeice {
 					// TODO: ここの root + _T('\\') + filename の方の filename を文字コード変換する．
 					message += filename;
 					progress.text(message);
-					if (n > 0) progress += step;
 				}
 				
 				// フォルダを開く
@@ -312,7 +328,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  decompress_tar
 		/* ----------------------------------------------------------------- */
-		void compress_tar(const string_type& src, const string_type& dest, const string_type& filetype, bool pass) {
+		void compress_tar(const string_type& src, const string_type& dest, const string_type& filetype, bool pass, cubeice::dialog::progressbar& progress) {
 			static const string_type keyword = _T("Compressing");
 			
 			string_type tar;
@@ -332,6 +348,7 @@ namespace cubeice {
 			int status = 0;
 			string_type line;
 			while ((status = proc.gets(line)) >= 0) {
+				progress.refresh();
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
 					Sleep(10);
@@ -450,7 +467,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  decompress_tar
 		/* ----------------------------------------------------------------- */
-		string_type decompress_tar(const string_type& src, const string_type& root, bool pass) {
+		string_type decompress_tar(const string_type& src, const string_type& root, bool pass, cubeice::dialog::progressbar& progress) {
 			static const string_type keyword = _T("Extracting");
 			
 			string_type cmdline = CUBEICE_ENGINE;
@@ -465,6 +482,7 @@ namespace cubeice {
 			string_type filename;
 			string_type line;
 			while ((status = proc.gets(line)) >= 0) {
+				progress.refresh();
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
 					Sleep(10);
