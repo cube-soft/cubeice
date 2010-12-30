@@ -284,7 +284,7 @@ namespace cubeice {
 					}
 				}
 				
-				if (!this->remove(tmp.c_str())) MessageBox(NULL, "failed to delete temp.", "info", MB_OK);
+				this->remove(tmp.c_str());
 			}
 		}
 		
