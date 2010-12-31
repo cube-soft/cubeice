@@ -38,6 +38,8 @@
 #define IDC_PROGRESS            1000
 #define IDC_INFO_LABEL          1001
 #define IDC_PASSWORD_TEXTBOX    1002
+#define IDC_CONFIRM_TEXTBOX     1005
+#define IDC_SHOWPASS_CHECKBOX   1006
 #define IDC_ICON_PICTUREBOX     1003
 #define IDC_ALL_CHECKBOX        1004
 
