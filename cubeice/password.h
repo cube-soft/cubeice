@@ -63,6 +63,10 @@ namespace cubeice {
 			HWND pic = GetDlgItem(hWnd, IDC_ICON_PICTUREBOX);
 			SendMessage(pic, STM_SETIMAGE, IMAGE_ICON, LPARAM(info));
 			
+			// パスワード文字を変更
+			SendMessage(GetDlgItem(hWnd, IDC_PASSWORD_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('*'), 0);
+			SendMessage(GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('*'), 0);
+			
 			// 画面中央に表示
 			RECT rect = {};
 			GetWindowRect(hWnd, (LPRECT)&rect);
@@ -75,15 +79,38 @@ namespace cubeice {
 			switch (LOWORD(wp)) {
 			case IDOK:
 			{
+				// NOTE: パスワード表示状態で入力した場合は整合性をチェックしない
 				TCHAR buffer[256] = {};
 				GetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, buffer, 256);
-				cubeice::password() = buffer;
+				std::basic_string<TCHAR> pass(buffer);
+				if (!IsDlgButtonChecked(hWnd, IDC_SHOWPASS_CHECKBOX)) {
+					GetDlgItemText(hWnd, IDC_CONFIRM_TEXTBOX, buffer, 256);
+					std::basic_string<TCHAR> confirm(buffer);
+					if (pass != confirm) {
+						MessageBox(hWnd, _T("パスワードが一致しません。"), _T("エラー"), MB_OK | MB_ICONERROR);
+						break;
+					}
+				}
+				cubeice::password() = pass;
 				EndDialog(hWnd, IDOK);
 				break;
 			}
 			case IDCANCEL:
 				EndDialog(hWnd, IDCANCEL);
 				break;
+			case IDC_SHOWPASS_CHECKBOX:
+			{
+				BOOL enabled = IsDlgButtonChecked(hWnd, IDC_SHOWPASS_CHECKBOX);
+				EnableWindow(GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX), !enabled);
+				TCHAR secret = enabled ? _T('\0') : _T('*');
+				SendMessage(GetDlgItem(hWnd, IDC_PASSWORD_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)secret, 0);
+				
+				// パスワード表示の切り替えが遅れるので強制的に変更する．
+				TCHAR buffer[256] = {};
+				GetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, buffer, 256);
+				SetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, buffer);
+				break;
+			}
 			default:
 				break;
 			}
