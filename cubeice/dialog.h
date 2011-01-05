@@ -344,5 +344,6 @@ namespace cubeice {
 
 #include "password.h"
 #include "overwrite.h"
+#include "report.h"
 
 #endif // CUBE_DIALOG_H

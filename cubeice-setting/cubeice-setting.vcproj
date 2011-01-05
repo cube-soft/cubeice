@@ -133,7 +133,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="comctl32.lib"
+				AdditionalDependencies="comctl32.lib shlwapi.lib"
 				LinkIncremental="1"
 				UACExecutionLevel="2"
 				GenerateDebugInformation="true"

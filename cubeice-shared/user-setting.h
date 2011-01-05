@@ -44,6 +44,7 @@
 #include <windows.h>
 #include <winreg.h>
 #include <shlobj.h>
+#include <shlwapi.h>
 #include <clx/base64.h>
 #include <clx/split.h>
 
@@ -100,9 +101,11 @@
 #define DETAIL_IGNORE_NEWER   0x0002  // 更新日時が新しい場合は無視
 #define DETAIL_OPEN           0x0004  // 保存先を開く
 #define DETAIL_CREATE_FOLDER  0x0008  // フォルダを作成する
+#define DETAIL_SINGLE_FOLDER  0x0100  // 単一フォルダの場合は作成しない
 #define DETAIL_CHARCODE       0x0010  // 文字コードを変換する
 #define DETAIL_FILTER         0x0020  // フィルタリングを行う
 #define DETAIL_SKIP_DESKTOP   0x0040  // デスクトップの場合は開かない
+#define DETAIL_REPORT         0x0080  // エラーレポートを表示する
 
 /* ------------------------------------------------------------------------- */
 //  レジストリに関する情報
@@ -110,21 +113,32 @@
 #define CUBEICE_REG_ROOT                _T("Software\\CubeSoft\\CubeICE")
 #define CUBEICE_REG_COMPRESS            _T("Compress")
 #define CUBEICE_REG_DECOMPRESS          _T("Decompress")
-#define CUBEICE_REG_FLAGS               _T("Flags")
+//#define CUBEICE_REG_FLAGS               _T("Flags")
 #define CUBEICE_REG_DETAILS	            _T("Details")
 #define CUBEICE_REG_OUTPUT_CONDITION    _T("OutputCondition")
 #define CUBEICE_REG_OUTPUT_PATH         _T("OutputPath")
 #define CUBEICE_REG_CONTEXT             _T("ContextFlags")
-#define CUBEICE_REG_SHORTCUT            _T("ShortcutFlags")
+//#define CUBEICE_REG_SHORTCUT            _T("ShortcutFlags")
+#define CUBEICE_REG_SCCOMPRESS          _T("ScCompressIndex")
 #define CUBEICE_REG_FILTER              _T("Filter")
 #define CUBEICE_REG_INSTALL             _T("InstallDirectory")
 #define CUBEICE_REG_VERSION             _T("Version")
 #define CUBEICE_REG_PREVARCHIVER        _T("PrevArchiver")
 
-namespace cubeice {
+/* ------------------------------------------------------------------------- */
+//  ショートカットに関する情報
+/* ------------------------------------------------------------------------- */
+#define CUBEICE_SC_COMPRESS             _T("CubeICE 圧縮.lnk")
+#define CUBEICE_SC_DECOMPRESS           _T("CubeICE 解凍.lnk")
+#define CUBEICE_SC_SETTING              _T("CubeICE 設定.lnk")
 
+namespace cubeice {
 	typedef std::map<std::basic_string<TCHAR>, std::pair<std::basic_string<TCHAR>, std::size_t> > ext_map;
+	typedef std::map<std::size_t, std::pair<std::basic_string<TCHAR>, std::basic_string<TCHAR> > > param_map;
 	
+	/* --------------------------------------------------------------------- */
+	//  extensions
+	/* --------------------------------------------------------------------- */
 	inline ext_map& extensions() {
 		static bool initialized = false;
 		static ext_map exts;
@@ -153,7 +167,25 @@ namespace cubeice {
 		}
 		return exts;
 	}
-
+	
+	
+	/* --------------------------------------------------------------------- */
+	//  compress_parameters
+	/* --------------------------------------------------------------------- */
+	inline param_map& compress_parameters() {
+		static bool initialized = false;
+		static param_map params;
+		if (!initialized) {
+			params[0] = std::make_pair(_T("zip"), _T("/c:zip"));
+			params[1] = std::make_pair(_T("zip (パスワード)"), _T("/c:zip /p"));
+			params[2] = std::make_pair(_T("7z"), _T("/c:7z"));
+			params[3] = std::make_pair(_T("gzip"), _T("/c:gzip"));
+			params[4] = std::make_pair(_T("bzip2"), _T("/c:bzip2"));
+			initialized = true;
+		}
+		return params;
+	}
+	
 	/* --------------------------------------------------------------------- */
 	/*
 	 *  archive_setting
@@ -234,7 +266,7 @@ namespace cubeice {
 			LONG lResult; // 関数の戻り値を格納する
 			lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
 			if (!lResult) {
-				RegSetValueEx(hkResult, CUBEICE_REG_FLAGS, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
+				//RegSetValueEx(hkResult, CUBEICE_REG_FLAGS, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
 				RegSetValueEx(hkResult, CUBEICE_REG_DETAILS, 0, REG_DWORD, (CONST BYTE*)&details_, sizeof(details_));
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_CONDITION, 0, REG_DWORD, (CONST BYTE*)&output_condition_, sizeof(output_condition_));
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, 0, REG_SZ, (CONST BYTE*)output_path_.c_str(), output_path_.length() + 1);
@@ -308,7 +340,7 @@ namespace cubeice {
 			root_(CUBEICE_REG_ROOT),
 			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0), sc_flags_(0), filters_() {
+			ctx_flags_(0), sc_flags_(0), sc_index_(0), filters_() {
 			this->load();	
 		}
 		
@@ -316,7 +348,7 @@ namespace cubeice {
 			root_(root),
 			comp_(root + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(root + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0), sc_flags_(0), filters_() {
+			ctx_flags_(0), sc_flags_(0), sc_index_(0), filters_() {
 			this->load();
 		}
 		
@@ -336,8 +368,15 @@ namespace cubeice {
 				dwSize = sizeof(ctx_flags_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
 				
-				dwSize = sizeof(sc_flags_);
-				RegQueryValueEx(hkResult, CUBEICE_REG_SHORTCUT, NULL, &dwType, (LPBYTE)&sc_flags_, &dwSize);
+				sc_flags_ = 0;
+				//dwSize = sizeof(sc_flags_);
+				//RegQueryValueEx(hkResult, CUBEICE_REG_SHORTCUT, NULL, &dwType, (LPBYTE)&sc_flags_, &dwSize);
+				if (shortcut_exist(CUBEICE_SC_COMPRESS)) sc_flags_ |= COMPRESS_FLAG;
+				if (shortcut_exist(CUBEICE_SC_DECOMPRESS)) sc_flags_ |= DECOMPRESS_FLAG;
+				if (shortcut_exist(CUBEICE_SC_SETTING)) sc_flags_ |= SETTING_FLAG;
+				
+				dwSize = sizeof(sc_index_);
+				RegQueryValueEx(hkResult, CUBEICE_REG_SCCOMPRESS, NULL, &dwType, (LPBYTE)&sc_index_, &dwSize);
 				
 				// 変数側の型は std::set<std::string>
 				char_type buffer[64 * 1024] = {};
@@ -364,17 +403,23 @@ namespace cubeice {
 				RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&ctx_flags_, sizeof(ctx_flags_));
 				
 				// ショートカットの処理．
-				RegSetValueEx(hkResult, CUBEICE_REG_SHORTCUT, 0, REG_DWORD, (CONST BYTE*)&sc_flags_, sizeof(sc_flags_));
+				//RegSetValueEx(hkResult, CUBEICE_REG_SHORTCUT, 0, REG_DWORD, (CONST BYTE*)&sc_flags_, sizeof(sc_flags_));
+				RegSetValueEx(hkResult, CUBEICE_REG_SCCOMPRESS, 0, REG_DWORD, (CONST BYTE*)&sc_index_, sizeof(sc_flags_));
+				
+#if !defined(UNICODE) && !defined(_UNICODE)
 				char buffer[2048] ={};
 				GetModuleFileNameA(GetModuleHandle(NULL), buffer, 2048);
 				std::basic_string<char> tmp = buffer;
-				std::basic_string<char> current = tmp.substr(0, tmp.find_last_of('\\'));
-				if ((sc_flags_ & COMPRESS_FLAG)) this->create_shortcut(current + "\\cubeice.exe", "/c:zip", "CubeICE Zip圧縮.lnk", 1);
-				else this->remove_shortcut("CubeICE Zip圧縮.lnk");
-				if ((sc_flags_ & DECOMPRESS_FLAG)) this->create_shortcut(current + "\\cubeice.exe", "/x", "CubeICE 解凍.lnk", 2);
-				else this->remove_shortcut("CubeICE 解凍.lnk");
-				if ((sc_flags_ & SETTING_FLAG)) this->create_shortcut(current + "\\cubeice-setting.exe", "", "CubeICE 設定.lnk", 0);
-				else this->remove_shortcut("CubeICE 設定.lnk");
+				std::basic_string<char> current = tmp.substr(0, tmp.find_last_of(_T('\\')));
+				const param_map& v = compress_parameters();
+				std::basic_string<char> params = (v.find(sc_index_) != v.end()) ? v.find(sc_index_)->second.second : _T("/c:zip");
+				if ((sc_flags_ & COMPRESS_FLAG)) this->create_shortcut(current + _T("\\cubeice.exe"), params, CUBEICE_SC_COMPRESS, 1);
+				else this->remove_shortcut(CUBEICE_SC_COMPRESS);
+				if ((sc_flags_ & DECOMPRESS_FLAG)) this->create_shortcut(current + _T("\\cubeice.exe"), _T("/x"), CUBEICE_SC_DECOMPRESS, 2);
+				else this->remove_shortcut(CUBEICE_SC_DECOMPRESS);
+				if ((sc_flags_ & SETTING_FLAG)) this->create_shortcut(current + _T("\\cubeice-setting.exe"), _T(""), CUBEICE_SC_SETTING, 0);
+				else this->remove_shortcut(CUBEICE_SC_SETTING);
+#endif
 				
 				string_type dest;
 				clx::join(filters_, dest, _T("<>"));
@@ -424,6 +469,12 @@ namespace cubeice {
 		const size_type& shortcut_flags() const { return sc_flags_; }
 		
 		/* ----------------------------------------------------------------- */
+		//  shortcut_compress_index
+		/* ----------------------------------------------------------------- */
+		size_type& shortcut_compress_index() { return sc_index_; }
+		const size_type& shortcut_compress_index() const { return sc_index_; }
+		
+		/* ----------------------------------------------------------------- */
 		//  filters
 		/* ----------------------------------------------------------------- */
 		container_type& filters() { return filters_; }
@@ -435,6 +486,7 @@ namespace cubeice {
 		archive_type decomp_;
 		size_type ctx_flags_;
 		size_type sc_flags_;
+		size_type sc_index_;
 		container_type filters_;
 		
 		/* ----------------------------------------------------------------- */
@@ -502,6 +554,25 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
+		//  shortcut_exist
+		/* ----------------------------------------------------------------- */
+		bool shortcut_exist(const std::basic_string<char>& link) {
+			LPITEMIDLIST pidl;
+			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl);
+			
+			char buf[2048] = {};
+			SHGetPathFromIDListA(pidl, buf);
+			strcat(buf, "\\");
+			strcat(buf, link.c_str());
+			
+			return PathFileExistsA(buf) == TRUE;
+		}
+		
+		bool shortcut_exist(const std::basic_string<wchar_t>& link) {
+			return false;
+		}
+		
+		/* ----------------------------------------------------------------- */
 		/*
 		 *  create_shortcut
 		 *
@@ -510,7 +581,7 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void create_shortcut(const std::basic_string<char>& path, const std::basic_string<char>& args, const std::basic_string<char>& link, int icon) {
-#if !defined(_UNICODE) && !defined(UNICODE)
+#if !defined(UNICODE) && !defined(_UNICODE)
 			HRESULT hres = CoInitialize(NULL);
 			if (FAILED(hres)) return;
 			
@@ -559,6 +630,10 @@ cleanup:
 #endif
 		}
 		
+		void create_shortcut(const std::basic_string<wchar_t>& path, const std::basic_string<wchar_t>& args, const std::basic_string<wchar_t>& link, int icon) {
+			return;
+		}
+		
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  create_shortcut
@@ -567,17 +642,19 @@ cleanup:
 		 */
 		/* ----------------------------------------------------------------- */
 		void remove_shortcut(const std::basic_string<char>& link) {
-#if !defined(_UNICODE) && !defined(UNICODE)
 			LPITEMIDLIST pidl;
 			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl);
 			
 			char buf[2048] = {};
-			SHGetPathFromIDList(pidl, buf);
-			lstrcat(buf, "\\");
-			lstrcat(buf, link.c_str());
+			SHGetPathFromIDListA(pidl, buf);
+			strcat(buf, "\\");
+			strcat(buf, link.c_str());
 			
-			DeleteFile(buf);
-#endif
+			DeleteFileA(buf);
+		}
+		
+		void remove_shortcut(const std::basic_string<wchar_t>& link) {
+			return;
 		}
 	};
 }

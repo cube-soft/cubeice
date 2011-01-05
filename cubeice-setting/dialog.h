@@ -50,6 +50,7 @@ namespace cubeice {
 	extern int create_propsheet(HWND parent);
 	
 	typedef std::map<std::size_t, std::size_t> flag_map;
+	typedef std::map<std::size_t, std::basic_string<TCHAR> > sctype_map;
 	
 	/* ----------------------------------------------------------------- */
 	//  compress_map
@@ -143,9 +144,12 @@ namespace cubeice {
 			dest[IDC_NEWER_CHECKBOX] = DETAIL_IGNORE_NEWER;
 			dest[IDC_POSTOPEN_CHECKBOX] = DETAIL_OPEN;
 			dest[IDC_CREATE_FOLDER_CHECKBOX] = DETAIL_CREATE_FOLDER;
+			dest[IDC_SINGLE_FOLDER_CHECKBOX] = DETAIL_SINGLE_FOLDER;
 			dest[IDC_SKIP_DESKTOP_CHECKBOX] = DETAIL_SKIP_DESKTOP;
 			dest[IDC_CHARCODE_CHECKBOX] = DETAIL_CHARCODE;
 			dest[IDC_FILTER_CHECKBOX] = DETAIL_FILTER;
+			dest[IDC_REPORT_CHECKBOX] = DETAIL_REPORT;
+			initialized = true;
 		}
 		return dest;
 	}
@@ -160,6 +164,7 @@ namespace cubeice {
 			dest[IDC_SPECIFIC_RADIO] = OUTPUT_SPECIFIC;
 			dest[IDC_SOURCE_RADIO] = OUTPUT_SOURCE;
 			dest[IDC_RUNTIME_RADIO] = OUTPUT_RUNTIME;
+			initialized = true;
 		}
 		return dest;
 	}
