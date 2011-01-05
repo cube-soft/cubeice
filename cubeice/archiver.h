@@ -243,6 +243,13 @@ namespace cubeice {
 				if (info.first == 0) progress.marquee(true);
 				else progress.marquee(false);
 				
+				// フォルダの作成
+				if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER)) {
+					if ((setting_.decompression().details() & DETAIL_SINGLE_FOLDER) == 0 || info.second.empty()) {
+						root = this->decompress_createdir(setting_.decompression(), root, src);
+					}
+				}
+				
 				// コマンドラインの生成
 				string_type cmdline = CUBEICE_ENGINE;
 				cmdline += _T(" x -bd -scsWIN -y");
@@ -318,6 +325,11 @@ namespace cubeice {
 				// フォルダを開く
 				if (setting_.decompression().details() & DETAIL_OPEN) {
 					if ((setting_.decompression().details() & DETAIL_SKIP_DESKTOP) == 0 || !this->is_desktop(root)) {
+						if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER) &&
+							(setting_.decompression().details() & DETAIL_SINGLE_FOLDER) &&
+							!info.second.empty()) {
+								root += _T("\\") + info.second;
+						}
 						ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
 					}
 				}
@@ -479,17 +491,22 @@ namespace cubeice {
 			// 保存先パスの決定
 			string_type root = this->rootdir(setting, src, force);
 			if (root.empty()) root = cubeice::dialog::browsefolder(_T("解凍するフォルダを指定して下さい。"));
-			if (root.empty()) return root;
+			return root;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  decompress_createdir
+		/* ----------------------------------------------------------------- */
+		string_type decompress_createdir(const setting_type::archive_type& setting, const string_type& root, const string_type& src) {
+			string_type dest = root;
 			
 			// フォルダの作成
-			if (setting.details() & DETAIL_CREATE_FOLDER) {
-				string_type::size_type pos = src.find_last_of(_T('\\'));
-				string_type filename = (pos == string_type::npos) ? src : src.substr(++pos);
-				root += _T('\\') + filename.substr(0, filename.find_last_of(_T('.')));
-				pos = root.find_last_of(_T('.'));
-				if (pos != string_type::npos && root.substr(pos) == _T(".tar")) root.erase(pos);
-			}
-			return root;
+			string_type::size_type pos = src.find_last_of(_T('\\'));
+			string_type filename = (pos == string_type::npos) ? src : src.substr(++pos);
+			dest += _T('\\') + filename.substr(0, filename.find_last_of(_T('.')));
+			pos = dest.find_last_of(_T('.'));
+			if (pos != string_type::npos && dest.substr(pos) == _T(".tar")) dest.erase(pos);
+			return dest;
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -503,22 +520,45 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		std::pair<size_type, string_type> decompress_size_and_folder(const string_type& path, cubeice::dialog::progressbar& progress) {
 			string_type cmdline = CUBEICE_ENGINE;
+			string_type separator = _T("------------------------");
+			string_type header = _T("Name");
+			string_type footer = _T("folders");
 			cmdline += _T(" l ");
 			cmdline += _T("\"") + path + _T("\"");
 			
+			std::vector<string_type> v;
 			std::pair<size_type, string_type> dest;
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return dest;
 			string_type buffer, src;
 			int status = 0;
+			bool single = true;
 			while ((status = proc.gets(buffer)) >= 0) {
 				progress.refresh();
 				if (status == 2) break; // pipe closed
 				else if (status == 1 && !buffer.empty()) src = buffer;
+				
+				v.clear();
+				clx::split(buffer, v);
+				if (v.size() == 6 && (v.at(5) == header || v.at(5) == footer || v.at(5) == separator)) {
+					buffer.clear();
+					continue;
+				}
+				
+				if (single && v.size() == 6) {
+					string_type::size_type pos = v.at(5).find_first_of(_T('\\'));
+					string_type folder = (pos != string_type::npos) ? v.at(5).substr(0, pos) : v.at(5);
+					if (pos != string_type::npos || v.at(2).find(_T('D')) != string_type::npos) {
+						if (dest.second.empty()) dest.second = folder;
+						else if (dest.second != folder) single = false;
+					}
+					else single = false;
+				}
 				buffer.clear();
 			}
+			if (!single) dest.second.erase();
 			
-			std::vector<string_type> v;
+			v.clear();
 			clx::split(src, v);
 			if (v.size() < 5) return dest;
 			
