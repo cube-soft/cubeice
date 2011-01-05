@@ -76,20 +76,14 @@ namespace cubeice {
 		case WM_COMMAND:
 			switch (LOWORD(wp)) {
 			case IDYES:
-			{
-				int to_all = IsDlgButtonChecked(hWnd, IDC_ALL_CHECKBOX) ? ID_TO_ALL : 0;
-				EndDialog(hWnd, IDOK | to_all);
-				break;
-			}
 			case IDNO:
-			{
-				int to_all = IsDlgButtonChecked(hWnd, IDC_ALL_CHECKBOX) ? ID_TO_ALL : 0;
-				EndDialog(hWnd, IDNO | to_all);
-				break;
-			}
+			case IDYESTOALL:
+			case IDNOTOALL:
 			case IDCANCEL:
-				EndDialog(hWnd, IDCANCEL);
+				EndDialog(hWnd, LOWORD(wp));
 				break;
+			case IDRENAME:
+				EndDialog(hWnd, IDNO); // å„Ç≈èCê≥
 			default:
 				break;
 			}

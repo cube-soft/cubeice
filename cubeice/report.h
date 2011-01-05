@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------- */
 /*
- *  password.h
+ *  report.h
  *
  *  Copyright (c) 2010 CubeSoft.
  *
@@ -32,40 +32,35 @@
  *  Last-modified: Mon 20 Dec 2010 22:05:00 JST
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_PASSWORD_H
-#define CUBEICE_PASSWORD_H
+#ifndef CUBEICE_REPORT_H
+#define CUBEICE_REPORT_H
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */
 	/*
-	 *  password
+	 *  report
 	 *
-	 *  NOTE: 現状は，全てのパスワードダイアログが一つのパスワード記憶
-	 *  領域を共有している．
+	 *  NOTE: 現状は，全てのイアログが一つのテキスト領域を共有している．
 	 */
 	/* --------------------------------------------------------------------- */
-	inline std::basic_string<TCHAR>& password() {
-		static std::basic_string<TCHAR> pass;
-		return pass;
+	inline std::basic_string<TCHAR>& report() {
+		static std::basic_string<TCHAR> text;
+		return text;
 	}
 	
 	/* --------------------------------------------------------------------- */
-	//  password_wndproc
+	//  overwrite_wndproc
 	/* --------------------------------------------------------------------- */
-	static BOOL CALLBACK password_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+	static BOOL CALLBACK report_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 		switch (msg) {
 		case WM_INITDIALOG:
 		{
 			// アイコン
 			HICON app = LoadIcon(GetModuleHandle(NULL), _T("IDI_APP"));
 			SendMessage(hWnd, WM_SETICON, 0, LPARAM(app));
-			HICON info = LoadIcon(NULL, IDI_INFORMATION);
-			HWND pic = GetDlgItem(hWnd, IDC_ICON_PICTUREBOX);
-			SendMessage(pic, STM_SETIMAGE, IMAGE_ICON, LPARAM(info));
 			
-			// パスワード文字を変更
-			SendMessage(GetDlgItem(hWnd, IDC_PASSWORD_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('*'), 0);
-			SendMessage(GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('*'), 0);
+			// テキスト
+			SetWindowText(GetDlgItem(hWnd, IDC_REPORT_TEXTBOX), report().c_str());
 			
 			// 画面中央に表示
 			RECT rect = {};
@@ -78,39 +73,9 @@ namespace cubeice {
 		case WM_COMMAND:
 			switch (LOWORD(wp)) {
 			case IDOK:
-			{
-				// NOTE: パスワード表示状態で入力した場合は整合性をチェックしない
-				TCHAR buffer[256] = {};
-				GetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, buffer, 256);
-				std::basic_string<TCHAR> pass(buffer);
-				if (!IsDlgButtonChecked(hWnd, IDC_SHOWPASS_CHECKBOX)) {
-					GetDlgItemText(hWnd, IDC_CONFIRM_TEXTBOX, buffer, 256);
-					std::basic_string<TCHAR> confirm(buffer);
-					if (pass != confirm) {
-						MessageBox(hWnd, _T("パスワードが一致しません。"), _T("エラー"), MB_OK | MB_ICONERROR);
-						break;
-					}
-				}
-				cubeice::password() = pass;
-				EndDialog(hWnd, IDOK);
-				break;
-			}
 			case IDCANCEL:
-				EndDialog(hWnd, IDCANCEL);
+				EndDialog(hWnd, 0);
 				break;
-			case IDC_SHOWPASS_CHECKBOX:
-			{
-				BOOL enabled = IsDlgButtonChecked(hWnd, IDC_SHOWPASS_CHECKBOX);
-				EnableWindow(GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX), !enabled);
-				TCHAR secret = enabled ? _T('\0') : _T('*');
-				SendMessage(GetDlgItem(hWnd, IDC_PASSWORD_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)secret, 0);
-				
-				// パスワード表示の切り替えが遅れるので強制的に変更する．
-				TCHAR buffer[256] = {};
-				GetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, buffer, 256);
-				SetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, buffer);
-				break;
-			}
 			default:
 				break;
 			}
@@ -123,11 +88,11 @@ namespace cubeice {
 	}
 	
 	/* --------------------------------------------------------------------- */
-	//  password_dialog
+	//  report_dialog
 	/* --------------------------------------------------------------------- */
-	inline INT_PTR password_dialog() {
-		return DialogBox(GetModuleHandle(NULL), _T("IDD_PASSWORD"), NULL, password_wndproc);
+	inline INT_PTR report_dialog() {
+		return DialogBox(GetModuleHandle(NULL), _T("IDD_REPORT"), NULL, report_wndproc);
 	}
 }
 
-#endif // CUBEICE_PASSWORD_H
+#endif // CUBEICE_REPORT_H

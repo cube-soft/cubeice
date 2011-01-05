@@ -186,6 +186,14 @@ namespace cubeice {
 					CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
 				}
 			}
+			
+			// ショートカットの圧縮の種類
+			HWND combo = GetDlgItem(hWnd, IDC_SC_TYPE_COMBOBOX);
+			const param_map& params = compress_parameters();
+			for (param_map::const_iterator pos = params.begin(); pos != params.end(); ++pos) {
+				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)pos->second.first.c_str());
+			}
+			SendMessage(combo, CB_SETCURSEL, Setting.shortcut_compress_index(), 0L);
 		}
 		
 		/* ---------------------------------------------------------------- */
@@ -301,6 +309,12 @@ namespace cubeice {
 					change_flag(Setting.shortcut_flags(), hWnd, pos->first, pos->second);
 					return TRUE;
 				}
+				
+				if (parameter == IDC_SC_TYPE_COMBOBOX) {
+					Setting.shortcut_compress_index() = SendMessage(GetDlgItem(hWnd, IDC_SC_TYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
+					return TRUE;
+				}
+				
 				break;
 			}
 			default:
