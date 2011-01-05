@@ -749,14 +749,14 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		bool move(const string_type& src, const string_type& dest) {
 			bool status = false;
-			
-			if (PathIsDirectory(src.c_str())) status = createdir(dest);
-			else {
+			string_type report;
+			if (PathIsDirectory(src.c_str())) {
+				status = createdir(dest);
+			} else {
 				string_type branch(dest.substr(0, dest.find_last_of(_T('\\'))));
 				status = createdir(branch);
-				status &= (MoveFile(src.c_str(), dest.c_str()) == TRUE);
+				status &= (MoveFileEx(src.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) == TRUE);
 			}
-			
 			return status;
 		}
 		
