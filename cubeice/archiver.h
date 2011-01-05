@@ -135,12 +135,14 @@ namespace cubeice {
 				
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
-					Sleep(100);
+					++progress;
+					if (progress.position() >= progress.maximum()) progress.marquee(true);
+					Sleep(10);
 					continue;
 				}
 				assert(status == 1);
 				
-				if (n > 0) {
+				if (n > 0 && progress.position() < progress.maximum()) {
 					double interval = watch.total_elapsed() * 1000.0;
 					if (progress.position() > interval) Sleep(static_cast<DWORD>(std::min(progress.position() - interval, 10.0)));
 					progress += step;
@@ -274,12 +276,14 @@ namespace cubeice {
 					
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
+						++progress;
+						if (progress.position() >= progress.maximum()) progress.marquee(true);
 						Sleep(10);
 						continue;
 					}
 					assert(status == 1);
 					
-					if (info.first > 0) {
+					if (info.first > 0 && progress.position() < progress.maximum()) {
 						double interval = watch.total_elapsed() * 1000.0;
 						if (progress.position() > interval) Sleep(static_cast<DWORD>(std::min(progress.position() - interval, 10.0)));
 						progress += step;
