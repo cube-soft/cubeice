@@ -134,19 +134,19 @@ namespace cube {
 				CloseHandle( hWritePipe );
 			}
 
-			std::auto_ptr<TCHAR>	cmdtmp( new TCHAR[(_tcslen(command)+5)*sizeof(command[0])] );
-			if( !cmdtmp.get() ) {
+			TCHAR	*cmdtmp = new TCHAR[(_tcslen(command)+5)*sizeof(command[0])];
+			if( !cmdtmp ) {
 				if( mode & WRITE )
 					CloseHandle( hReadPipe );
 				else
 					CloseHandle( hWritePipe );
 				return false;
 			}
-			_tcscpy( cmdtmp.get(), command );
+			_tcscpy( cmdtmp, command );
 
-			BOOL	bcp = CreateProcess( NULL, cmdtmp.get(), NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi );
+			BOOL	bcp = CreateProcess( NULL, cmdtmp, NULL, NULL, TRUE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi );
 
-			cmdtmp.reset();
+			delete[] cmdtmp;
 
 			if( mode & WRITE )
 				CloseHandle( hReadPipe );
