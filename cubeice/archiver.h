@@ -680,6 +680,22 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
+		//  createdir
+		/* ----------------------------------------------------------------- */
+		bool createdir(const string_type& path) {
+			if (PathFileExists(path.c_str())) {
+				if (PathIsDirectory(path.c_str())) return true;
+				else DeleteFile(path.c_str());
+			}
+			
+			string_type::size_type pos = path.find_last_of(_T('\\'));
+			if (pos != string_type::npos) {
+				if (!createdir(path.substr(0, pos))) return false;
+			}
+			return CreateDirectory(path.c_str(), NULL) == TRUE;
+		}
+		
+		/* ----------------------------------------------------------------- */
 		/*
 		 *  move
 		 *
@@ -688,20 +704,16 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		bool move(const string_type& src, const string_type& dest) {
-			BOOL status = FALSE;
+			bool status = false;
 			
-			if (PathIsDirectory(src.c_str())) status = CreateDirectory(dest.c_str(), NULL);
+			if (PathIsDirectory(src.c_str())) status = createdir(dest);
 			else {
 				string_type branch(dest.substr(0, dest.find_last_of(_T('\\'))));
-				if (!PathFileExists(branch.c_str())) CreateDirectory(branch.c_str(), NULL);
-				else if (!PathIsDirectory(branch.c_str())) {
-					DeleteFile(branch.c_str());
-					CreateDirectory(branch.c_str(), NULL);
-				}
-				status = MoveFile(src.c_str(), dest.c_str());
+				status = createdir(branch);
+				status &= (MoveFile(src.c_str(), dest.c_str()) == TRUE);
 			}
 			
-			return status == TRUE;
+			return status;
 		}
 		
 		/* ----------------------------------------------------------------- */
