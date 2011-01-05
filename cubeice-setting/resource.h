@@ -69,6 +69,7 @@
 #define IDC_SC_COMPRESS_CHECKBOX    2301 // COMPRESS_FLAG
 #define IDC_SC_DECOMPRESS_CHECKBOX  2302 // DECOMPRESS_FLAG
 #define IDC_SC_SETTING_CHECKBOX     2303 // SETTING_FLAG
+#define IDC_SC_TYPE_COMBOBOX        2304 // 圧縮の種類
 
 #ifdef nouse
 #define IDC_ADD_ZIP_CHECKBOX        2204 // ZIP_FLAG
@@ -96,6 +97,7 @@
 #define IDC_FILTER_CHECKBOX         3105 // ファイルのフィルタんリングを行う
 #define IDC_POSTOPEN_CHECKBOX       3106 // 保存先フォルダを開
 #define IDC_SKIP_DESKTOP_CHECKBOX   3107 // デスクトップの場合は開かない
+#define IDC_REPORT_CHECKBOX         3108 // エラーレポートを表示する
 
 /* ------------------------------------------------------------------------- */
 //  「フィルタリング」タブ
