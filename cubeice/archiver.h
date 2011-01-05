@@ -67,8 +67,10 @@ namespace cubeice {
 		template <class InputIterator>
 		void compress(InputIterator first, InputIterator last) {
 			static const string_type keyword = _T("Compressing");
+			static const string_type error = _T("ERROR:");
 			
 			bool pass = false;
+			
 			
 			// オプションを読み飛ばす．
 			if (first->compare(0, 3, _T("/c:")) != 0) return;
@@ -79,7 +81,8 @@ namespace cubeice {
 			if (first == last) return;
 			
 			// 保存先パスの決定
-			string_type dest = this->compress_path(setting_.compression(), *first, filetype);
+			string_type ext = this->compress_extension(filetype, first, last);
+			string_type dest = this->compress_path(setting_.compression(), *first, ext);
 			if (dest.empty()) return;
 			
 			// パスワードの設定．
@@ -110,7 +113,7 @@ namespace cubeice {
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" a");
 			if (filetype == _T("exe")) cmdline += _T(" -sfx7z.sfx");
-			else if (filetype == _T("gzip") || filetype == _T("bzip2")) cmdline += _T(" -ttar");
+			else if (ext.find(_T(".tar")) != string_type::npos) cmdline += _T(" -ttar");
 			else cmdline += _T(" -t") + filetype;
 			if (pass) cmdline += _T(" -p") + cubeice::password();
 			cmdline += _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
@@ -121,6 +124,7 @@ namespace cubeice {
 			// メイン処理
 			int status = 0;
 			string_type line;
+			string_type report;
 			clx::timer watch;
 			while ((status = proc.gets(line)) >= 0) {
 				progress.refresh();
@@ -142,16 +146,27 @@ namespace cubeice {
 					progress += step;
 				}
 				
-				string_type::size_type pos = line.find(keyword);
+				string_type::size_type pos = line.find(error);
+				if (pos != string_type::npos) {
+					report += line + _T("\r\n");
+					continue;
+				}
+				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
 				
 				string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
-				string_type message = dest + _T("\n") + filename;
+				string_type message = dest + _T("\r\n") + filename;
 				progress.text(message);
 			}
 			
+			if (status < 0) report += error + _T(" broken pipe.\r\n");
+			if ((setting_.compression().details() & DETAIL_REPORT) && !report.empty()) {
+				cubeice::report() = report;
+				cubeice::report_dialog();
+			}
+			
 			if (status == 2) {
-				if (filetype == _T("gzip") || filetype == _T("bzip2")) this->compress_tar(tmp, dest, filetype, pass, progress);
+				if (ext.find(_T(".tar")) != string_type::npos) this->compress_tar(tmp, dest, filetype, pass, progress);
 				else MoveFile(tmp.c_str(), dest.c_str());
 				
 				// フィルタリング
@@ -182,6 +197,7 @@ namespace cubeice {
 		template <class InputIterator>
 		void decompress(InputIterator first, InputIterator last) {
 			static const string_type keyword = _T("Extracting");
+			static const string_type error = _T("ERROR:");
 			
 			// レジストリの設定を無視するコマンドかどうか．
 			string_type force;
@@ -222,9 +238,9 @@ namespace cubeice {
 				if (this->is_tar(src)) src = this->decompress_tar(src, tmp, pass, progress);
 				
 				// プログレスバーの進行度の設定
-				size_type n = this->decompress_size(src, 5.0);
-				double step = (n > 0) ? (progress.maximum() - progress.minimum()) / static_cast<double>(n) : 0.0;
-				if (n == 0) progress.marquee(true);
+				std::pair<size_type, string_type> info = this->decompress_size_and_folder(src, progress);
+				double step = (info.first > 0) ? (progress.maximum() - progress.minimum()) / static_cast<double>(info.first) : 0.0;
+				if (info.first == 0) progress.marquee(true);
 				else progress.marquee(false);
 				
 				// コマンドラインの生成
@@ -240,6 +256,7 @@ namespace cubeice {
 				int status = 0;
 				int to_all = 0; // 「全てはい」or「全ていいえ」
 				string_type line;
+				string_type report;
 				clx::timer watch;
 				while ((status = proc.gets(line)) >= 0) {
 					progress.refresh();
@@ -255,13 +272,18 @@ namespace cubeice {
 					}
 					assert(status == 1);
 					
-					if (n > 0) {
+					if (info.first > 0) {
 						double interval = watch.total_elapsed() * 1000.0;
 						if (progress.position() > interval) Sleep(static_cast<DWORD>(std::min(progress.position() - interval, 10.0)));
 						progress += step;
 					}
 					
-					string_type::size_type pos = line.find(keyword);
+					string_type::size_type pos = line.find(error);
+					if (pos != string_type::npos) {
+						report += line + _T("\r\n");
+						continue;
+					}
+					pos = line.find(keyword);
 					if (pos == string_type::npos || line.size() <= keyword.size()) continue;
 					
 					string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
@@ -276,13 +298,21 @@ namespace cubeice {
 					else if (result == IDNO) continue;
 					
 					// フィルタリング
-					string_type message = root + _T("\n");
+					string_type message = root + _T("\r\n");
 					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
 						message += _T("Filtering: ");
 					}
-					else this->move(tmp + _T('\\') + filename, root + _T('\\') + filename);
+					else if (!this->move(tmp + _T('\\') + filename, root + _T('\\') + filename)) {
+						report += error + _T(" Can not move file. ") + filename + _T("\r\n");
+					}
 					message += filename;
 					progress.text(message);
+				}
+				
+				if (status < 0) report += error + _T(" broken pipe.");
+				if ((setting_.decompression().details() & DETAIL_REPORT) && !report.empty()) {
+					cubeice::report() = report;
+					cubeice::report_dialog();
 				}
 				
 				// フォルダを開く
@@ -298,13 +328,36 @@ namespace cubeice {
 		
 	private: // compress_xxx
 		/* ----------------------------------------------------------------- */
+		/*
+		 *  compress_extension
+		 */
+		/* ----------------------------------------------------------------- */
+		template <class InputIterator>
+		string_type compress_extension(const string_type& filetype, InputIterator first, InputIterator last) {
+			string_type ext = _T(".");
+			if (filetype == _T("gzip")) ext += _T("gz");
+			else if (filetype == _T("bzip2")) ext += _T("bz2");
+			else ext += filetype;
+
+			if (filetype == _T("gzip") || filetype == _T("bzip2")) {
+				int n = 0;
+				for (InputIterator pos = first; pos != last; ++pos) ++n;
+				if (n > 1 || first->find_last_of(_T('.')) == string_type::npos) {
+					ext = _T(".tar") + ext;
+				}
+			}
+			
+			return ext;
+		}
+
+		/* ----------------------------------------------------------------- */
 		//  compress_path
 		/* ----------------------------------------------------------------- */
-		string_type compress_path(const setting_type::archive_type& setting, const string_type& src, const string_type& filetype) {
+		string_type compress_path(const setting_type::archive_type& setting, const string_type& src, const string_type& ext) {
 			string_type dest =  this->rootdir(setting, src);
 			if (dest.empty()) {
 				const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-				string_type init = src.substr(0, src.find_last_of(_T('.'))) + this->extension(filetype);
+				string_type init = src.substr(0, src.find_last_of(_T('.'))) + ext;
 				dest = cubeice::dialog::savefile(filter, init.c_str());
 			}
 			else {
@@ -312,7 +365,7 @@ namespace cubeice {
 				if (first == string_type::npos) first = 0;
 				else ++first;
 				string_type filename = src.substr(first);
-				dest += _T('\\') + filename.substr(0, filename.find_last_of(_T('.'))) + this->extension(filetype);
+				dest += _T('\\') + filename.substr(0, filename.find_last_of(_T('.'))) + ext;
 			}
 			return dest;
 		}
@@ -440,35 +493,42 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  decompress_size
+		/*
+		 *  decompress_size_and_folder
+		 *
+		 *  返り値の first は，圧縮ファイルに含まれるファイル数，
+		 *  second は root となるフォルダが単一フォルダの場合，その
+		 *  フォルダ名．
+		 */
 		/* ----------------------------------------------------------------- */
-		size_type decompress_size(const string_type& path, double timeout) {
+		std::pair<size_type, string_type> decompress_size_and_folder(const string_type& path, cubeice::dialog::progressbar& progress) {
 			string_type cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" l ");
 			cmdline += _T("\"") + path + _T("\"");
 			
-			clx::timer t;
+			std::pair<size_type, string_type> dest;
 			cube::popen proc;
-			if (!proc.open(cmdline.c_str(), _T("r"))) return 0;
+			if (!proc.open(cmdline.c_str(), _T("r"))) return dest;
 			string_type buffer, src;
 			int status = 0;
 			while ((status = proc.gets(buffer)) >= 0) {
+				progress.refresh();
 				if (status == 2) break; // pipe closed
 				else if (status == 1 && !buffer.empty()) src = buffer;
 				buffer.clear();
-				if (t.elapsed() > timeout) return 0;
 			}
 			
 			std::vector<string_type> v;
 			clx::split(src, v);
-			if (v.size() < 5) return 0;
+			if (v.size() < 5) return dest;
 			
 			try {
-				return clx::lexical_cast<size_type>(v.at(2)) + clx::lexical_cast<size_type>(v.at(4));
+				dest.first = clx::lexical_cast<size_type>(v.at(2)) + clx::lexical_cast<size_type>(v.at(4));
+				return dest;
 			}
 			catch (std::exception&) {}
 			
-			return 0;
+			return dest;
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -551,21 +611,6 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		archiver(const archiver& cp);
 		archiver& operator=(const archiver& cp);
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  extension
-		 *
-		 *  NOTE: gzip, bz2 の場合は *.tar で返す．
-		 */
-		/* ----------------------------------------------------------------- */
-		string_type extension(const string_type& filetype) {
-			string_type ext = _T(".");
-			if (filetype == _T("gzip")) ext += _T("tar.gz");
-			else if (filetype == _T("bzip2")) ext += _T("tar.bz2");
-			else ext += filetype;
-			return ext;
-		}
 		
 		/* ----------------------------------------------------------------- */
 		/*

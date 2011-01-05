@@ -213,6 +213,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\report.h"
+				>
+			</File>
+			<File
 				RelativePath=".\resource.h"
 				>
 			</File>

@@ -42,6 +42,7 @@
 #define IDC_SHOWPASS_CHECKBOX   1006
 #define IDC_ICON_PICTUREBOX     1003
 #define IDC_ALL_CHECKBOX        1004
+#define IDC_REPORT_TEXTBOX      2000
 
 #define ID_TO_ALL               0x100
 
