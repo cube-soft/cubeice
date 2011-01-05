@@ -23,19 +23,20 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
       throw 282228;
     resultString.ReleaseBuffer(numChars);
 #else
-    if (codePage == CP_UTF8) {
-      babel::init_babel();
-      //std::basic_string<wchar_t> encoded = babel::auto_translate<std::basic_string<wchar_t> >((const char*)srcString);
-      std::basic_string<wchar_t> encoded = babel::utf8_to_unicode((const char*)srcString);
-      resultString = encoded.c_str();
-    }
-    else {
+    babel::init_babel();
+    babel::analyze_result analyze_result = babel::analyze_base_encoding((const char*)srcString);
+    switch(analyze_result.get_strict_result()) {
+    case babel::base_encoding::utf8 : resultString = babel::utf8_to_unicode((const char*)srcString).c_str(); break;
+    case babel::base_encoding::euc :  resultString = babel::euc_to_unicode((const char*)srcString).c_str(); break;
+    case babel::base_encoding::jis :  resultString = babel::jis_to_unicode((const char*)srcString).c_str(); break;
+    case babel::base_encoding::sjis : resultString = babel::sjis_to_unicode((const char*)srcString).c_str(); break;
+    default: 
       int numChars = MultiByteToWideChar(codePage, 0, srcString,
         srcString.Length(), resultString.GetBuffer(srcString.Length()),
         srcString.Length() + 1);
-      if (numChars == 0)
-        throw 282228;
+      if (numChars == 0) throw 282228;
       resultString.ReleaseBuffer(numChars);
+      break;
     }
 #endif
   }
