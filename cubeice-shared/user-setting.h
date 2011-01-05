@@ -406,6 +406,7 @@ namespace cubeice {
 				//RegSetValueEx(hkResult, CUBEICE_REG_SHORTCUT, 0, REG_DWORD, (CONST BYTE*)&sc_flags_, sizeof(sc_flags_));
 				RegSetValueEx(hkResult, CUBEICE_REG_SCCOMPRESS, 0, REG_DWORD, (CONST BYTE*)&sc_index_, sizeof(sc_flags_));
 				
+#if !defined(UNICODE) && !defined(_UNICODE)
 				char buffer[2048] ={};
 				GetModuleFileNameA(GetModuleHandle(NULL), buffer, 2048);
 				std::basic_string<char> tmp = buffer;
@@ -418,6 +419,7 @@ namespace cubeice {
 				else this->remove_shortcut(CUBEICE_SC_DECOMPRESS);
 				if ((sc_flags_ & SETTING_FLAG)) this->create_shortcut(current + _T("\\cubeice-setting.exe"), _T(""), CUBEICE_SC_SETTING, 0);
 				else this->remove_shortcut(CUBEICE_SC_SETTING);
+#endif
 				
 				string_type dest;
 				clx::join(filters_, dest, _T("<>"));
@@ -555,19 +557,19 @@ namespace cubeice {
 		//  shortcut_exist
 		/* ----------------------------------------------------------------- */
 		bool shortcut_exist(const std::basic_string<char>& link) {
-#if !defined(_UNICODE) && !defined(UNICODE)
 			LPITEMIDLIST pidl;
 			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl);
 			
 			char buf[2048] = {};
-			SHGetPathFromIDList(pidl, buf);
-			lstrcat(buf, "\\");
-			lstrcat(buf, link.c_str());
+			SHGetPathFromIDListA(pidl, buf);
+			strcat(buf, "\\");
+			strcat(buf, link.c_str());
 			
-			return PathFileExists(buf) == TRUE;
-#else
+			return PathFileExistsA(buf) == TRUE;
+		}
+		
+		bool shortcut_exist(const std::basic_string<wchar_t>& link) {
 			return false;
-#endif
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -579,7 +581,7 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void create_shortcut(const std::basic_string<char>& path, const std::basic_string<char>& args, const std::basic_string<char>& link, int icon) {
-#if !defined(_UNICODE) && !defined(UNICODE)
+#if !defined(UNICODE) && !defined(_UNICODE)
 			HRESULT hres = CoInitialize(NULL);
 			if (FAILED(hres)) return;
 			
@@ -628,6 +630,10 @@ cleanup:
 #endif
 		}
 		
+		void create_shortcut(const std::basic_string<wchar_t>& path, const std::basic_string<wchar_t>& args, const std::basic_string<wchar_t>& link, int icon) {
+			return;
+		}
+		
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  create_shortcut
@@ -636,17 +642,19 @@ cleanup:
 		 */
 		/* ----------------------------------------------------------------- */
 		void remove_shortcut(const std::basic_string<char>& link) {
-#if !defined(_UNICODE) && !defined(UNICODE)
 			LPITEMIDLIST pidl;
 			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl);
 			
 			char buf[2048] = {};
-			SHGetPathFromIDList(pidl, buf);
-			lstrcat(buf, "\\");
-			lstrcat(buf, link.c_str());
+			SHGetPathFromIDListA(pidl, buf);
+			strcat(buf, "\\");
+			strcat(buf, link.c_str());
 			
-			DeleteFile(buf);
-#endif
+			DeleteFileA(buf);
+		}
+		
+		void remove_shortcut(const std::basic_string<wchar_t>& link) {
+			return;
 		}
 	};
 }
