@@ -44,6 +44,9 @@
 #define IDC_ALL_CHECKBOX        1004
 #define IDC_REPORT_TEXTBOX      2000
 
-#define ID_TO_ALL               0x100
+#define IDYESTOALL              0x106
+#define IDNOTOALL               0x107
+#define IDRENAME                0x120
+#define ID_TO_ALL               0x101
 
 #endif // CUBEICE_RESOURCE_H
