@@ -101,6 +101,7 @@
 #define DETAIL_IGNORE_NEWER   0x0002  // 更新日時が新しい場合は無視
 #define DETAIL_OPEN           0x0004  // 保存先を開く
 #define DETAIL_CREATE_FOLDER  0x0008  // フォルダを作成する
+#define DETAIL_SINGLE_FOLDER  0x0100  // 単一フォルダの場合は作成しない
 #define DETAIL_CHARCODE       0x0010  // 文字コードを変換する
 #define DETAIL_FILTER         0x0020  // フィルタリングを行う
 #define DETAIL_SKIP_DESKTOP   0x0040  // デスクトップの場合は開かない
