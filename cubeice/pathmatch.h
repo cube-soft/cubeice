@@ -2,7 +2,7 @@
 /*
  *  pathmatch.h
  *
- *  Copyright (c) 2004 - 2010, clown. All rights reserved.
+ *  Copyright (c) 2010 CubeSoft Inc.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
@@ -29,7 +29,7 @@
  *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- *  Last-modified: Tue 16 Mar 2010 17:06:03 JST
+ *  Last-modified: Fri 07 Jan 2011 14:01:03 JST
  */
 /* ------------------------------------------------------------------------- */
 #ifndef CUBEICE_PATHMATCH_H
