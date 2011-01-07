@@ -67,12 +67,19 @@ namespace cubeice {
 			SendMessage(GetDlgItem(hWnd, IDC_PASSWORD_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('*'), 0);
 			SendMessage(GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('*'), 0);
 			
+			if (lp == 0x02) { // ‰ð“€—p
+				CheckDlgButton(hWnd, IDC_SHOWPASS_CHECKBOX, BM_SETCHECK);
+				EnableWindow(GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX), FALSE);
+				SendMessage(GetDlgItem(hWnd, IDC_PASSWORD_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('\0'), 0);
+			}
+			
 			// ‰æ–Ê’†‰›‚É•\Ž¦
 			RECT rect = {};
 			GetWindowRect(hWnd, (LPRECT)&rect);
 			int x = (GetSystemMetrics(SM_CXSCREEN) - (rect.right - rect.left)) / 2;
 			int y = (GetSystemMetrics(SM_CYSCREEN) - (rect.bottom - rect.top)) / 2;
 			SetWindowPos(hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
+			
 			return TRUE;
 		}
 		case WM_COMMAND:
@@ -125,8 +132,8 @@ namespace cubeice {
 	/* --------------------------------------------------------------------- */
 	//  password_dialog
 	/* --------------------------------------------------------------------- */
-	inline INT_PTR password_dialog() {
-		return DialogBox(GetModuleHandle(NULL), _T("IDD_PASSWORD"), NULL, password_wndproc);
+	inline INT_PTR password_dialog(int which) {
+		return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_PASSWORD"), NULL, password_wndproc, which);
 	}
 }
 

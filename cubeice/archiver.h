@@ -86,7 +86,7 @@ namespace cubeice {
 			if (dest.empty()) return;
 			
 			// パスワードの設定．
-			if (pass && password_dialog() == IDCANCEL) return;
+			if (pass && password_dialog(COMPRESS_FLAG) == IDCANCEL) return;
 			
 			// 一時ファイルのパスを決定
 			string_type tmp = tmpfile(_T("cubeice"));
@@ -226,7 +226,7 @@ namespace cubeice {
 				
 				// パスワードの設定
 				bool pass = this->decompress_password(src, progress);
-				if (pass && password_dialog() == IDCANCEL) break;
+				if (pass && password_dialog(DECOMPRESS_FLAG) == IDCANCEL) break;
 				
 				// フォルダの作成
 				if (!PathFileExists(root.c_str()) && CreateDirectory(root.c_str(), NULL) == 0) break;
