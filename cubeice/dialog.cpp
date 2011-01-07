@@ -103,7 +103,7 @@ namespace cubeice {
 			typedef TCHAR char_type;
 			char_type path[CUBE_MAX_PATH] = {};
 			GetCurrentDirectory(CUBE_MAX_PATH, path);
-
+			
 			BROWSEINFO info = {};
 			info.pszDisplayName = path;
 			info.lpszTitle = description;

@@ -120,6 +120,7 @@ namespace cubeice {
 			for (; first != last; ++first) cmdline += _T(" \"") + *first + _T("\"");
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
+			Sleep(100);
 			
 			// ƒƒCƒ“ˆ—
 			int status = 0;
@@ -136,8 +137,7 @@ namespace cubeice {
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
 					++progress;
-					if (progress.position() >= progress.maximum()) progress.marquee(true);
-					Sleep(10);
+					Sleep(50);
 					continue;
 				}
 				assert(status == 1);
@@ -276,8 +276,7 @@ namespace cubeice {
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
 						++progress;
-						if (progress.position() >= progress.maximum()) progress.marquee(true);
-						Sleep(10);
+						Sleep(50);
 						continue;
 					}
 					assert(status == 1);
