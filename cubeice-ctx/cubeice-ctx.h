@@ -13,7 +13,7 @@ extern HINSTANCE	hDllInstance;
 namespace cube {
 	namespace shlctxmenu {
 
-		class CShlCtxMenu : public IContextMenu, IShellExtInit, IMenuInfo {
+		class CShlCtxMenu : public IContextMenu3, IShellExtInit, IMenuInfo {
 		public:
 			CShlCtxMenu() : refCount( 0L ) {}
 			~CShlCtxMenu() {}
@@ -24,6 +24,10 @@ namespace cube {
 
 				if( IsEqualIID( riid, IID_IUnknown ) || IsEqualIID( riid, IID_IContextMenu ) )
 					*ppv = static_cast<LPCONTEXTMENU>( this );
+				else if( IsEqualIID( riid, IID_IContextMenu2 ) )
+					*ppv = static_cast<LPCONTEXTMENU2>( this );
+				else if( IsEqualIID( riid, IID_IContextMenu3 ) )
+					*ppv = static_cast<LPCONTEXTMENU3>( this );
 				else if( IsEqualIID( riid, IID_IShellExtInit ) )
 					*ppv = static_cast<LPSHELLEXTINIT>( this );
 				else
@@ -70,30 +74,40 @@ namespace cube {
 					MENUITEMINFO		miinfo;
 
 					ZeroMemory( &miinfo, sizeof( miinfo ) );
-					miinfo.cbSize		= sizeof( miinfo );
-					miinfo.fMask		= MIIM_ID | MIIM_TYPE;
-					miinfo.fType		= MFT_STRING;
-					miinfo.wID			= idCmd++;
+					miinfo.cbSize			= sizeof( miinfo );
+					miinfo.fMask			= MIIM_FTYPE | MIIM_STRING | MIIM_ID;
+					miinfo.fType			= MFT_STRING;
+					miinfo.wID				= idCmd++;
 #ifndef	UNICODE
-					miinfo.dwTypeData	= const_cast<LPSTR>( MenuItem[i].stringA );
+					miinfo.dwTypeData		= const_cast<LPSTR>( MenuItem[i].stringA );
 #else	// UNICODE
-					miinfo.dwTypeData	= const_cast<LPWSTR>( MenuItem[i].stringW );
+					miinfo.dwTypeData		= const_cast<LPWSTR>( MenuItem[i].stringW );
 #endif	// UNICODE
 
 					if( MenuItem[i].submenu ) {
-						miinfo.fMask	|= MIIM_SUBMENU;
-						miinfo.hSubMenu	= CreateSubMenu( MenuItem[i].submenu, idCmd );
+						miinfo.fMask		|= MIIM_SUBMENU;
+						miinfo.hSubMenu		= CreateSubMenu( MenuItem[i].submenu, idCmd );
 					}
-					InsertMenuItem( hMenu, indexMenu++, TRUE, &miinfo );
-
 					if( MenuItem[i].iconID != ICON_NOT_USED ) {
-						HBITMAP		hBitmap = static_cast<HBITMAP>( LoadImage( hDllInstance, MAKEINTRESOURCE( MenuItem[i].iconID ), IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR | LR_SHARED ) );
-						SetMenuItemBitmaps( hMenu, indexMenu - 1, MF_BYPOSITION, hBitmap, hBitmap );
+						miinfo.fMask		|= MIIM_BITMAP | MIIM_DATA;
+						miinfo.hbmpItem		= HBMMENU_CALLBACK;
+						miinfo.dwItemData	= MenuItem[i].iconID;
 					}
+
+					InsertMenuItem( hMenu, indexMenu++, TRUE, &miinfo );
 				}
 
 				// Add separator
 				InsertMenu( hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
+
+				MENUINFO	mi;
+				ZeroMemory( &mi, sizeof( mi ) );
+				mi.cbSize	= sizeof( mi );
+				mi.fMask	= MIM_STYLE;
+				GetMenuInfo( hMenu, &mi );
+				mi.dwStyle	= ( mi.dwStyle & ~MNS_NOCHECK ) | MNS_CHECKORBMP;
+				mi.fMask	= MIM_STYLE | MIM_APPLYTOSUBMENUS;
+				SetMenuInfo( hMenu, &mi );
 
 				return MAKE_SCODE( SEVERITY_SUCCESS, FACILITY_NULL, idCmd - idCmdFirst );
 			}
@@ -118,6 +132,62 @@ namespace cube {
 					if( uFlags == GCS_VALIDATEA || uFlags == GCS_VALIDATEW )
 						return S_FALSE;
 				}
+				return S_OK;
+			}
+
+			// IContextMenu2 members
+			STDMETHODIMP HandleMenuMsg( UINT uMsg, WPARAM wParam, LPARAM lParam ) {
+				HRESULT		res;
+				return HandleMenuMsg2( uMsg, wParam, lParam, &res );
+			}
+
+			// IContextMenu3 members
+			STDMETHODIMP HandleMenuMsg2( UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT *plResult ) {
+				HRESULT		res;
+
+				if( !plResult )
+					plResult = &res;
+				*plResult = FALSE;
+
+				switch( uMsg ) {
+					//case WM_INITMENUPOPUP:
+					//	break;
+					//case WM_MENUCHAR:
+					//	break;
+
+					case WM_MEASUREITEM:
+					{
+						MEASUREITEMSTRUCT	*lpmis = reinterpret_cast<MEASUREITEMSTRUCT*>( lParam );
+
+						if( !lpmis )
+							return S_OK;
+						lpmis->itemHeight	= 16;
+						lpmis->itemWidth	= 16;
+						*plResult = TRUE;
+						break;
+					}
+
+					case WM_DRAWITEM:
+					{
+						DRAWITEMSTRUCT		*lpdis = reinterpret_cast<DRAWITEMSTRUCT*>( lParam );
+
+						if( !lpdis || lpdis->CtlType != ODT_MENU )
+							return S_OK;
+
+						HICON	hIcon = static_cast<HICON>( LoadImage( hDllInstance, MAKEINTRESOURCE( lpdis->itemData ), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR ) );
+
+						if( !hIcon )
+							return S_OK;
+
+						DrawIconEx( lpdis->hDC, lpdis->rcItem.left, lpdis->rcItem.top, hIcon, 16, 16, 0, NULL, DI_NORMAL );
+
+						DestroyIcon( hIcon );
+
+						*plResult = TRUE;
+						break;
+					}
+				}
+
 				return S_OK;
 			}
 
@@ -189,26 +259,27 @@ namespace cube {
 						continue;
 
 					ZeroMemory( &miinfo, sizeof( miinfo ) );
-					miinfo.cbSize		= sizeof( miinfo );
-					miinfo.fMask		= MIIM_ID | MIIM_TYPE;
-					miinfo.fType		= MFT_STRING;
-					miinfo.wID			= idCmd++;
+					miinfo.cbSize			= sizeof( miinfo );
+					miinfo.fMask			= MIIM_FTYPE | MIIM_STRING | MIIM_ID;
+					miinfo.fType			= MFT_STRING;
+					miinfo.wID				= idCmd++;
 #ifndef	UNICODE
-					miinfo.dwTypeData	= const_cast<LPSTR>( smi[i].stringA );
+					miinfo.dwTypeData		= const_cast<LPSTR>( smi[i].stringA );
 #else	// UNICODE
-					miinfo.dwTypeData	= const_cast<LPWSTR>( smi[i].stringW );
+					miinfo.dwTypeData		= const_cast<LPWSTR>( smi[i].stringW );
 #endif	// UNICODE
 
 					if( smi[i].submenu ) {
-						miinfo.fMask	|= MIIM_SUBMENU;
-						miinfo.hSubMenu	= CreateSubMenu( smi[i].submenu, idCmd );
+						miinfo.fMask		|= MIIM_SUBMENU;
+						miinfo.hSubMenu		= CreateSubMenu( smi[i].submenu, idCmd );
 					}
-					InsertMenuItem( hMenu, i, TRUE, &miinfo );
-
 					if( smi[i].iconID != ICON_NOT_USED ) {
-						HBITMAP		hBitmap = static_cast<HBITMAP>( LoadImage( hDllInstance, MAKEINTRESOURCE( smi[i].iconID ), IMAGE_BITMAP, 0, 0, LR_DEFAULTCOLOR | LR_SHARED ) );
-						SetMenuItemBitmaps( hMenu, i, MF_BYPOSITION, hBitmap, hBitmap );
+						miinfo.fMask		|= MIIM_BITMAP | MIIM_DATA;
+						miinfo.hbmpItem		= HBMMENU_CALLBACK;
+						miinfo.dwItemData	= smi[i].iconID;
 					}
+
+					InsertMenuItem( hMenu, i, TRUE, &miinfo );
 				}
 
 				return hMenu;
@@ -218,6 +289,9 @@ namespace cube {
 			void RecursiveInvokeCommand( const SUB_MENU_ITEM *smi, LPCMINVOKECOMMANDINFO lpcmi, DWORD &index ) {
 				for( unsigned int i = 0 ; smi[i].stringA && index <= LOWORD( lpcmi->lpVerb ) ; ++i ) {
 					if( smi[i].dispSetting && !( ctxSetting & smi[i].dispSetting ) )
+						continue;
+
+					if( smi[i].dispSetting == DECOMPRESS_FLAG && !this->is_decompress(fileList.begin(), fileList.end()))
 						continue;
 
 					if( index == LOWORD( lpcmi->lpVerb ) ) {
@@ -237,6 +311,9 @@ namespace cube {
 			void RecursiveGetCommandString( const SUB_MENU_ITEM *smi, unsigned int &index, UINT_PTR idCmd, UINT uFlags, LPSTR pszName, UINT cchMax ) {
 				for( unsigned int i = 0 ; smi[i].stringA && index <= idCmd ; ++i ) {
 					if( smi[i].dispSetting && !( ctxSetting & smi[i].dispSetting ) )
+						continue;
+
+					if( smi[i].dispSetting == DECOMPRESS_FLAG && !this->is_decompress(fileList.begin(), fileList.end()))
 						continue;
 
 					if( index == idCmd ) {
