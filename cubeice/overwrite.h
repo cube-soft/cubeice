@@ -37,18 +37,6 @@
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */
-	/*
-	 *  overwrite
-	 *
-	 *  NOTE: 現状は，全てのイアログが一つのテキスト領域を共有している．
-	 */
-	/* --------------------------------------------------------------------- */
-	inline std::basic_string<TCHAR>& overwrite() {
-		static std::basic_string<TCHAR> text;
-		return text;
-	}
-	
-	/* --------------------------------------------------------------------- */
 	//  overwrite_wndproc
 	/* --------------------------------------------------------------------- */
 	static BOOL CALLBACK overwrite_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
@@ -63,7 +51,7 @@ namespace cubeice {
 			SendMessage(pic, STM_SETIMAGE, IMAGE_ICON, LPARAM(info));
 			
 			// テキスト
-			SetWindowText(GetDlgItem(hWnd, IDC_INFO_LABEL), overwrite().c_str());
+			SetWindowText(GetDlgItem(hWnd, IDC_INFO_LABEL), (const TCHAR*)lp);
 			
 			// 画面中央に表示
 			RECT rect = {};
@@ -80,10 +68,9 @@ namespace cubeice {
 			case IDYESTOALL:
 			case IDNOTOALL:
 			case IDCANCEL:
+			case IDRENAMETOALL:
 				EndDialog(hWnd, LOWORD(wp));
 				break;
-			case IDRENAME:
-				EndDialog(hWnd, IDNO); // 後で修正
 			default:
 				break;
 			}
@@ -98,8 +85,8 @@ namespace cubeice {
 	/* --------------------------------------------------------------------- */
 	//  password_dialog
 	/* --------------------------------------------------------------------- */
-	inline INT_PTR overwrite_dialog() {
-		return DialogBox(GetModuleHandle(NULL), _T("IDD_OVERWRITE"), NULL, overwrite_wndproc);
+	inline INT_PTR overwrite_dialog(const std::basic_string<TCHAR>& message) {
+		return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_OVERWRITE"), NULL, overwrite_wndproc, (LPARAM)message.c_str());
 	}
 }
 
