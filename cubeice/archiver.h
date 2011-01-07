@@ -38,6 +38,7 @@
 #include <clx/replace.h>
 #include <clx/date_time.h>
 #include <clx/timer.h>
+#include <clx/lexical_cast.h>
 #include "wpopen.h"
 #include "pathmatch.h"
 #include "user-setting.h"
@@ -743,6 +744,7 @@ namespace cubeice {
 			}
 			return CreateDirectory(path.c_str(), NULL) == TRUE;
 		}
+
 		
 		/* ----------------------------------------------------------------- */
 		/*
@@ -752,17 +754,31 @@ namespace cubeice {
 		 *  代わりに同名のディレクトリを移動先に作成する．
 		 */
 		/* ----------------------------------------------------------------- */
+#define MAX_RENAME_DIGIT 100
+
 		bool move(const string_type& src, const string_type& dest, bool rename) {
 			bool status = false;
-			string_type report;
 			if (PathIsDirectory(src.c_str())) {
 				status = createdir(dest);
 			} else {
 				string_type branch(dest.substr(0, dest.find_last_of(_T('\\'))));
 				status = createdir(branch);
 				// TODO: リネーム処理を追加
-				//if (rename && PathFileExists(dest.c_str())) {}
-				status &= (MoveFileEx(src.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) == TRUE);
+				if (rename && PathFileExists(dest.c_str())) {
+					TCHAR drivename[8], dirname[4096], basename[1024], extname[32];
+					_wsplitpath_s(dest.c_str(), drivename, sizeof(drivename), dirname, sizeof(dirname), basename, sizeof(basename), extname, sizeof(extname));
+					TCHAR renamed[8192];
+					// renamed を.....(N).拡張子に変更する Nは数字。一応 N< MAX_RENAME_DIGITとしておく
+					int i;
+					for (i = 2; i <= MAX_RENAME_DIGIT; i++) {
+						swprintf_s(renamed, sizeof(renamed), _T("%s%s%s(%d)%s"), drivename, dirname, basename, i, extname);
+						if (!PathFileExists(renamed)) break;
+					}
+					if (i > MAX_RENAME_DIGIT) { return false; }
+					status &= (MoveFileEx(src.c_str(), renamed, (MOVEFILE_COPY_ALLOWED)) == TRUE);
+				} else {
+					status &= (MoveFileEx(src.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) == TRUE);
+				}
 			}
 			return status;
 		}
