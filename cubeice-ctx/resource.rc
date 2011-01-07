@@ -4,4 +4,4 @@
 //
 // Bitmap resources
 //
-IDB_LOGO           BITMAP         ".\logo.bmp"
+IDB_LOGO           ICON         ".\cubeice.ico"

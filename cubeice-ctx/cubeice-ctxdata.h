@@ -42,6 +42,15 @@ const SUB_MENU_ITEM		SubMenuCompress[] = {
 //	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "自己解凍形式" ),		TEXT( "/c:exe" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
+const SUB_MENU_ITEM		SubMenuCompAndMail[] = {
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "zip" ),					NULL,				MAKE_AWSTRING( "zip圧縮" ),				TEXT( "/c:zip /m" ) },
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "zip (パスワード)" ),	NULL,				MAKE_AWSTRING( "zip圧縮(パス)" ),		TEXT( "/c:zip /p /m" ) },
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "7z" ),					NULL,				MAKE_AWSTRING( "7-zip圧縮" ),			TEXT( "/c:7z /m" ) },
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "bzip2" ),				NULL,				MAKE_AWSTRING( "bzip2圧縮" ),			TEXT( "/c:bzip2 /m" ) },
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "gzip" ),				NULL,				MAKE_AWSTRING( "gzip圧縮" ),			TEXT( "/c:gzip /m" ) },
+//	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "自己解凍形式" ),		TEXT( "/c:exe /m" ) },
+	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
+};
 const SUB_MENU_ITEM		SubMenuDecompress[] = {
 	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "ここに解凍" ),			NULL,				MAKE_AWSTRING( "この場所に解凍" ),		TEXT( "/x:source" ) },
 	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "デスクトップに解凍" ),	NULL,				MAKE_AWSTRING( "デスクトップに解凍" ),	TEXT( "/x:desktop" ) },
@@ -51,6 +60,7 @@ const SUB_MENU_ITEM		SubMenuDecompress[] = {
 
 const SUB_MENU_ITEM		MenuItem[] = {
 	{ COMPRESS_FLAG,	IDB_LOGO,		MAKE_AWSTRING( "圧縮" ),				SubMenuCompress,	MAKE_AWSTRING( "圧縮を行う" ),			NULL },
+	{ MAIL_FLAG,		IDB_LOGO,		MAKE_AWSTRING( "圧縮してメール送信" ),	SubMenuCompAndMail,	MAKE_AWSTRING( "圧縮してメール送信" ),	NULL },
 	{ DECOMPRESS_FLAG,	IDB_LOGO,		MAKE_AWSTRING( "解凍" ),				SubMenuDecompress,	MAKE_AWSTRING( "展開を行う" ),			NULL },
 //	{ SETTING_FLAG,		IDB_LOGO,		MAKE_AWSTRING( "設定" ),				NULL,				MAKE_AWSTRING( "設定を行う" ),			NULL },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
