@@ -79,6 +79,7 @@
 #define COMPRESS_FLAG       0x0001
 #define DECOMPRESS_FLAG     0x0002
 #define SETTING_FLAG        0x0004
+#define MAIL_FLAG           0x0008
 
 /* ------------------------------------------------------------------------- */
 //  出力先フォルダに関連するフラグ

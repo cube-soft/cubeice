@@ -113,6 +113,7 @@ namespace cubeice {
 			dest[IDC_CT_COMPRESS_CHECKBOX] = COMPRESS_FLAG;
 			dest[IDC_CT_DECOMPRESS_CHECKBOX] = DECOMPRESS_FLAG;
 			dest[IDC_CT_SETTING_CHECKBOX] = SETTING_FLAG;
+			dest[IDC_CT_MAIL_CHECKBOX] = MAIL_FLAG;
 			initialized = true;
 		}
 		return dest;
