@@ -48,14 +48,14 @@ Name: japanese; MessagesFile: compiler:Languages\Japanese.isl
 
 [Files]
 Source: {#SrcDir}\release\cubeice.exe; DestDir: {app}; Flags: ignoreversion
-Source: ..\release\cubeice-setting.exe; DestDir: {app}; Flags: ignoreversion
+Source: {#SrcDir}\release\cubeice-setting.exe; DestDir: {app}; Flags: ignoreversion
 Source: {#SrcDir}\release\cubeice-exec.exe; DestDir: {app}; Flags: ignoreversion
-Source: ..\release\cubeice-file.ico; DestDir: {app}; Flags: ignoreversion
-Source: ..\release\cubeicectx.dll; DestDir: {app}; Flags: ignoreversion onlyifdoesntexist
+Source: {#SrcDir}\release\cubeice-file.ico; DestDir: {app}; Flags: ignoreversion
+Source: {#SrcDir}\release\cubeicectx.dll; DestDir: {app}; Flags: ignoreversion onlyifdoesntexist
 Source: {#SrcDir}\release\GNU General Public License.txt; DestDir: {app}; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: {#SrcDir}\release\7z.dll; DestDir: {app}; Flags: ignoreversion
-Source: ..\release\7z.sfx; DestDir: {app}; Flags: ignoreversion
+Source: {#SrcDir}\release\7z.sfx; DestDir: {app}; Flags: ignoreversion
 
 [Icons]
 Name: {group}\{#MyAppName} ê›íË; Filename: {app}\cubeice-setting.exe; IconIndex: 0
