@@ -36,6 +36,7 @@
 #include <clx/strip.h>
 #include <clx/split.h>
 #include <clx/replace.h>
+#include <clx/date_time.h>
 #include <clx/timer.h>
 #include "wpopen.h"
 #include "pathmatch.h"
@@ -646,6 +647,13 @@ namespace cubeice {
 		
 	private: // others
 		const setting_type& setting_;
+		size_type size_;
+		
+		struct fileinfo {
+			size_type size;
+			clx::date_time time;
+		};
+		std::map<string_type, fileinfo> filelist_;
 		
 		/* ----------------------------------------------------------------- */
 		//  non-copyable
