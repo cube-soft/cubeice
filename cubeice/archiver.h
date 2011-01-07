@@ -86,7 +86,7 @@ namespace cubeice {
 			if (dest.empty()) return;
 			
 			// パスワードの設定．
-			if (pass && password_dialog(COMPRESS_FLAG) == IDCANCEL) return;
+			if (pass && cubeice::dialog::password(COMPRESS_FLAG) == IDCANCEL) return;
 			
 			// 一時ファイルのパスを決定
 			string_type tmp = tmpfile(_T("cubeice"));
@@ -163,7 +163,7 @@ namespace cubeice {
 			
 			if (status < 0) report += error + _T(" broken pipe.\r\n");
 			if ((setting_.compression().details() & DETAIL_REPORT) && !report.empty()) {
-				cubeice::report_dialog(report);
+				cubeice::dialog::report(report);
 			}
 			
 			if (status == 2) {
@@ -226,7 +226,7 @@ namespace cubeice {
 				
 				// パスワードの設定
 				bool pass = this->decompress_password(src, progress);
-				if (pass && password_dialog(DECOMPRESS_FLAG) == IDCANCEL) break;
+				if (pass && cubeice::dialog::password(DECOMPRESS_FLAG) == IDCANCEL) break;
 				
 				// フォルダの作成
 				if (!PathFileExists(root.c_str()) && CreateDirectory(root.c_str(), NULL) == 0) break;
@@ -321,7 +321,7 @@ namespace cubeice {
 				
 				if (status < 0) report += error + _T(" broken pipe.");
 				if ((setting_.decompression().details() & DETAIL_REPORT) && !report.empty()) {
-					cubeice::report_dialog(report);
+					cubeice::dialog::report(report);
 				}
 				
 				// フォルダを開く
@@ -855,7 +855,7 @@ namespace cubeice {
 			if ((setting.details() & DETAIL_OVERWRITE) && PathFileExists(target.c_str())) {
 				if ((setting.details() & DETAIL_IGNORE_NEWER) && !is_older(target, compared)) return IDYES;
 				else if (force > 0) return force;
-				else return cubeice::overwrite_dialog(target + _T(" は既に存在します。\r\n上書きしますか？"));
+				else return cubeice::dialog::overwrite(target + _T(" は既に存在します。\r\n上書きしますか？"));
 			}
 			return IDOK;
 		}
