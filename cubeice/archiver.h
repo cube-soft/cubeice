@@ -163,8 +163,7 @@ namespace cubeice {
 			
 			if (status < 0) report += error + _T(" broken pipe.\r\n");
 			if ((setting_.compression().details() & DETAIL_REPORT) && !report.empty()) {
-				cubeice::report() = report;
-				cubeice::report_dialog();
+				cubeice::report_dialog(report);
 			}
 			
 			if (status == 2) {
@@ -313,7 +312,7 @@ namespace cubeice {
 					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
 						message += _T("Filtering: ");
 					}
-					else if (!this->move(tmp + _T('\\') + filename, root + _T('\\') + filename)) {
+					else if (!this->move(tmp + _T('\\') + filename, root + _T('\\') + filename, result == IDRENAME)) {
 						report += error + _T(" Can not move file. ") + filename + _T("\r\n");
 					}
 					message += filename;
@@ -322,8 +321,7 @@ namespace cubeice {
 				
 				if (status < 0) report += error + _T(" broken pipe.");
 				if ((setting_.decompression().details() & DETAIL_REPORT) && !report.empty()) {
-					cubeice::report() = report;
-					cubeice::report_dialog();
+					cubeice::report_dialog(report);
 				}
 				
 				// フォルダを開く
@@ -747,7 +745,7 @@ namespace cubeice {
 		 *  代わりに同名のディレクトリを移動先に作成する．
 		 */
 		/* ----------------------------------------------------------------- */
-		bool move(const string_type& src, const string_type& dest) {
+		bool move(const string_type& src, const string_type& dest, bool rename) {
 			bool status = false;
 			string_type report;
 			if (PathIsDirectory(src.c_str())) {
@@ -755,6 +753,8 @@ namespace cubeice {
 			} else {
 				string_type branch(dest.substr(0, dest.find_last_of(_T('\\'))));
 				status = createdir(branch);
+				// TODO: リネーム処理を追加
+				//if (rename && PathFileExists(dest.c_str())) {}
 				status &= (MoveFileEx(src.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) == TRUE);
 			}
 			return status;
@@ -855,10 +855,7 @@ namespace cubeice {
 			if ((setting.details() & DETAIL_OVERWRITE) && PathFileExists(target.c_str())) {
 				if ((setting.details() & DETAIL_IGNORE_NEWER) && !is_older(target, compared)) return IDYES;
 				else if (force > 0) return force;
-				else {
-					cubeice::overwrite() = target + _T(" は既に存在します。\r\n上書きしますか？");
-					return cubeice::overwrite_dialog();
-				}
+				else return cubeice::overwrite_dialog(target + _T(" は既に存在します。\r\n上書きしますか？"));
 			}
 			return IDOK;
 		}

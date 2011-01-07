@@ -37,18 +37,6 @@
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */
-	/*
-	 *  report
-	 *
-	 *  NOTE: 現状は，全てのイアログが一つのテキスト領域を共有している．
-	 */
-	/* --------------------------------------------------------------------- */
-	inline std::basic_string<TCHAR>& report() {
-		static std::basic_string<TCHAR> text;
-		return text;
-	}
-	
-	/* --------------------------------------------------------------------- */
 	//  overwrite_wndproc
 	/* --------------------------------------------------------------------- */
 	static BOOL CALLBACK report_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
@@ -60,7 +48,7 @@ namespace cubeice {
 			SendMessage(hWnd, WM_SETICON, 0, LPARAM(app));
 			
 			// テキスト
-			SetWindowText(GetDlgItem(hWnd, IDC_REPORT_TEXTBOX), report().c_str());
+			SetWindowText(GetDlgItem(hWnd, IDC_REPORT_TEXTBOX), (const TCHAR*)lp);
 			
 			// 画面中央に表示
 			RECT rect = {};
@@ -90,8 +78,8 @@ namespace cubeice {
 	/* --------------------------------------------------------------------- */
 	//  report_dialog
 	/* --------------------------------------------------------------------- */
-	inline INT_PTR report_dialog() {
-		return DialogBox(GetModuleHandle(NULL), _T("IDD_REPORT"), NULL, report_wndproc);
+	inline INT_PTR report_dialog(const std::basic_string<TCHAR>& message) {
+		return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_REPORT"), NULL, report_wndproc, (LPARAM)message.c_str());
 	}
 }
 
