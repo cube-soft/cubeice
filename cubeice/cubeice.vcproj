@@ -182,6 +182,18 @@
 				RelativePath=".\dialog.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\overwrite.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\password.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\report.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="ヘッダー ファイル"
@@ -201,19 +213,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\overwrite.h"
-				>
-			</File>
-			<File
-				RelativePath=".\password.h"
-				>
-			</File>
-			<File
 				RelativePath=".\pathmatch.h"
-				>
-			</File>
-			<File
-				RelativePath=".\report.h"
 				>
 			</File>
 			<File
