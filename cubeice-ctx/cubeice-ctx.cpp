@@ -1,7 +1,7 @@
 #include <initguid.h>
 #include <shlguid.h>
 #include <shlobj.h>
-#include "cubeice-ctx.h"
+#include "cubeice-ctxfactory.h"
 #include "guid.h"
 
 namespace {
