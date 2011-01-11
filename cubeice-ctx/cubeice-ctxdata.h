@@ -9,6 +9,11 @@
 #include "user-setting.h"
 #include "resource.h"
 
+
+const int	ICON_SIZE = 16;
+const int	ICON_Y_SIZE = ICON_SIZE;
+const int	ICON_X_SIZE = ICON_SIZE;
+
 class IMenuInfo {
 public:
 	typedef std::basic_string<TCHAR>		tstring;

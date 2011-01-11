@@ -197,11 +197,23 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\cubeice-ctx.h"
+				RelativePath=".\cubeice-ctxbase.h"
 				>
 			</File>
 			<File
 				RelativePath=".\cubeice-ctxdata.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cubeice-ctxfactory.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cubeice-ctxvista.h"
+				>
+			</File>
+			<File
+				RelativePath=".\cubeice-ctxxp.h"
 				>
 			</File>
 			<File
