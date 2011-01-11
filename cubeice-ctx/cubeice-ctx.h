@@ -88,6 +88,7 @@ namespace cube {
 						miinfo.fMask		|= MIIM_SUBMENU;
 						miinfo.hSubMenu		= CreateSubMenu( MenuItem[i].submenu, idCmd );
 					}
+					
 					if( MenuItem[i].iconID != ICON_NOT_USED ) {
 						miinfo.fMask		|= MIIM_BITMAP | MIIM_DATA;
 						miinfo.hbmpItem		= HBMMENU_CALLBACK;
@@ -166,7 +167,6 @@ namespace cube {
 						*plResult = TRUE;
 						break;
 					}
-
 					case WM_DRAWITEM:
 					{
 						DRAWITEMSTRUCT		*lpdis = reinterpret_cast<DRAWITEMSTRUCT*>( lParam );
