@@ -61,7 +61,7 @@ namespace cubeice {
 		//  constructor
 		/* ----------------------------------------------------------------- */
 		explicit archiver(const setting_type& setting) :
-			setting_(setting) {}
+			setting_(setting), filelist_(), size_(0) {}
 		
 		/* ----------------------------------------------------------------- */
 		//  compress
@@ -72,7 +72,6 @@ namespace cubeice {
 			static const string_type error = _T("ERROR:");
 			
 			bool pass = false;
-			
 			
 			// オプションを読み飛ばす．
 			if (first->compare(0, 3, _T("/c:")) != 0) return;
@@ -105,7 +104,7 @@ namespace cubeice {
 			}
 			
 			// プログレスバーの設定
-			size_type n = this->compress_size(first, last, 5.0);
+			size_type n = this->compress_filelist(first, last, progress);
 			char msgbuf[32] = {};
 			double step = (n > 0) ? (progress.maximum() - progress.minimum()) / static_cast<double>(n) : 0.0;
 			if (n == 0) progress.marquee(true);
@@ -241,7 +240,7 @@ namespace cubeice {
 				if (this->is_tar(src)) src = this->decompress_tar(src, tmp, pass, progress);
 				
 				// プログレスバーの進行度の設定
-				std::pair<size_type, string_type> info = this->decompress_size_and_folder(src, progress);
+				std::pair<size_type, string_type> info = this->decompress_filelist(src, progress);
 				double step = (info.first > 0) ? (progress.maximum() - progress.minimum()) / static_cast<double>(info.first) : 0.0;
 				if (info.first == 0) progress.marquee(true);
 				else progress.marquee(false);
@@ -386,16 +385,15 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  compress_size
+		//  compress_filelist
 		/* ----------------------------------------------------------------- */
 		template <class InputIterator>
-		size_type compress_size(InputIterator first, InputIterator last, double timeout) {
+		size_type compress_filelist(InputIterator first, InputIterator last, cubeice::dialog::progressbar& progress) {
 			size_type n = 0;
-			clx::timer t;
 			for (; first != last; ++first) {
+				progress.refresh();
 				if (PathIsDirectory(first->c_str())) n += compress_size_folder(*first);
 				else ++n;
-				if (t.elapsed() > timeout) return 0;
 			}
 			return n;
 		}
@@ -514,14 +512,14 @@ namespace cubeice {
 		
 		/* ----------------------------------------------------------------- */
 		/*
-		 *  decompress_size_and_folder
+		 *  decompress_filelist
 		 *
 		 *  返り値の first は，圧縮ファイルに含まれるファイル数，
 		 *  second は root となるフォルダが単一フォルダの場合，その
 		 *  フォルダ名．
 		 */
 		/* ----------------------------------------------------------------- */
-		std::pair<size_type, string_type> decompress_size_and_folder(const string_type& path, cubeice::dialog::progressbar& progress) {
+		std::pair<size_type, string_type> decompress_filelist(const string_type& path, cubeice::dialog::progressbar& progress) {
 			string_type cmdline = CUBEICE_ENGINE;
 			string_type separator = _T("------------------------");
 			string_type header = _T("Name");
@@ -648,13 +646,14 @@ namespace cubeice {
 		
 	private: // others
 		const setting_type& setting_;
-		size_type size_;
 		
 		struct fileinfo {
 			size_type size;
 			clx::date_time time;
+			bool directory;
 		};
 		std::map<string_type, fileinfo> filelist_;
+		size_type size_; // トータルサイズ (KB 単位)
 		
 		/* ----------------------------------------------------------------- */
 		//  non-copyable

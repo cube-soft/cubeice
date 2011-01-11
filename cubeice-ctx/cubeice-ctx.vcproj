@@ -212,10 +212,6 @@
 				RelativePath=".\resource.h"
 				>
 			</File>
-			<File
-				RelativePath="..\cubeice-shared\user-setting.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="リソース ファイル"
