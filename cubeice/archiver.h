@@ -126,7 +126,6 @@ namespace cubeice {
 			cmdline += _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
 			for (; first != last; ++first) cmdline += _T(" \"") + *first + _T("\"");
 			cube::popen proc;
-			MessageBox(NULL, cmdline.c_str(), NULL, MB_OK);
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
 			Sleep(100);
 			
@@ -149,7 +148,7 @@ namespace cubeice {
 					continue;
 				}
 				assert(status == 1);
-				MessageBox(NULL, line.c_str(), NULL, MB_OK);
+				
 				if (n > 0 && progress.position() < progress.maximum()) {
 					double interval = watch.total_elapsed() * 1000.0;
 					if (progress.position() > interval) Sleep(static_cast<DWORD>(std::min(progress.position() - interval, 10.0)));

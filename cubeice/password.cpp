@@ -55,12 +55,6 @@ namespace cubeice {
 				SendMessage(GetDlgItem(hWnd, IDC_PASSWORD_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('*'), 0);
 				SendMessage(GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('*'), 0);
 				
-				if (lp == 0x02) { // 解凍用
-					CheckDlgButton(hWnd, IDC_SHOWPASS_CHECKBOX, BM_SETCHECK);
-					EnableWindow(GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX), FALSE);
-					SendMessage(GetDlgItem(hWnd, IDC_PASSWORD_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('\0'), 0);
-				}
-				
 				// 画面中央に表示
 				RECT rect = {};
 				GetWindowRect(hWnd, (LPRECT)&rect);
@@ -79,11 +73,12 @@ namespace cubeice {
 					GetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, buffer, 256);
 					std::basic_string<TCHAR> pass(buffer);
 					if (!IsDlgButtonChecked(hWnd, IDC_SHOWPASS_CHECKBOX)) {
-						GetDlgItemText(hWnd, IDC_CONFIRM_TEXTBOX, buffer, 256);
-						std::basic_string<TCHAR> confirm(buffer);
-						if (pass != confirm) {
-							MessageBox(hWnd, _T("パスワードが一致しません。"), _T("エラー"), MB_OK | MB_ICONERROR);
-							break;
+						if (GetDlgItemText(hWnd, IDC_CONFIRM_TEXTBOX, buffer, 256)) {
+							std::basic_string<TCHAR> confirm(buffer);
+							if (pass != confirm) {
+								MessageBox(hWnd, _T("パスワードが一致しません。"), _T("エラー"), MB_OK | MB_ICONERROR);
+								break;
+							}
 						}
 					}
 					cubeice::password() = pass;
@@ -121,7 +116,8 @@ namespace cubeice {
 		//  password
 		/* ----------------------------------------------------------------- */
 		int password(int which) {
-			return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_PASSWORD"), NULL, password_wndproc, which);
+			if (which == 0x01) return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_PASSWORD"), NULL, password_wndproc, which);
+			else return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_PASSWORD2"), NULL, password_wndproc, which);
 		}
 	}
 }
