@@ -72,12 +72,14 @@ namespace cubeice {
 			static const string_type error = _T("ERROR:");
 			
 			bool pass = false;
+			bool mail = false;
 			
 			// オプションを読み飛ばす．
 			if (first->compare(0, 3, _T("/c:")) != 0) return;
 			string_type filetype(first->substr(3));
 			for (; first != last && first->at(0) == _T('/'); ++first) {
 				if (first->compare(0, 2, _T("/p")) == 0) pass = true;
+				if (first->compare(0, 2, _T("/m")) == 0) mail = true;
 			}
 			if (first == last) return;
 			
@@ -182,6 +184,10 @@ namespace cubeice {
 					if ((setting_.compression().details() & DETAIL_SKIP_DESKTOP) == 0 || !this->is_desktop(root)) {
 						ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
 					}
+				}
+				
+				if (mail) {
+					// 添付してメールを送信するロジック
 				}
 			}
 			
