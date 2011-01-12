@@ -39,12 +39,16 @@
 #include <clx/date_time.h>
 #include <clx/timer.h>
 #include <clx/lexical_cast.h>
+#include <babel/babel.h>
 #include "wpopen.h"
 #include "pathmatch.h"
 #include "user-setting.h"
 #include "dialog.h"
+#include "sendmail.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
+#define MAIL_SUBJECT ""
+#define MAIL_BODY ""
 
 namespace cubeice {
 	/* --------------------------------------------------------------------- */
@@ -170,9 +174,21 @@ namespace cubeice {
 			}
 			
 			if (status == 2) {
-				if (ext.find(_T(".tar")) != string_type::npos) this->compress_tar(tmp, dest, filetype, pass, progress);
-				else MoveFile(tmp.c_str(), dest.c_str());
-				
+				if (mail) {
+					// 添付してメールを送信するロジック
+#ifdef	UNICODE
+					babel::init_babel();
+					cube::utility::sendmail::SendMail( MAIL_SUBJECT, MAIL_BODY, babel::unicode_to_sjis( tmp ).c_str(), babel::unicode_to_jis( dest.substr( dest.find_last_of( _T( '\\' ) ) + 1 ) ).c_str() );
+#else	// UNICODE
+					cube::utility::sendmail::SendMail( MAIL_SUBJECT, MAIL_BODY, tmp.c_str(), dest.substr( dest.find_last_of( _T( '\\' ) ) + 1 ).c_str() );
+#endif	// UNICODE
+				}
+
+
+				//if (ext.find(_T(".tar")) != string_type::npos) this->compress_tar(tmp, dest, filetype, pass, progress);
+				//else MoveFile(tmp.c_str(), dest.c_str());
+				MoveFile(tmp.c_str(), dest.c_str());
+
 				// フィルタリング
 				if ((setting_.compression().details() & DETAIL_FILTER) && !setting_.filters().empty()) {
 					this->compress_filter(dest, setting_.filters());
@@ -185,10 +201,7 @@ namespace cubeice {
 						ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
 					}
 				}
-				
-				if (mail) {
-					// 添付してメールを送信するロジック
-				}
+			
 			}
 			
 			if (PathFileExists(tmp.c_str())) DeleteFile(tmp.c_str());
