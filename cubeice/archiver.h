@@ -174,8 +174,14 @@ namespace cubeice {
 			}
 			
 			if (status == 2) {
+				if (ext.find(_T(".tar")) != string_type::npos) {
+					string_type prev = tmp;
+					tmp = tmpfile(_T("cubeice"));
+					this->compress_tar(prev, tmp, filetype, pass, progress);
+					if (PathFileExists(prev.c_str())) DeleteFile(prev.c_str());
+				}
+				
 				if (mail) {
-					// 添付してメールを送信するロジック
 #ifdef	UNICODE
 					babel::init_babel();
 					cube::utility::sendmail::SendMail( MAIL_SUBJECT, MAIL_BODY, babel::unicode_to_sjis( tmp ).c_str(), babel::unicode_to_jis( dest.substr( dest.find_last_of( _T( '\\' ) ) + 1 ) ).c_str() );
@@ -183,12 +189,9 @@ namespace cubeice {
 					cube::utility::sendmail::SendMail( MAIL_SUBJECT, MAIL_BODY, tmp.c_str(), dest.substr( dest.find_last_of( _T( '\\' ) ) + 1 ).c_str() );
 #endif	// UNICODE
 				}
-
-
-				//if (ext.find(_T(".tar")) != string_type::npos) this->compress_tar(tmp, dest, filetype, pass, progress);
-				//else MoveFile(tmp.c_str(), dest.c_str());
+				
 				MoveFile(tmp.c_str(), dest.c_str());
-
+				
 				// フィルタリング
 				if ((setting_.compression().details() & DETAIL_FILTER) && !setting_.filters().empty()) {
 					this->compress_filter(dest, setting_.filters());
