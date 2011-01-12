@@ -122,10 +122,11 @@ namespace cubeice {
 			if (filetype == _T("exe")) cmdline += _T(" -sfx7z.sfx");
 			else if (ext.find(_T(".tar")) != string_type::npos) cmdline += _T(" -ttar");
 			else cmdline += _T(" -t") + filetype;
-			if (pass) cmdline += _T(" -p") + cubeice::password();
+			if (pass) cmdline += _T(" -p\"") + cubeice::password() + _T("\"");
 			cmdline += _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
 			for (; first != last; ++first) cmdline += _T(" \"") + *first + _T("\"");
 			cube::popen proc;
+			MessageBox(NULL, cmdline.c_str(), NULL, MB_OK);
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
 			Sleep(100);
 			
@@ -148,7 +149,7 @@ namespace cubeice {
 					continue;
 				}
 				assert(status == 1);
-				
+				MessageBox(NULL, line.c_str(), NULL, MB_OK);
 				if (n > 0 && progress.position() < progress.maximum()) {
 					double interval = watch.total_elapsed() * 1000.0;
 					if (progress.position() > interval) Sleep(static_cast<DWORD>(std::min(progress.position() - interval, 10.0)));

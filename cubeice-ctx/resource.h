@@ -36,5 +36,7 @@
 #define CUBEICE_RESOURCE_H
 
 #define IDB_LOGO                                101
+#define IDB_COMPRESS                            102
+#define IDB_DECOMPRESS                          103
 
 #endif // CUBEICE_RESOURCE_H
