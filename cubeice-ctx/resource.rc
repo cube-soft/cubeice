@@ -5,3 +5,5 @@
 // Bitmap resources
 //
 IDB_LOGO           ICON         ".\cubeice.ico"
+IDB_COMPRESS       ICON         ".\compress.ico"
+IDB_DECOMPRESS     ICON         ".\decompress.ico"
