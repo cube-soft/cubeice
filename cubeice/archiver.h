@@ -174,6 +174,7 @@ namespace cubeice {
 			}
 			
 			if (status == 2) {
+				// *.tar の処理
 				if (ext.find(_T(".tar")) != string_type::npos) {
 					string_type prev = tmp;
 					tmp = tmpfile(_T("cubeice"));
@@ -245,7 +246,7 @@ namespace cubeice {
 				
 				cubeice::dialog::progressbar progress;
 				progress.marquee(true);
-				progress.text(root);
+				//progress.text(root);
 				
 				// パスワードの設定
 				bool pass = this->decompress_password(src, progress);
@@ -262,14 +263,13 @@ namespace cubeice {
 				if (this->is_tar(src)) src = this->decompress_tar(src, tmp, pass, progress);
 				
 				// プログレスバーの進行度の設定
-				std::pair<size_type, string_type> info = this->decompress_filelist(src, progress);
-				double step = (info.first > 0) ? (progress.maximum() - progress.minimum()) / static_cast<double>(info.first) : 0.0;
-				if (info.first == 0) progress.marquee(true);
+				string_type folder = this->decompress_filelist(src, progress);
+				if (this->size_ == 0) progress.marquee(true);
 				else progress.marquee(false);
 				
 				// フォルダの作成
 				if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER)) {
-					if ((setting_.decompression().details() & DETAIL_SINGLE_FOLDER) == 0 || info.second.empty()) {
+					if ((setting_.decompression().details() & DETAIL_SINGLE_FOLDER) == 0 || folder.empty()) {
 						root = this->decompress_createdir(setting_.decompression(), root, src);
 					}
 				}
@@ -285,10 +285,10 @@ namespace cubeice {
 				
 				// メイン処理
 				int status = 0;
-				int to_all = 0; // 「全てはい」or「全ていいえ」
+				int to_all = 0; // はい/いいえ/リネーム
 				string_type line;
 				string_type report;
-				clx::timer watch;
+				double calcpos = 0.0; // 計算上のプログレスバーの位置
 				while ((status = proc.gets(line)) >= 0) {
 					progress.refresh();
 					if (progress.is_cancel()) {
@@ -298,27 +298,30 @@ namespace cubeice {
 					
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
-						++progress;
-						Sleep(50);
+						if (progress.position() < progress.maximum()) ++progress;
+						Sleep(10);
 						continue;
 					}
 					assert(status == 1);
 					
-					if (info.first > 0 && progress.position() < progress.maximum()) {
-						double interval = watch.total_elapsed() * 1000.0;
-						if (progress.position() > interval) Sleep(static_cast<DWORD>(std::min(progress.position() - interval, 10.0)));
-						progress += step;
-					}
-					
 					string_type::size_type pos = line.find(error);
 					if (pos != string_type::npos) {
+						if (progress.position() < progress.maximum()) ++progress;
 						report += line + _T("\r\n");
 						continue;
 					}
-					pos = line.find(keyword);
-					if (pos == string_type::npos || line.size() <= keyword.size()) continue;
 					
+					pos = line.find(keyword);
+					if (pos == string_type::npos || line.size() <= keyword.size()) {
+						if (progress.position() < progress.maximum()) ++progress;
+						continue;
+					}
 					string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
+					progress.text(root + _T("\r\n") + filename);
+					
+					// プログレスバーの更新
+					calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->filelist_[filename].size);
+					if (this->size_ && progress.position() < calcpos) progress.position(calcpos);
 					
 					// 上書きの確認
 					int result = this->is_overwrite(root + _T('\\') + filename, tmp + _T('\\') + filename, setting_.decompression(), to_all);
@@ -332,13 +335,11 @@ namespace cubeice {
 					// フィルタリング
 					string_type message = root + _T("\r\n");
 					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
-						message += _T("Filtering: ");
+						// report += _T("Filtering: ") + filename + _T("\r\n");
 					}
 					else if (!this->move(tmp + _T('\\') + filename, root + _T('\\') + filename, result == IDRENAME)) {
 						report += error + _T(" Can not move file. ") + filename + _T("\r\n");
 					}
-					message += filename;
-					progress.text(message);
 				}
 				
 				if (status < 0) report += error + _T(" broken pipe.");
@@ -351,8 +352,8 @@ namespace cubeice {
 					if ((setting_.decompression().details() & DETAIL_SKIP_DESKTOP) == 0 || !this->is_desktop(root)) {
 						if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER) &&
 							(setting_.decompression().details() & DETAIL_SINGLE_FOLDER) &&
-							!info.second.empty()) {
-								root += _T("\\") + info.second;
+							!folder.empty()) {
+							root += _T("\\") + folder;
 						}
 						ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
 					}
@@ -421,7 +422,7 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  decompress_tar
+		//  compress_tar
 		/* ----------------------------------------------------------------- */
 		void compress_tar(const string_type& src, const string_type& dest, const string_type& filetype, bool pass, cubeice::dialog::progressbar& progress) {
 			static const string_type keyword = _T("Compressing");
@@ -536,12 +537,11 @@ namespace cubeice {
 		/*
 		 *  decompress_filelist
 		 *
-		 *  返り値の first は，圧縮ファイルに含まれるファイル数，
-		 *  second は root となるフォルダが単一フォルダの場合，その
+		 *  返り値は root となるフォルダが単一フォルダの場合，その
 		 *  フォルダ名．
 		 */
 		/* ----------------------------------------------------------------- */
-		std::pair<size_type, string_type> decompress_filelist(const string_type& path, cubeice::dialog::progressbar& progress) {
+		string_type decompress_filelist(const string_type& path, cubeice::dialog::progressbar& progress) {
 			string_type cmdline = CUBEICE_ENGINE;
 			string_type separator = _T("------------------------");
 			string_type header = _T("Name");
@@ -549,8 +549,10 @@ namespace cubeice {
 			cmdline += _T(" l ");
 			cmdline += _T("\"") + path + _T("\"");
 			
+			this->size_ = 0;
+			string_type dest;
+			
 			std::vector<string_type> v;
-			std::pair<size_type, string_type> dest;
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return dest;
 			string_type buffer, src;
@@ -568,28 +570,29 @@ namespace cubeice {
 					continue;
 				}
 				
-				if (single && v.size() == 6) {
-					string_type::size_type pos = v.at(5).find_first_of(_T('\\'));
-					string_type folder = (pos != string_type::npos) ? v.at(5).substr(0, pos) : v.at(5);
-					if (pos != string_type::npos || v.at(2).find(_T('D')) != string_type::npos) {
-						if (dest.second.empty()) dest.second = folder;
-						else if (dest.second != folder) single = false;
+				if (v.size() == 6) {
+					// ファイルリストの更新
+					fileinfo elem;
+					elem.size = clx::lexical_cast<std::size_t>(v.at(3));
+					elem.time.from_string(v.at(0) + _T("T") + v.at(1), string_type(_T("%Y-%m-dT%H:%M:%S")));
+					elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
+					filelist_[v.at(5)] = elem;
+					this->size_ += elem.size;
+					
+					// 単一フォルダかどうかのチェック
+					if (single) {
+						string_type::size_type pos = v.at(5).find_first_of(_T('\\'));
+						string_type folder = (pos != string_type::npos) ? v.at(5).substr(0, pos) : v.at(5);
+						if (pos != string_type::npos || elem.directory) {
+							if (dest.empty()) dest = folder;
+							else if (dest != folder) single = false;
+						}
+						else single = false;
 					}
-					else single = false;
 				}
 				buffer.clear();
 			}
-			if (!single) dest.second.erase();
-			
-			v.clear();
-			clx::split(src, v);
-			if (v.size() < 5) return dest;
-			
-			try {
-				dest.first = clx::lexical_cast<size_type>(v.at(2)) + clx::lexical_cast<size_type>(v.at(4));
-				return dest;
-			}
-			catch (std::exception&) {}
+			if (!single) dest.erase();
 			
 			return dest;
 		}
@@ -670,6 +673,7 @@ namespace cubeice {
 		const setting_type& setting_;
 		
 		struct fileinfo {
+		public:
 			size_type size;
 			clx::date_time time;
 			bool directory;
@@ -740,8 +744,11 @@ namespace cubeice {
 			if (force == _T("runtime")) return string_type();
 			if (force == _T("desktop")) return desktop;
 			else if (force == _T("source") || setting.output_condition() == OUTPUT_SOURCE) {
-				// TODO: 相対パスの場合どうするか．
-				return src.substr(0, src.find_last_of(_T('\\')));
+				string_type folder;
+				ZeroMemory(buffer, CUBE_MAX_PATH);
+				GetFullPathName(src.c_str(), CUBE_MAX_PATH, buffer, NULL);
+				folder = buffer;
+				return src.substr(0, folder.find_last_of(_T('\\')));
 			}
 			else if (setting.output_condition() == OUTPUT_SPECIFIC) {
 				if (!setting.output_path().empty()) return setting.output_path();
@@ -765,7 +772,29 @@ namespace cubeice {
 			}
 			return CreateDirectory(path.c_str(), NULL) == TRUE;
 		}
-
+		
+		/* ----------------------------------------------------------------- */
+		//  createinfo
+		/* ----------------------------------------------------------------- */
+		fileinfo createinfo(const string_type& path) {
+			fileinfo dest;
+			
+			dest.directory = (PathIsDirectory(path.c_str()) == TRUE);
+			HANDLE h = CreateFile(path.c_str(), 0, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (h != INVALID_HANDLE_VALUE) {
+				FILETIME t = {};
+				if (GetFileTime(h, NULL, NULL, &t)) {
+					SYSTEMTIME sys = {};
+					FileTimeToSystemTime(&t , &sys);
+					dest.time.assign(static_cast<int>(sys.wYear), static_cast<int>(sys.wMonth), static_cast<int>(sys.wDay),
+						static_cast<int>(sys.wHour), static_cast<int>(sys.wMinute), static_cast<int>(sys.wSecond));
+				}
+				dest.size = GetFileSize(h, NULL);
+			}
+			CloseHandle(h);
+			
+			return dest;
+		}
 		
 		/* ----------------------------------------------------------------- */
 		/*
@@ -775,9 +804,8 @@ namespace cubeice {
 		 *  代わりに同名のディレクトリを移動先に作成する．
 		 */
 		/* ----------------------------------------------------------------- */
-#define MAX_RENAME_DIGIT 100
-
 		bool move(const string_type& src, const string_type& dest, bool rename) {
+			static const int max_rename = 100;
 			bool status = false;
 			if (PathIsDirectory(src.c_str())) {
 				status = createdir(dest);
@@ -791,11 +819,11 @@ namespace cubeice {
 					TCHAR renamed[8192];
 					// renamed を.....(N).拡張子に変更する Nは数字。一応 N< MAX_RENAME_DIGITとしておく
 					int i;
-					for (i = 2; i <= MAX_RENAME_DIGIT; i++) {
+					for (i = 2; i <= max_rename; i++) {
 						swprintf_s(renamed, sizeof(renamed), _T("%s%s%s(%d)%s"), drivename, dirname, basename, i, extname);
 						if (!PathFileExists(renamed)) break;
 					}
-					if (i > MAX_RENAME_DIGIT) { return false; }
+					if (i > max_rename) { return false; }
 					status &= (MoveFileEx(src.c_str(), renamed, (MOVEFILE_COPY_ALLOWED)) == TRUE);
 				} else {
 					status &= (MoveFileEx(src.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) == TRUE);
@@ -896,7 +924,7 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		int is_overwrite(const string_type& target, const string_type& compared, const setting_type::archive_type& setting, int force) {
-			if ((setting.details() & DETAIL_OVERWRITE) && PathFileExists(target.c_str())) {
+			if ((setting.details() & DETAIL_OVERWRITE) && PathFileExists(target.c_str()) && !PathIsDirectory(target.c_str())) {
 				if ((setting.details() & DETAIL_IGNORE_NEWER) && !is_older(target, compared)) return IDYES;
 				else if (force > 0) return force;
 				else return cubeice::dialog::overwrite(target + _T(" は既に存在します。\r\n上書きしますか？"));
