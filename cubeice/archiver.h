@@ -191,7 +191,7 @@ namespace cubeice {
 #endif	// UNICODE
 				}
 				
-				MoveFile(tmp.c_str(), dest.c_str());
+				MoveFileEx(tmp.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED));
 				
 				// フィルタリング
 				if ((setting_.compression().details() & DETAIL_FILTER) && !setting_.filters().empty()) {
@@ -431,7 +431,7 @@ namespace cubeice {
 			string_type ext = dest.substr(dest.find_last_of(_T('.')));
 			tar = dest.substr(0, dest.find_last_of(_T('.')));
 			if (ext != _T(".gz") && ext != _T(".bz2")) tar += _T(".tar");
-			if (!MoveFile(src.c_str(), tar.c_str())) return;
+			if (!MoveFileEx(src.c_str(), tar.c_str(), MOVEFILE_COPY_ALLOWED)) return;
 			
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" a -t") + filetype;
