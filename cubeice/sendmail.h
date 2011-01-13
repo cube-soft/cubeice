@@ -1,5 +1,5 @@
-#ifndef	SENDMAIL_H
-#define	SENDMAIL_H
+#ifndef	CUBEICE_SENDMAIL_H
+#define	CUBEICE_SENDMAIL_H
 
 #include <windows.h>
 #include <mapi.h>
@@ -63,4 +63,4 @@ namespace cube {
 	}
 }
 
-#endif	// SENDMAIL_H
+#endif	// CUBEICE_SENDMAIL_H

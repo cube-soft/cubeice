@@ -679,7 +679,7 @@ namespace cubeice {
 			bool directory;
 		};
 		std::map<string_type, fileinfo> filelist_;
-		size_type size_; // トータルサイズ (KB 単位)
+		__int64 size_; // トータルサイズ
 		
 		/* ----------------------------------------------------------------- */
 		//  non-copyable
