@@ -212,11 +212,11 @@ namespace cube {
 
 				buffer[nBytesRead/sizeof(buffer[0])] = TEXT( '\0' );
 
-				if( pCRLF = _tcsstr( buffer, TEXT( "\r\n" ) ) ) {
-					loadSize = ( pCRLF - buffer + 2 ) * sizeof( buffer[0] );
+				if( pCRLF = _tcschr( buffer, TEXT( '\n' ) ) ) {
+					loadSize = ( pCRLF - buffer + 1 ) * sizeof( buffer[0] );
 					flag = true;
 				} else {
-					loadSize = nBytesRead;
+					loadSize = ( nBytesRead / sizeof( buffer[0] ) ) * sizeof( buffer[0] );
 					flag = false;
 				}
 
@@ -224,9 +224,12 @@ namespace cube {
 					return -2;
 
 				if( flag ) {
-					buffer[nBytesRead/sizeof(buffer[0])-2] = TEXT( '\0' );
+					buffer[nBytesRead/sizeof(buffer[0])] = TEXT( '\0' );
 					_line += buffer;
-					str = _line;
+					if( _line.size() > 1 && _line[_line.size()-2] == TEXT( '\r' ) )
+						str = _line.substr( 0, _line.size() - 2 );
+					else
+						str = _line.substr( 0, _line.size() - 1 );
 					_line.clear();
 					return 1;
 				}
