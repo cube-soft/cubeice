@@ -169,7 +169,6 @@ namespace cubeice {
 		return exts;
 	}
 	
-	
 	/* --------------------------------------------------------------------- */
 	//  compress_parameters
 	/* --------------------------------------------------------------------- */
@@ -185,6 +184,22 @@ namespace cubeice {
 			initialized = true;
 		}
 		return params;
+	}
+	
+	/* --------------------------------------------------------------------- */
+	//  is_dotnet_installed
+	/* --------------------------------------------------------------------- */
+	inline bool is_dotnet_installed() {
+		std::basic_string<TCHAR> subkey = _T("Software\\Microsoft\\NET Framework Setup\\NDP\\v2.0.50727");
+		HKEY hkResult;
+		LONG lResult = RegOpenKeyEx(HKEY_LOCAL_MACHINE, subkey.c_str(), 0, KEY_READ, &hkResult);
+		if (lResult) return false;
+		
+		int value = 0;
+		DWORD dwType = 0;
+		DWORD dwSize = sizeof(value);
+		RegQueryValueEx(hkResult, _T("Install"), NULL, &dwType, (LPBYTE)&value, &dwSize);
+		return (value == 1);
 	}
 	
 	/* --------------------------------------------------------------------- */
@@ -341,7 +356,7 @@ namespace cubeice {
 			root_(CUBEICE_REG_ROOT),
 			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0), sc_flags_(0), sc_index_(0), filters_() {
+			ctx_flags_(0), sc_flags_(0), sc_index_(0), filters_(), update_(false) {
 			this->load();	
 		}
 		
@@ -349,7 +364,7 @@ namespace cubeice {
 			root_(root),
 			comp_(root + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(root + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0), sc_flags_(0), sc_index_(0), filters_() {
+			ctx_flags_(0), sc_flags_(0), sc_index_(0), filters_(), update_(false) {
 			this->load();
 		}
 		
@@ -380,13 +395,21 @@ namespace cubeice {
 				RegQueryValueEx(hkResult, CUBEICE_REG_SCCOMPRESS, NULL, &dwType, (LPBYTE)&sc_index_, &dwSize);
 				
 				// ïœêîë§ÇÃå^ÇÕ std::set<std::string>
-				char_type buffer[64 * 1024] = {};
+				char_type buffer[8 * 1024] = {};
 				dwSize = sizeof(buffer);
 				if (RegQueryValueEx(hkResult, CUBEICE_REG_FILTER, NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) {
 					string_type s(buffer);
 					filters_.clear();
 					clx::split_if(s, filters_, clx::is_any_of(_T("<>")));
 				}
+			}
+			
+			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 0, KEY_ALL_ACCESS, &hkResult);
+			if (!lResult) {
+				char_type buffer[1024] = {};
+				DWORD dwType;
+				DWORD dwSize = sizeof(buffer);
+				if (RegQueryValueEx(hkResult, _T("cubeice-checker"), NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) update_ = true;
 			}
 		}
 		
@@ -426,6 +449,20 @@ namespace cubeice {
 				clx::join(filters_, dest, _T("<>"));
 				RegSetValueEx(hkResult, CUBEICE_REG_FILTER, 0, REG_SZ, (CONST BYTE*)dest.c_str(), dest.length() + 1);
 			}
+			
+			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 0, KEY_ALL_ACCESS, &hkResult);
+			if (!lResult) {
+				if (update_ && is_dotnet_installed()) {
+					TCHAR buffer[1024] = {};
+					GetCurrentDirectory(1024, buffer);
+					std::basic_string<TCHAR> value = _T("\"");
+					value += buffer;
+					value += _T("\\cubeice-checker.exe\"");
+					RegSetValueEx(hkResult, _T("cubeice-checker"), 0, REG_SZ, (CONST BYTE*)value.c_str(), value.length() + 1);
+				}
+				else RegDeleteValue(hkResult, _T("cubeice-checker"));
+			}
+			
 			this->associate(decomp_.flags());
 		}
 		
@@ -481,6 +518,12 @@ namespace cubeice {
 		container_type& filters() { return filters_; }
 		const container_type& filters() const { return filters_; }
 		
+		/* ----------------------------------------------------------------- */
+		//  update
+		/* ----------------------------------------------------------------- */
+		bool& update() { return update_; }
+		const bool& update() const { return update_; }
+		
 	private:
 		string_type root_;
 		archive_type comp_;
@@ -489,6 +532,7 @@ namespace cubeice {
 		size_type sc_flags_;
 		size_type sc_index_;
 		container_type filters_;
+		bool update_;
 		
 		/* ----------------------------------------------------------------- */
 		/*
