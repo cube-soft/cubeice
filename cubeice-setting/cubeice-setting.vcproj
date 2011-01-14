@@ -116,7 +116,7 @@
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="..\cubeice-shared\"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
