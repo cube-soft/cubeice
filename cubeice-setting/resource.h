@@ -99,6 +99,7 @@
 #define IDC_FILTER_CHECKBOX         3105 // ファイルのフィルタんリングを行う
 #define IDC_POSTOPEN_CHECKBOX       3106 // 保存先フォルダを開
 #define IDC_SKIP_DESKTOP_CHECKBOX   3107 // デスクトップの場合は開かない
+#define IDC_MAIL_REMOVE_CHECKBOX    3110 // メール添付の際にファイルを残さない
 #define IDC_REPORT_CHECKBOX         3108 // エラーレポートを表示する
 
 /* ------------------------------------------------------------------------- */

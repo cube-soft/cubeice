@@ -103,11 +103,11 @@ namespace cubeice {
 			progress.marquee(true);
 			
 			// 上書きの確認
-			if (setting_.compression().output_condition() != OUTPUT_RUNTIME) {
-				int result = this->is_overwrite(dest, tmp, setting_.compression(), 0);
-				result &= ~ID_TO_ALL;
-				if (result != IDOK && result != IDYES) return;
-			}
+			//if (setting_.compression().output_condition() != OUTPUT_RUNTIME) {
+			//	int result = this->is_overwrite(dest, tmp, setting_.compression(), 0);
+			//	result &= ~ID_TO_ALL;
+			//	if (result != IDOK && result != IDYES) return;
+			//}
 			
 			// プログレスバーの設定
 			this->compress_filelist(first, last, progress);
@@ -125,6 +125,7 @@ namespace cubeice {
 			for (InputIterator pos = first; pos != last; ++pos) cmdline += _T(" \"") + *pos + _T("\"");
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
+			progress.text(dest);
 			
 			// メイン処理
 			int status = 0;
@@ -156,8 +157,7 @@ namespace cubeice {
 				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
 				string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
-				string_type message = dest + _T("\r\n") + filename;
-				progress.text(message);
+				progress.text(filename);
 				
 				// プログレスバーの更新
 				fileinfo elem = this->compress_getinfo(first, last, filename);
@@ -186,6 +186,10 @@ namespace cubeice {
 #else	// UNICODE
 					cube::utility::sendmail::SendMail( MAIL_SUBJECT, MAIL_BODY, tmp.c_str(), dest.substr( dest.find_last_of( _T( '\\' ) ) + 1 ).c_str() );
 #endif	// UNICODE
+					if ((setting_.compression().details() & DETAIL_MAIL_REMOVE)) {
+						if (PathFileExists(tmp.c_str())) DeleteFile(tmp.c_str());
+						return;
+					}
 				}
 				
 				MoveFileEx(tmp.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED));
@@ -278,6 +282,7 @@ namespace cubeice {
 				cmdline += _T(" \"") + src + _T("\"");
 				cube::popen proc;
 				if (!proc.open(cmdline.c_str(), _T("r"))) return;
+				progress.text(root);
 				
 				// メイン処理
 				int status = 0;
@@ -413,6 +418,11 @@ namespace cubeice {
 				else ++first;
 				string_type filename = src.substr(first);
 				dest += _T('\\') + filename.substr(0, filename.find_last_of(_T('.'))) + ext;
+				if (PathFileExists(dest.c_str())) {
+					const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
+					string_type init = src.substr(0, src.find_last_of(_T('.'))) + ext;
+					dest = cubeice::dialog::savefile(filter, init.c_str());
+				}
 			}
 			return dest;
 		}
@@ -820,7 +830,6 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		bool move(const string_type& src, const string_type& dest, bool rename) {
-			static const int max_rename = 100;
 			bool status = false;
 			if (PathIsDirectory(src.c_str())) {
 				status = createdir(dest);
@@ -833,12 +842,10 @@ namespace cubeice {
 					_wsplitpath_s(dest.c_str(), drivename, sizeof(drivename), dirname, sizeof(dirname), basename, sizeof(basename), extname, sizeof(extname));
 					TCHAR renamed[8192];
 					// renamed を.....(N).拡張子に変更する Nは数字。一応 N< MAX_RENAME_DIGITとしておく
-					int i;
-					for (i = 2; i <= max_rename; i++) {
+					for (int i = 2; i <= 2147483647; i++) {
 						swprintf_s(renamed, sizeof(renamed), _T("%s%s%s(%d)%s"), drivename, dirname, basename, i, extname);
 						if (!PathFileExists(renamed)) break;
 					}
-					if (i > max_rename) { return false; }
 					status &= (MoveFileEx(src.c_str(), renamed, (MOVEFILE_COPY_ALLOWED)) == TRUE);
 				} else {
 					status &= (MoveFileEx(src.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) == TRUE);

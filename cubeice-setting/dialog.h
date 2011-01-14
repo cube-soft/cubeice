@@ -150,6 +150,7 @@ namespace cubeice {
 			dest[IDC_CHARCODE_CHECKBOX] = DETAIL_CHARCODE;
 			dest[IDC_FILTER_CHECKBOX] = DETAIL_FILTER;
 			dest[IDC_REPORT_CHECKBOX] = DETAIL_REPORT;
+			dest[IDC_MAIL_REMOVE_CHECKBOX] = DETAIL_MAIL_REMOVE;
 			initialized = true;
 		}
 		return dest;
