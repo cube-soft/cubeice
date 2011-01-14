@@ -81,6 +81,14 @@ namespace cubeice {
 							}
 						}
 					}
+					else if (GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX) != NULL) { // 圧縮用パスワードダイアログ
+						for (std::basic_string<TCHAR>::const_iterator pos = pass.begin(); pos != pass.end(); ++pos) {
+							if (*pos > 0x007f) {
+								if (MessageBox(hWnd, _T("パスワードに半角英数以外の文字を使用すると、環境によっては解凍できなくなる場合があります。"), _T("パスワードの確認"), MB_OKCANCEL | MB_ICONWARNING) == IDOK) break;
+								else return FALSE;
+							}
+						}
+					}
 					cubeice::password() = pass;
 					EndDialog(hWnd, IDOK);
 					break;
