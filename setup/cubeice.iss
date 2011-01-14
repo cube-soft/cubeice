@@ -67,6 +67,9 @@ Name: {group}\{cm:UninstallProgram,{#MyAppName}}; Filename: {uninstallexe}
 Name: {userdesktop}\{#MyAppName} à≥èk; Filename: {app}\cubeice.exe; Parameters: /c:zip; IconFilename: {app}\cubeice.exe; IconIndex: 1; Tasks: desktopicon
 Name: {userdesktop}\{#MyAppName} âìÄ; Filename: {app}\cubeice.exe; Parameters: /x; IconFilename: {app}\cubeice.exe; IconIndex: 2; Tasks: desktopicon
 
+[Run]
+Filename: {app}\cubeice-setting.exe; Description: CubeICE ê›íËÇãNìÆÇ∑ÇÈ; Flags: postinstall nowait shellexec
+
 [Registry]
 Root: HKCR; Subkey: CLSID\{{F3DB85F4-4731-4e80-BC2E-754A7320D830}; ValueType: string; ValueData: CubeICE; Permissions: system-full admins-full users-read; Flags: uninsdeletekey
 Root: HKCR; Subkey: CLSID\{{F3DB85F4-4731-4e80-BC2E-754A7320D830}\InProcServer32; ValueType: string; ValueData: """{app}\cubeicectx.dll"""; Permissions: system-full admins-full users-read; Flags: uninsdeletekey
@@ -158,6 +161,7 @@ Root: HKLM; Subkey: Software\CubeSoft\CubeICE; ValueType: string; ValueName: Ins
 Root: HKLM; Subkey: Software\CubeSoft\CubeICE; ValueType: string; ValueName: Version; ValueData: {#MyAppVersion}É¿; Flags: uninsdeletevalue
 Root: HKCU; Subkey: Software\CubeSoft\CubeICE; Flags: uninsdeletekey
 Root: HKCU; Subkey: Software\CubeSoft\CubeICE; ValueType: dword; ValueName: ContextFlags; ValueData: 3; Flags: createvalueifdoesntexist uninsdeletevalue
+Root: HKCU; Subkey: Software\CubeSoft\CubeICE; ValueType: string; ValueName: Filter; ValueData: .DS_Store<>__MACOSX<>desktop.ini; Flags: createvalueifdoesntexist uninsdeletevalue
 Root: HKCU; Subkey: Software\CubeSoft\CubeICE; ValueType: dword; ValueName: Initialize; ValueData: 1; Flags: uninsdeletevalue
 Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Compress; ValueType: dword; ValueName: Details; ValueData: 129; Flags: createvalueifdoesntexist uninsdeletevalue
 Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Compress; ValueType: dword; ValueName: OutputCondition; Flags: createvalueifdoesntexist uninsdeletevalue; ValueData: 0
@@ -319,7 +323,5 @@ begin
 		SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
 	end;
 end;
-
-
 
 
