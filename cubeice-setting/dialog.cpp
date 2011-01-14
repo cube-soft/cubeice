@@ -446,8 +446,17 @@ namespace cubeice {
 					}
 				}
 				
+				if (Setting.update()) CheckDlgButton(hWnd, IDC_UPDATE_CHECKBOX, BM_SETCHECK);
+				
 				break;
 			}
+			case WM_COMMAND:
+				switch (LOWORD(wp)) {
+				case IDC_UPDATE_CHECKBOX:
+					Setting.update() = (IsDlgButtonChecked(hWnd, IDC_UPDATE_CHECKBOX) == BST_CHECKED);
+					return TRUE;
+				}
+				break;
 			default:
 				break;
 			}

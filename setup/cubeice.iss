@@ -3,7 +3,7 @@
 
 #define SrcDir "C:\projects\cubeice"
 #define MyAppName "CubeICE"
-#define MyAppVersion "0.2.7.2"
+#define MyAppVersion "0.2.8"
 #define MyAppPublisher "CubeSoft"
 #define MyAppURL "http://www.cube-soft.jp/"
 #define MyAppExeName "cubeice.exe"
@@ -25,7 +25,7 @@ DefaultGroupName=CubeSoft\{#MyAppName}
 AllowNoIcons=true
 LicenseFile={#SrcDir}\release\GNU General Public License.txt
 OutputDir={#SrcDir}
-OutputBaseFilename=cubeice
+OutputBaseFilename=setup
 SetupIconFile={#SrcDir}\release\cubeice.ico
 Compression=lzma
 SolidCompression=true
@@ -43,6 +43,7 @@ PrivilegesRequired=admin
 Name: japanese; MessagesFile: compiler:Languages\Japanese.isl
 
 [Tasks]
+Name: desktopicon; Description: デスクトップにショートカットを作成する
 
 [Dirs]
 
@@ -50,26 +51,23 @@ Name: japanese; MessagesFile: compiler:Languages\Japanese.isl
 Source: {#SrcDir}\release\cubeice.exe; DestDir: {app}; Flags: ignoreversion
 Source: {#SrcDir}\release\cubeice-setting.exe; DestDir: {app}; Flags: ignoreversion
 Source: {#SrcDir}\release\cubeice-exec.exe; DestDir: {app}; Flags: ignoreversion
+Source: ..\release\cubeice-checker.exe; DestDir: {app}; Flags: ignoreversion
 Source: {#SrcDir}\release\cubeice-file.ico; DestDir: {app}; Flags: ignoreversion
 Source: {#SrcDir}\release\cubeicectx.dll; DestDir: {app}; Flags: ignoreversion onlyifdoesntexist
 Source: {#SrcDir}\release\GNU General Public License.txt; DestDir: {app}; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: {#SrcDir}\release\7z.dll; DestDir: {app}; Flags: ignoreversion
 Source: {#SrcDir}\release\7z.sfx; DestDir: {app}; Flags: ignoreversion
+Source: ..\release\Readme.txt; DestDir: {app}; Flags: ignoreversion
 
 [Icons]
 Name: {group}\{#MyAppName} 設定; Filename: {app}\cubeice-setting.exe; IconIndex: 0
 Name: {group}\{cm:ProgramOnTheWeb,CubeICE}; Filename: http://www.cube-soft.jp/
 Name: {group}\{cm:UninstallProgram,{#MyAppName}}; Filename: {uninstallexe}
+Name: {userdesktop}\{#MyAppName} 圧縮; Filename: {app}\cubeice.exe; Parameters: /c:zip; IconFilename: {app}\cubeice.exe; IconIndex: 1; Tasks: desktopicon
+Name: {userdesktop}\{#MyAppName} 解凍; Filename: {app}\cubeice.exe; Parameters: /x; IconFilename: {app}\cubeice.exe; IconIndex: 2; Tasks: desktopicon
 
 [Registry]
-Root: HKLM; Subkey: Software\CubeSoft\CubeICE; ValueType: string; ValueName: InstallDirectory; ValueData: {app}; Flags: uninsdeletekey
-Root: HKLM; Subkey: Software\CubeSoft\CubeICE; ValueType: string; ValueName: Version; ValueData: {#MyAppVersion}β; Flags: uninsdeletekey
-Root: HKCU; Subkey: Software\CubeSoft\CubeICE; ValueType: dword; ValueName: ContextFlags; ValueData: 3; Flags: createvalueifdoesntexist uninsdeletekey
-Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Compress; ValueType: dword; ValueName: Details; ValueData: 129; Flags: createvalueifdoesntexist
-Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Compress; ValueType: dword; ValueName: OutputCondition; Flags: createvalueifdoesntexist; ValueData: 0
-Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Decompress; ValueType: dword; ValueName: Details; ValueData: 493; Flags: createvalueifdoesntexist
-Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Decompress; ValueType: dword; ValueName: OutputCondition; Flags: createvalueifdoesntexist; ValueData: 1
 Root: HKCR; Subkey: CLSID\{{F3DB85F4-4731-4e80-BC2E-754A7320D830}; ValueType: string; ValueData: CubeICE; Permissions: system-full admins-full users-read; Flags: uninsdeletekey
 Root: HKCR; Subkey: CLSID\{{F3DB85F4-4731-4e80-BC2E-754A7320D830}\InProcServer32; ValueType: string; ValueData: """{app}\cubeicectx.dll"""; Permissions: system-full admins-full users-read; Flags: uninsdeletekey
 Root: HKCR; Subkey: CLSID\{{F3DB85F4-4731-4e80-BC2E-754A7320D830}\InProcServer32; ValueType: string; ValueData: Apartment; Permissions: system-full admins-full users-read; Flags: uninsdeletekey; ValueName: ThreadingModel
@@ -155,11 +153,24 @@ Root: HKCR; Subkey: cubeice_xz; ValueType: string; ValueData: XZ ファイル; Permi
 Root: HKCR; Subkey: cubeice_xz\shell; ValueType: string; ValueData: open; Permissions: system-full admins-full users-read; Flags: uninsdeletekey
 Root: HKCR; Subkey: cubeice_xz\shell\open\command; ValueType: string; ValueData: """{app}\{#MyAppExeName}"" ""/x"" ""%1"""; Permissions: system-full admins-full users-read; Flags: uninsdeletekey
 Root: HKCR; Subkey: cubeice_xz\DefaultIcon; ValueType: string; ValueData: {app}\cubeice-file.ico,0; Permissions: system-full admins-full users-read; Flags: uninsdeletekey
+Root: HKLM; Subkey: Software\CubeSoft\CubeICE; Flags: uninsdeletekey
+Root: HKLM; Subkey: Software\CubeSoft\CubeICE; ValueType: string; ValueName: InstallDirectory; ValueData: {app}; Flags: uninsdeletevalue
+Root: HKLM; Subkey: Software\CubeSoft\CubeICE; ValueType: string; ValueName: Version; ValueData: {#MyAppVersion}β; Flags: uninsdeletevalue
+Root: HKCU; Subkey: Software\CubeSoft\CubeICE; Flags: uninsdeletekey
+Root: HKCU; Subkey: Software\CubeSoft\CubeICE; ValueType: dword; ValueName: ContextFlags; ValueData: 3; Flags: createvalueifdoesntexist uninsdeletevalue
+Root: HKCU; Subkey: Software\CubeSoft\CubeICE; ValueType: dword; ValueName: Initialize; ValueData: 1; Flags: uninsdeletevalue
+Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Compress; ValueType: dword; ValueName: Details; ValueData: 129; Flags: createvalueifdoesntexist uninsdeletevalue
+Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Compress; ValueType: dword; ValueName: OutputCondition; Flags: createvalueifdoesntexist uninsdeletevalue; ValueData: 0
+Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Decompress; ValueType: dword; ValueName: Details; ValueData: 493; Flags: createvalueifdoesntexist uninsdeletevalue
+Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Decompress; ValueType: dword; ValueName: OutputCondition; Flags: createvalueifdoesntexist uninsdeletevalue; ValueData: 1
 
 [UninstallDelete]
 Name: {app}\*; Type: filesandordirs
 Name: {app}; Type: dirifempty
 [Code]
+#include "windows.iss"
+#include "process.iss"
+
 // ------------------------------------------------------------------------- //
 //  const variables
 // ------------------------------------------------------------------------- //
@@ -194,13 +205,53 @@ begin
   RegWriteStringValue(HKCR, extension, writeKey, writeValue);
 end;
 
+// ------------------------------------------------------------------------- //
+//  InitializeSetup
+// ------------------------------------------------------------------------- //
+function InitializeSetup(): Boolean;
+begin
+    if (not TerminateRunningProcess('cubeice.exe', False)) then begin
+		Result := False;
+		exit;
+    end;
+
+    if (not TerminateRunningProcess('cubeice-setting.exe', False)) then begin
+		Result := False;
+		exit;
+    end;
+
+    if (not TerminateRunningProcess('cubeice-checker.exe', False)) then begin
+		Result := False;
+		exit;
+    end;
+
+    Result := True;
+end;
+
+// ------------------------------------------------------------------------- //
+//  InitializeUninstall
+// ------------------------------------------------------------------------- //
+function InitializeUninstall(): Boolean;
+begin
+	TerminateRunningProcess('cubeice.exe', True);
+	TerminateRunningProcess('cubeice-setting.exe', True);
+	TerminateRunningProcess('cubeice-checker.exe', True);
+	Result := True;
+end;
 
 // ------------------------------------------------------------------------- //
 //  CurStepChanged
 // ------------------------------------------------------------------------- //
 procedure CurStepChanged(CurStep: TSetupStep);
+var
+    ErrCode: Integer;
 begin
 	if CurStep = ssDone then begin
+		if (IsDotNetDetected('v2.0.50727', 0) = True) then begin
+			RegWriteStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'cubeice-checker', '"' + ExpandConstant('{app}\cubeice-checker.exe') + '"');
+			Exec(ExpandConstant('{app}\cubeice-checker.exe'), '', '', SW_SHOW, ewNoWait, ErrCode);
+		end;
+
 		saveAndWriteValue('.zip', '', PREV_ARCHIVER, 'cubeice_zip');
 		saveAndWriteValue('.7z', '', PREV_ARCHIVER, 'cubeice_7z');
 		saveAndWriteValue('.lzh', '', PREV_ARCHIVER, 'cubeice_lzh');
@@ -239,7 +290,8 @@ end;
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
 	if CurUninstallStep = usPostUninstall then begin
-		DeleteFile(ExpandConstant('{userdesktop}')+'\CubeICE Zip圧縮.lnk');
+		RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'cubeice-checker');
+		DeleteFile(ExpandConstant('{userdesktop}')+'\CubeICE 圧縮.lnk');
 		DeleteFile(ExpandConstant('{userdesktop}')+'\CubeICE 解凍.lnk');
 		DeleteFile(ExpandConstant('{userdesktop}')+'\CubeICE 設定.lnk');
 
@@ -267,3 +319,7 @@ begin
 		SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
 	end;
 end;
+
+
+
+

@@ -48,6 +48,6 @@
 #define IDRENAMETOALL           0x120
 #define IDYESTOALL              0x106
 #define IDNOTOALL               0x107
-#define ID_TO_ALL               0x101
+#define ID_TO_ALL               0x100
 
 #endif // CUBEICE_RESOURCE_H

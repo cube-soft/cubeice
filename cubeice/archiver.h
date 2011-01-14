@@ -202,7 +202,6 @@ namespace cubeice {
 						ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
 					}
 				}
-			
 			}
 			
 			if (PathFileExists(tmp.c_str())) DeleteFile(tmp.c_str());
@@ -321,7 +320,7 @@ namespace cubeice {
 					if (this->size_ && progress.position() < calcpos) progress.position(calcpos);
 					
 					// 上書きの確認
-					int result = this->is_overwrite(root + _T('\\') + filename, tmp + _T('\\') + filename, setting_.decompression(), to_all);
+					int result = this->is_overwrite(root + _T('\\') + filename, tmp, filename, setting_.decompression(), to_all);
 					if ((result & ID_TO_ALL)) {
 						result &= ~ID_TO_ALL;
 						to_all = result;
@@ -761,9 +760,10 @@ namespace cubeice {
 			else if (force == _T("source") || setting.output_condition() == OUTPUT_SOURCE) {
 				string_type folder;
 				ZeroMemory(buffer, CUBE_MAX_PATH);
-				GetFullPathName(src.c_str(), CUBE_MAX_PATH, buffer, NULL);
-				folder = buffer;
-				return src.substr(0, folder.find_last_of(_T('\\')));
+				DWORD status = GetFullPathName(src.c_str(), CUBE_MAX_PATH, buffer, NULL);
+				if (status == 0) folder = src;
+				else folder = buffer;
+				return folder.substr(0, folder.find_last_of(_T('\\')));
 			}
 			else if (setting.output_condition() == OUTPUT_SPECIFIC) {
 				if (!setting.output_path().empty()) return setting.output_path();
@@ -894,7 +894,34 @@ namespace cubeice {
 
 			return (bResult == TRUE);
 		}
-
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  punct
+		 *
+		 *  3桁毎にカンマを挿入する．
+		 */
+		/* ----------------------------------------------------------------- */
+		string_type punct(size_type num) {
+			static const int digit = 1000;
+			
+			string_type dest;
+			while (num / digit > 0) {
+				string_type comma = dest.empty() ? _T("") : _T(",");
+				char_type buffer[8] = {};
+				_stprintf_s(buffer, _T("%03d"), num % 1000);
+				dest = buffer + comma + dest;
+				num /= 1000;
+			}
+			
+			string_type comma = dest.empty() ? _T("") : _T(",");
+			char_type buffer[8] = {};
+			_stprintf_s(buffer, _T("%d"), num % 1000);
+			dest = buffer + comma + dest;
+			
+			return dest;
+		}
+		
 		/* ----------------------------------------------------------------- */
 		//  is_filter
 		/* ----------------------------------------------------------------- */
@@ -942,7 +969,49 @@ namespace cubeice {
 			if ((setting.details() & DETAIL_OVERWRITE) && PathFileExists(target.c_str()) && !PathIsDirectory(target.c_str())) {
 				if ((setting.details() & DETAIL_IGNORE_NEWER) && !is_older(target, compared)) return IDYES;
 				else if (force > 0) return force;
-				else return cubeice::dialog::overwrite(target + _T(" は既に存在します。\r\n上書きしますか？"));
+				else {
+					string_type message = target + _T(" は既に存在します。上書きしますか？");
+					return MessageBox(NULL, message.c_str(), _T("上書きの確認"), MB_YESNO | MB_ICONWARNING);
+				}
+			}
+			return IDOK;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  is_overwrite
+		 *
+		 *  ファイルの上書きを行うかどうかを確認する．
+		 *  ファイルの上書きダイアログにファイル情報を出力するバージョン．
+		 */
+		/* ----------------------------------------------------------------- */
+		int is_overwrite(const string_type& target, const string_type& root, const string_type& filename, const setting_type::archive_type& setting, int force) {
+			string_type compared = root + _T("\\") + filename;
+			if ((setting.details() & DETAIL_OVERWRITE) && PathFileExists(target.c_str()) && !PathIsDirectory(target.c_str())) {
+				if ((setting.details() & DETAIL_IGNORE_NEWER) && !is_older(target, compared)) return IDYES;
+				else if (force > 0) return force;
+				else {
+					string_type message = _T("この場所には同じ名前のファイルが既に存在します。上書きしますか？\r\n");
+					
+					// 現在のファイル
+					fileinfo elem = this->createinfo(target);
+					message += _T("\r\n");
+					message += _T("現在のファイル\r\n");
+					message += target + _T("\r\n");
+					message += _T("サイズ: ") + this->punct(elem.size) + _T(" バイト\r\n");
+					message += _T("更新日時: ") + elem.time.to_string(_T("%Y-%m-%d %H:%M:%S\r\n"));
+					
+					// 新しいファイル
+					//elem = this->filelist_[filename];
+					elem = this->createinfo(compared);
+					message += _T("\r\n");
+					message += _T("新しいファイル\r\n");
+					message += filename + _T("\r\n");
+					message += _T("サイズ: ") + this->punct(elem.size) + _T(" バイト\r\n");
+					message += _T("更新日時: ") + elem.time.to_string(_T("%Y-%m-%d %H:%M:%S"));
+					
+					return cubeice::dialog::overwrite(message);
+				}
 			}
 			return IDOK;
 		}

@@ -117,5 +117,6 @@
 #define IDC_VERSION_LABEL           5002
 #define IDC_COMPANY_LABEL           5003
 #define IDC_URI_LABEL               5004
+#define IDC_UPDATE_CHECKBOX         5005
 
 #endif // CUBEICE_RESOURCE_H
