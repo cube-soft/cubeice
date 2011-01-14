@@ -106,6 +106,7 @@
 #define DETAIL_CHARCODE       0x0010  // 文字コードを変換する
 #define DETAIL_FILTER         0x0020  // フィルタリングを行う
 #define DETAIL_SKIP_DESKTOP   0x0040  // デスクトップの場合は開かない
+#define DETAIL_MAIL_REMOVE    0x0200  // メール添付の際にファイルを残さない
 #define DETAIL_REPORT         0x0080  // エラーレポートを表示する
 
 /* ------------------------------------------------------------------------- */
