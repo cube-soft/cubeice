@@ -102,13 +102,6 @@ namespace cubeice {
 			cubeice::dialog::progressbar progress;
 			progress.marquee(true);
 			
-			// 上書きの確認
-			//if (setting_.compression().output_condition() != OUTPUT_RUNTIME) {
-			//	int result = this->is_overwrite(dest, tmp, setting_.compression(), 0);
-			//	result &= ~ID_TO_ALL;
-			//	if (result != IDOK && result != IDYES) return;
-			//}
-			
 			// プログレスバーの設定
 			this->compress_filelist(first, last, progress);
 			if (this->size_ == 0) progress.marquee(true);
@@ -182,7 +175,7 @@ namespace cubeice {
 				if (mail) {
 #ifdef	UNICODE
 					babel::init_babel();
-					cube::utility::sendmail::SendMail( MAIL_SUBJECT, MAIL_BODY, babel::unicode_to_sjis( tmp ).c_str(), babel::unicode_to_jis( dest.substr( dest.find_last_of( _T( '\\' ) ) + 1 ) ).c_str() );
+					cube::utility::sendmail::SendMail( MAIL_SUBJECT, MAIL_BODY, babel::unicode_to_sjis( tmp ).c_str(), babel::unicode_to_sjis( dest.substr( dest.find_last_of( _T( '\\' ) ) + 1 ) ).c_str() );
 #else	// UNICODE
 					cube::utility::sendmail::SendMail( MAIL_SUBJECT, MAIL_BODY, tmp.c_str(), dest.substr( dest.find_last_of( _T( '\\' ) ) + 1 ).c_str() );
 #endif	// UNICODE
@@ -406,23 +399,21 @@ namespace cubeice {
 		//  compress_path
 		/* ----------------------------------------------------------------- */
 		string_type compress_path(const setting_type::archive_type& setting, const string_type& src, const string_type& ext) {
+			const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
+			string_type path = src.substr(0, src.find_last_of(_T('.')));
+			size_type pos = path.find_last_of(_T('.'));
+			if (pos != string_type::npos && path.substr(pos) == _T(".tar")) path = path.substr(0, pos);
+			path += ext;
+			
 			string_type dest =  this->rootdir(setting, src);
-			if (dest.empty()) {
-				const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-				string_type init = src.substr(0, src.find_last_of(_T('.'))) + ext;
-				dest = cubeice::dialog::savefile(filter, init.c_str());
-			}
+			if (dest.empty()) dest = cubeice::dialog::savefile(filter, path.c_str());
 			else {
-				string_type::size_type first = src.find_last_of(_T('\\'));
+				string_type::size_type first = path.find_last_of(_T('\\'));
 				if (first == string_type::npos) first = 0;
 				else ++first;
-				string_type filename = src.substr(first);
-				dest += _T('\\') + filename.substr(0, filename.find_last_of(_T('.'))) + ext;
-				if (PathFileExists(dest.c_str())) {
-					const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-					string_type init = src.substr(0, src.find_last_of(_T('.'))) + ext;
-					dest = cubeice::dialog::savefile(filter, init.c_str());
-				}
+				string_type filename = path.substr(first);
+				dest += _T('\\') + filename;
+				if (PathFileExists(dest.c_str())) dest = cubeice::dialog::savefile(filter, path.c_str());
 			}
 			return dest;
 		}
