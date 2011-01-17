@@ -216,11 +216,11 @@ namespace cubeice {
 			int len = GetWindowTextLength(GetDlgItem(hWnd, IDC_FILTER_TEXTBOX));
 			if (len < maxlen) {  
 				cubeice::user_setting::char_type buffer[maxlen] = {};
-				std::size_t status = GetDlgItemText(hWnd, IDC_FILTER_TEXTBOX, (LPSTR)buffer,  sizeof(buffer));
+				std::size_t status = GetDlgItemText(hWnd, IDC_FILTER_TEXTBOX, (LPTSTR)buffer,  sizeof(buffer));
 				if (status > 0 || GetLastError() == 0) {
 					cubeice::user_setting::string_type s(buffer);
 					Setting.filters().clear();
-					clx::split_if(s, Setting.filters(), clx::is_any_of("\r\n"));
+					clx::split_if(s, Setting.filters(), clx::is_any_of(_T("\r\n")));
 				}
 			}
 		}
@@ -438,10 +438,10 @@ namespace cubeice {
 					DWORD type = 0;
 					DWORD size = 1024;
 					if (RegQueryValueEx(subkey, CUBEICE_REG_VERSION, NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS) {
-						std::basic_string<TCHAR> message = "Version: ";
+						std::basic_string<TCHAR> message = _T("Version: ");
 						message += buffer;
-						if (sizeof(INT_PTR) == 4) message += " (x86)";
-						else message += " (x64)";
+						if (sizeof(INT_PTR) == 4) message += _T(" (x86)");
+						else message += _T(" (x64)");
 						SetWindowText(GetDlgItem(hWnd, IDC_VERSION_LABEL), message.c_str());
 					}
 				}
