@@ -3,7 +3,7 @@
 
 #define SrcDir "C:\projects\cubeice"
 #define MyAppName "CubeICE"
-#define MyAppVersion "0.2.8"
+#define MyAppVersion "0.2.8.2"
 #define MyAppPublisher "CubeSoft"
 #define MyAppURL "http://www.cube-soft.jp/"
 #define MyAppExeName "cubeice.exe"
@@ -164,7 +164,7 @@ Root: HKCU; Subkey: Software\CubeSoft\CubeICE; ValueType: dword; ValueName: Cont
 Root: HKCU; Subkey: Software\CubeSoft\CubeICE; ValueType: string; ValueName: Filter; ValueData: .DS_Store<>__MACOSX<>desktop.ini; Flags: createvalueifdoesntexist uninsdeletevalue
 Root: HKCU; Subkey: Software\CubeSoft\CubeICE; ValueType: dword; ValueName: Initialize; ValueData: 1; Flags: uninsdeletevalue
 Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Compress; ValueType: dword; ValueName: Details; ValueData: 129; Flags: createvalueifdoesntexist uninsdeletevalue
-Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Compress; ValueType: dword; ValueName: OutputCondition; Flags: createvalueifdoesntexist uninsdeletevalue; ValueData: 0
+Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Compress; ValueType: dword; ValueName: OutputCondition; Flags: createvalueifdoesntexist uninsdeletevalue; ValueData: 2
 Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Decompress; ValueType: dword; ValueName: Details; ValueData: 493; Flags: createvalueifdoesntexist uninsdeletevalue
 Root: HKCU; Subkey: Software\CubeSoft\CubeICE\Decompress; ValueType: dword; ValueName: OutputCondition; Flags: createvalueifdoesntexist uninsdeletevalue; ValueData: 1
 
@@ -323,5 +323,3 @@ begin
 		SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
 	end;
 end;
-
-
