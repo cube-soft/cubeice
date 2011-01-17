@@ -21,6 +21,7 @@
  */
 /* ------------------------------------------------------------------------- */
 #include "cubeice.h"
+#include "style.h"
 #include <windows.h>
 
 cubeice::user_setting UserSetting;

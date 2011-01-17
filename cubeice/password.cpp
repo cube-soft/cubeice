@@ -40,7 +40,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  password_wndproc
 		/* ----------------------------------------------------------------- */
-		static BOOL CALLBACK password_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+		static INT_PTR CALLBACK password_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_INITDIALOG:
 			{

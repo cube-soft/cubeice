@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C++ Express 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Console", "Console.vcproj", "{B596F881-698F-4D2A-A0AA-A7909CCB322B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		DebugU|Win32 = DebugU|Win32
+		DebugU|x64 = DebugU|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+		ReleaseU|Win32 = ReleaseU|Win32
+		ReleaseU|x64 = ReleaseU|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.Debug|Win32.Build.0 = Debug|Win32
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.Debug|x64.ActiveCfg = Debug|x64
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.Debug|x64.Build.0 = Debug|x64
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.DebugU|Win32.ActiveCfg = DebugU|Win32
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.DebugU|Win32.Build.0 = DebugU|Win32
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.DebugU|x64.ActiveCfg = DebugU|x64
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.DebugU|x64.Build.0 = DebugU|x64
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.Release|Win32.ActiveCfg = Release|Win32
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.Release|Win32.Build.0 = Release|Win32
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.Release|x64.ActiveCfg = Release|x64
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.Release|x64.Build.0 = Release|x64
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.ReleaseU|Win32.ActiveCfg = ReleaseU|Win32
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.ReleaseU|Win32.Build.0 = ReleaseU|Win32
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.ReleaseU|x64.ActiveCfg = ReleaseU|x64
+		{B596F881-698F-4D2A-A0AA-A7909CCB322B}.ReleaseU|x64.Build.0 = ReleaseU|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
