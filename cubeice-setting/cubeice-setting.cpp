@@ -3,6 +3,7 @@
 #include <commctrl.h>
 #include "cubeice-setting.h"
 #include "dialog.h"
+#include "style.h"
 
 cubeice::user_setting Setting;
 

@@ -74,7 +74,7 @@ namespace cube {
 			 */
 			/* ------------------------------------------------------------- */
 			STDMETHODIMP HandleMenuMsg( UINT uMsg, WPARAM wParam, LPARAM lParam ) {
-				HRESULT		res;
+				LRESULT		res;
 				return HandleMenuMsg2( uMsg, wParam, lParam, &res );
 			}
 			
@@ -86,7 +86,7 @@ namespace cube {
 			 */
 			/* ------------------------------------------------------------- */
 			STDMETHODIMP HandleMenuMsg2( UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT *plResult ) {
-				HRESULT		res;
+				LRESULT		res;
 				
 				if( !plResult )
 					plResult = &res;
