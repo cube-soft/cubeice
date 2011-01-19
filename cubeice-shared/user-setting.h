@@ -205,6 +205,52 @@ namespace cubeice {
 	
 	/* --------------------------------------------------------------------- */
 	/*
+	 *  RegDeleteKeyNT
+	 *
+	 *  see also: http://support.microsoft.com/kb/142491/ja
+	 */
+	/* --------------------------------------------------------------------- */
+	inline DWORD RegDeleteKeyNT(HKEY hStartKey , LPCTSTR pKeyName ){
+		static const int max_keylen = 2048;
+		DWORD   dwRtn, dwSubKeyLength;
+		LPTSTR  pSubKey = NULL;
+		TCHAR   szSubKey[max_keylen] = {};
+		HKEY    hKey;
+		
+		// Do not allow NULL or empty key name
+		if ( pKeyName &&  lstrlen(pKeyName)) {
+			if( (dwRtn=RegOpenKeyEx(hStartKey,pKeyName, 0, KEY_ENUMERATE_SUB_KEYS | DELETE, &hKey )) == ERROR_SUCCESS ) {
+				while (dwRtn == ERROR_SUCCESS ) {
+					dwSubKeyLength = max_keylen;
+					dwRtn = RegEnumKeyEx(
+								hKey,
+								0,       // always index zero
+								szSubKey,
+								&dwSubKeyLength,
+								NULL,
+								NULL,
+								NULL,
+								NULL
+							);
+					
+					if(dwRtn == ERROR_NO_MORE_ITEMS) {
+						dwRtn = RegDeleteKey(hStartKey, pKeyName);
+						break;
+					}
+					else if(dwRtn == ERROR_SUCCESS) dwRtn=RegDeleteKeyNT(hKey, szSubKey);
+				}
+				RegCloseKey(hKey);
+				// Do not save return code because error
+				// has already occurred
+			}
+		}
+		else dwRtn = ERROR_BADKEY;
+		
+		return dwRtn;
+	}
+	
+	/* --------------------------------------------------------------------- */
+	/*
 	 *  archive_setting
 	 *
 	 *  圧縮/解凍の設定をレジストリへ入出力するためのクラス．
@@ -591,7 +637,10 @@ namespace cubeice {
 						if (RegQueryValueEx(subkey, CUBEICE_REG_PREVARCHIVER, NULL, &type, (LPBYTE)prev, &size) == ERROR_SUCCESS) {
 							RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)prev, (_tcslen(prev) + 1) * sizeof(char_type));
 						}
-						else RegDeleteKey(HKEY_CLASSES_ROOT, key.c_str());
+						else {
+							RegCloseKey(subkey);
+							RegDeleteKeyNT(HKEY_CLASSES_ROOT, key.c_str());
+						}
 					}
 				}
 			}
