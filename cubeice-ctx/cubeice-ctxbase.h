@@ -35,6 +35,14 @@
 #ifndef	CUBEICE_CTXBASE_H
 #define	CUBEICE_CTXBASE_H
 
+#include <tchar.h>
+#include <string>
+#include <vector>
+#include <clx/date_time.h>
+#include "wpopen.h"
+
+#define CUBEICE_ENGINE _T("cubeice-exec.exe")
+
 extern HINSTANCE	hDllInstance;
 
 namespace cube {
@@ -42,17 +50,43 @@ namespace cube {
 		/* ----------------------------------------------------------------- */
 		//  CShlCtxMenuBase
 		/* ----------------------------------------------------------------- */
-		class CShlCtxMenuBase : public IContextMenu3, IShellExtInit, IMenuInfo {
+		class CShlCtxMenuBase : public IContextMenu3, IShellExtInit, IQueryInfo, IPersistFile, IMenuInfo {
+		private:
+			typedef TCHAR char_type;
+			typedef std::basic_string<TCHAR> string_type;
+			typedef std::size_t size_type;
+
+			struct fileinfo {
+			public:
+				string_type name;
+				size_type size;
+				clx::date_time time;
+				bool directory;
+				
+				fileinfo() : name(), size(0), time(), directory(false) {}
+			};
+
 		public:
 			/* ------------------------------------------------------------- */
 			//  constructor
 			/* ------------------------------------------------------------- */
-			CShlCtxMenuBase() : refCount( 0L ), hInstance( hDllInstance ) {}
+			CShlCtxMenuBase( ULONG &dllrc ) : refCount( 1UL ), hInstance( hDllInstance ), dllRefCount( dllrc ) {
+				InterlockedIncrement( reinterpret_cast<LONG*>(&dllRefCount) );
+
+				TCHAR	path[4096];
+
+				GetModuleFileName( hDllInstance, path, sizeof( path ) );
+				PathRemoveFileSpec( path );
+				cubeiceEnginePath = path;
+				cubeiceEnginePath += _T( "\\" ) CUBEICE_ENGINE;
+			}
 			
 			/* ------------------------------------------------------------- */
 			//  destructor
 			/* ------------------------------------------------------------- */
-			virtual ~CShlCtxMenuBase() {}
+			virtual ~CShlCtxMenuBase() {
+				InterlockedDecrement( reinterpret_cast<LONG*>(&dllRefCount) );
+			}
 			
 			/* ------------------------------------------------------------- */
 			/*
@@ -68,6 +102,10 @@ namespace cube {
 					*ppv = static_cast<LPCONTEXTMENU>( this );
 				else if( IsEqualIID( riid, IID_IShellExtInit ) )
 					*ppv = static_cast<LPSHELLEXTINIT>( this );
+				else if( IsEqualIID( riid, IID_IQueryInfo ) )
+					*ppv = static_cast<IQueryInfo*>( this );
+				else if( IsEqualIID( riid, IID_IPersistFile ) )
+					*ppv = static_cast<LPPERSISTFILE>( this );
 				else
 					return E_NOINTERFACE;
 				
@@ -260,7 +298,129 @@ namespace cube {
 			}
 			
 			/* ------------------------------------------------------------- */
-			//  GetFileList
+			/*
+			 *  GetInfoFlags
+			 *
+			 *  IQueryInfo members
+			 */
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP GetInfoFlags( DWORD * )
+			{
+				return E_NOTIMPL;
+			}
+
+			/* ------------------------------------------------------------- */
+			//  GetInfoTip
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP GetInfoTip( DWORD, WCHAR **ppwszTip ) {
+				tstring		tooltip;
+				TCHAR		*ext;
+				TCHAR		tmp[512];
+
+				tooltip = _T( "種類: " );
+				ext = PathFindExtension( compFileName.c_str() );
+				if( ext ) {
+					++ext;
+					tooltip += ext;
+				}
+				tooltip += _T( "ファイル\r\n" );
+
+				HANDLE			hFile = CreateFile( compFileName.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+				LARGE_INTEGER	li = { 0 };
+				SYSTEMTIME		st = { 0 };
+				if( hFile != INVALID_HANDLE_VALUE ) {
+					FILETIME		ft;
+
+					GetFileSizeEx( hFile, &li );
+					GetFileTime( hFile, NULL, NULL, &ft );
+					FileTimeToSystemTime( &ft, &st );
+					CloseHandle( hFile );
+				}
+				tooltip += _T( "サイズ: " );
+				tooltip += punct( li.QuadPart );
+				tooltip += _T( "バイト\r\n" );
+
+				tooltip += _T( "更新日時: " );
+				wsprintf( tmp, _T( "%d/%02d/%02d %d:%02d" ), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute );
+				tooltip += tmp;
+				tooltip += _T( "\r\n" );
+
+				tooltip += _T( "ファイルリスト\r\n" );
+
+				for( size_t i = 0 ; i < compFileList.size() ; ++i )
+					tooltip += _T( "  " ) + compFileList[i].name + _T( "\r\n" );
+
+				*ppwszTip = static_cast<wchar_t*>( CoTaskMemAlloc( ( tooltip.size() + 5 ) * sizeof( wchar_t ) ) );
+#ifdef	UNICODE
+				lstrcpyW( *ppwszTip, tooltip.c_str() );
+#else	// UNICODE
+				MultiByteToWideChar( CP_OEMCP, 0, tooltip.c_str(), -1, *ppwszTip, ( tooltip.size() + 5 ) * sizeof( wchar_t ) );
+#endif
+
+				return S_OK;
+			}
+
+			/* ------------------------------------------------------------- */
+			/*
+			 *  GetClassID
+			 *
+			 *  IPersistFile members
+			 */
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP GetClassID(CLSID *pClassID) {
+				return E_NOTIMPL;
+			}
+
+			/* ------------------------------------------------------------- */
+			//  IsDirty
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP IsDirty() {
+				return E_NOTIMPL;
+			}
+
+			/* ------------------------------------------------------------- */
+			//  Load
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP Load(LPCOLESTR pszFileName, DWORD dwMode) {
+				compFileList.clear();
+#ifdef	UNICODE
+				const wchar_t	*fname = pszFileName;
+#else	// UNICODE
+				char	fname[4096];
+				WideCharToMultiByte( CP_OEMCP, 0, pszFileName, -1, fname, sizeof( fname ), NULL, NULL );
+#endif	// UNICODE
+				compFileName = pszFileName;
+				decompress_filelist( fname, compFileList );
+				return S_OK;
+			}
+
+			/* ------------------------------------------------------------- */
+			//  Save
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP Save(LPCOLESTR pszFileName, BOOL fRemember) {
+				return E_NOTIMPL;
+			}
+
+			/* ------------------------------------------------------------- */
+			//  SaveCompleted
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP SaveCompleted(LPCOLESTR pszFileName) {
+				return E_NOTIMPL;
+			}
+
+			/* ------------------------------------------------------------- */
+			//  GetCurFile
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP GetCurFile(LPOLESTR *ppszFileName) {
+				return E_NOTIMPL;
+			}
+
+			/* ------------------------------------------------------------- */
+			/*
+			 *  GetFileList
+			 *
+			 *  IMenuInfo members
+			*/
 			/* ------------------------------------------------------------- */
 			const std::vector<tstring> &GetFileList() {
 				return fileList;
@@ -285,7 +445,6 @@ namespace cube {
 			virtual void SetMenuIcon( WORD iconID, MENUITEMINFO &miinfo ) = 0;
 			
 		private:
-			
 			/* ------------------------------------------------------------- */
 			//  CreateSubMenu
 			/* ------------------------------------------------------------- */
@@ -427,9 +586,83 @@ namespace cube {
 				return false;
 			}
 			
+			/* ----------------------------------------------------------------- */
+			//  decompress_filelist
+			/* ----------------------------------------------------------------- */
+			void decompress_filelist(const string_type& path, std::vector<fileinfo> &flist) {
+				string_type cmdline = cubeiceEnginePath;
+				string_type separator = _T("------------------------");
+				string_type header = _T("Name");
+				string_type footer = _T("folders");
+				cmdline += _T(" l ");
+				cmdline += _T("\"") + path + _T("\"");
+				
+				flist.clear();
+
+				std::vector<string_type> v;
+				cube::popen proc;
+				if (!proc.open(cmdline.c_str(), _T("r"))) return;
+				string_type buffer, src;
+				int status = 0;
+				while ((status = proc.gets(buffer)) >= 0) {
+					if (status == 2) break; // pipe closed
+					else if (status == 1 && !buffer.empty()) src = buffer;
+					
+					v.clear();
+					clx::split(buffer, v);
+					if (v.size() == 6 && (v.at(5) == header || v.at(5) == footer || v.at(5) == separator)) {
+						buffer.clear();
+						continue;
+					}
+					
+					if (v.size() == 6) {
+						// ファイルリストの更新
+						fileinfo elem;
+						elem.name = v.at(5);
+						elem.size = clx::lexical_cast<std::size_t>(v.at(3));
+						elem.time.from_string(v.at(0) + _T("T") + v.at(1), string_type(_T("%Y-%m-dT%H:%M:%S")));
+						elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
+						flist.push_back( elem );
+					}
+					buffer.clear();
+				}
+				return;
+			}
+
+			/* ----------------------------------------------------------------- */
+			/*
+			 *  punct
+			 *
+			 *  3桁毎にカンマを挿入する．
+			 */
+			/* ----------------------------------------------------------------- */
+			string_type punct(LONGLONG num) {
+				static const int digit = 1000;
+				
+				string_type dest;
+				while (num / digit > 0) {
+					string_type comma = dest.empty() ? _T("") : _T(",");
+					char_type buffer[8] = {};
+					_stprintf_s(buffer, _T("%03d"), num % 1000);
+					dest = buffer + comma + dest;
+					num /= 1000;
+				}
+				
+				string_type comma = dest.empty() ? _T("") : _T(",");
+				char_type buffer[8] = {};
+				_stprintf_s(buffer, _T("%d"), num % 1000);
+				dest = buffer + comma + dest;
+				
+				return dest;
+			}
+
 			std::vector<tstring>				fileList;
 			cubeice::user_setting::size_type	ctxSetting;
 			ULONG								refCount;
+			ULONG								&dllRefCount;
+			tstring								compFileName;
+			std::vector<fileinfo>				compFileList;
+			tstring								cubeiceEnginePath;
 		};
 
 	}

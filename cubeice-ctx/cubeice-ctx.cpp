@@ -32,6 +32,7 @@
  *  Last-modified: Wed 12 Jan 2011 14:28:04 JST
  */
 /* ------------------------------------------------------------------------- */
+#include <windows.h>
 #include <initguid.h>
 #include <shlguid.h>
 #include <shlobj.h>
@@ -39,7 +40,7 @@
 #include "guid.h"
 
 namespace {
-	UINT	dllRefCount = 0;
+	ULONG	dllRefCount = 0;
 }
 HINSTANCE		hDllInstance;
 
@@ -84,9 +85,16 @@ STDAPI DllGetClassObject( REFCLSID rclsid, REFIID riid, LPVOID *ppvOut )
 	*ppvOut = NULL;
 
 	if( IsEqualIID( rclsid, CLSID_CubeICE ) ) {
-		CShlCtxMenuFactory *pscmf = new CShlCtxMenuFactory( dllRefCount );
+		CShlCtxMenuFactory	*pscmf = new CShlCtxMenuFactory( dllRefCount );
+		HRESULT				hr;
 
-		return pscmf->QueryInterface( riid, ppvOut );
+		if( !pscmf )
+			return E_OUTOFMEMORY;
+
+		hr = pscmf->QueryInterface( riid, ppvOut );
+		pscmf->Release();
+
+		return hr;
 	}
 
 	return CLASS_E_CLASSNOTAVAILABLE;

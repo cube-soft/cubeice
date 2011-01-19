@@ -47,6 +47,7 @@
 #include <shlwapi.h>
 #include <clx/base64.h>
 #include <clx/split.h>
+#include "guid.h"
 
 /* ------------------------------------------------------------------------- */
 //  関連付けに関連するフラグ
@@ -509,7 +510,7 @@ namespace cubeice {
 				else RegDeleteValue(hkResult, _T("cubeice-checker"));
 			}
 			
-			this->associate(decomp_.flags());
+			this->associate(decomp_.flags(), decomp_.details());
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -588,10 +589,10 @@ namespace cubeice {
 		 *  あらかじめ登録しておくこと．
 		 */
 		/* ----------------------------------------------------------------- */
-		void associate(size_type flags) {
+		void associate(size_type flags, size_type details) {
 			const ext_map& exts = extensions();
 			for (ext_map::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
-				this->associate(pos->first, pos->second.first, ((flags & pos->second.second) != 0));
+				this->associate(pos->first, pos->second.first, ((flags & pos->second.second) != 0), ((details & DETAIL_TOOLTIP) != 0));
 			}
 			SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
 		}
@@ -610,8 +611,14 @@ namespace cubeice {
 		 *     があれば、その値を取得し、既定のキーとする
 		 */
 		/* ----------------------------------------------------------------- */
-		void associate(const string_type& key, const string_type& value, bool flag) {
+		void associate(const string_type& key, const string_type& value, bool flag, bool tooltip) {
 			HKEY subkey;
+			LONG status = RegOpenKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex" ) ).c_str(), 0, KEY_ALL_ACCESS, &subkey );
+
+			if( !status ) {
+				RegDeleteKeyNT( subkey, _T( "{00021500-0000-0000-C000-000000000046}" ) );
+				RegCloseKey( subkey );
+			}
 			if (flag) {
 				DWORD disposition = 0;
 				LONG status = RegCreateKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
@@ -623,6 +630,12 @@ namespace cubeice {
 						RegSetValueEx(subkey, CUBEICE_REG_PREVARCHIVER, 0, REG_SZ, (CONST BYTE*)buffer, (_tcslen(buffer) + 1) * sizeof(char_type));
 					}
 					RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)value.c_str(), (value.size() + 1) * sizeof(char_type));
+				}
+				if( tooltip ) {
+					disposition = 0;
+					status = RegCreateKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex\\{00021500-0000-0000-C000-000000000046}" ) ).c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
+					if (!status)
+						RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)CLSID_CubeICE_STR, sizeof( CLSID_CubeICE_STR ));
 				}
 			}
 			else {
