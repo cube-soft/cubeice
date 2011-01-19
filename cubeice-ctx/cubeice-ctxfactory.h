@@ -55,15 +55,15 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			//  constructor
 			/* ------------------------------------------------------------- */
-			CShlCtxMenuFactory( UINT &dllrc ) : refCount( 0L ), dllRefCount( dllrc ) {
-				++dllRefCount;
+			CShlCtxMenuFactory( ULONG &dllrc ) : refCount( 1UL ), dllRefCount( dllrc ) {
+				InterlockedIncrement( reinterpret_cast<LONG*>(&dllRefCount) );
 			}
 			
 			/* ------------------------------------------------------------- */
 			//  destructor
 			/* ------------------------------------------------------------- */
 			virtual ~CShlCtxMenuFactory() {
-				--dllRefCount;
+				InterlockedDecrement( reinterpret_cast<LONG*>(&dllRefCount) );
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -127,15 +127,19 @@ namespace cube {
 				GetVersionEx( reinterpret_cast<OSVERSIONINFO*>(&osver) );
 				
 				CShlCtxMenuBase	*pSCMenu;
+				HRESULT			hr;
 				if( MAKEWORD( osver.dwMinorVersion, osver.dwMajorVersion ) >= 0x0600 )
-					pSCMenu = new CShlCtxMenuVista();
+					pSCMenu = new CShlCtxMenuVista( dllRefCount );
 				else
-					pSCMenu = new CShlCtxMenuXP();
+					pSCMenu = new CShlCtxMenuXP( dllRefCount );
 				
 				if( !pSCMenu )
 					return E_OUTOFMEMORY;
 				
-				return pSCMenu->QueryInterface( riid, ppvObj );
+				hr = pSCMenu->QueryInterface( riid, ppvObj );
+				pSCMenu->Release();
+
+				return hr;
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -147,7 +151,7 @@ namespace cube {
 			
 		private:
 			ULONG		refCount;
-			UINT		&dllRefCount;
+			ULONG		&dllRefCount;
 		};
 	}
 }

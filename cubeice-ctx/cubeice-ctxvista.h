@@ -239,7 +239,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			//  constructor
 			/* ------------------------------------------------------------- */
-			CShlCtxMenuVista() {
+			CShlCtxMenuVista( ULONG &dllrc ) : CShlCtxMenuBase( dllrc ) {
 				InitIcon( MenuItem );
 			}
 			

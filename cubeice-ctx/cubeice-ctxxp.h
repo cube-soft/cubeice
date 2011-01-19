@@ -45,6 +45,11 @@ namespace cube {
 		class CShlCtxMenuXP : public CShlCtxMenuBase {
 		public:
 			/* ------------------------------------------------------------- */
+			//  constructor
+			/* ------------------------------------------------------------- */
+			CShlCtxMenuXP( ULONG &dllrc ) : CShlCtxMenuBase( dllrc ) {}
+
+			/* ------------------------------------------------------------- */
 			//  QueryInterface
 			/* ------------------------------------------------------------- */
 			STDMETHODIMP QueryInterface( REFIID riid, LPVOID FAR *ppv ) {
