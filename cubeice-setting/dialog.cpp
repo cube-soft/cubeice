@@ -359,6 +359,11 @@ namespace cubeice {
 					EnableWindow(GetDlgItem(hWnd, IDC_SKIP_DESKTOP_CHECKBOX), enabled);
 				}
 				
+				if (pos->first == IDC_CREATE_FOLDER_CHECKBOX) {
+					BOOL enabled = (setting.details() & DETAIL_CREATE_FOLDER) ? TRUE : FALSE;
+					EnableWindow(GetDlgItem(hWnd, IDC_SINGLE_FOLDER_CHECKBOX), enabled);
+				}
+				
 				return TRUE;
 			}
 			

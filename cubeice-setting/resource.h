@@ -101,6 +101,7 @@
 #define IDC_SKIP_DESKTOP_CHECKBOX   3107 // デスクトップの場合は開かない
 #define IDC_MAIL_REMOVE_CHECKBOX    3110 // メール添付の際にファイルを残さない
 #define IDC_REPORT_CHECKBOX         3108 // エラーレポートを表示する
+#define IDC_TOOLTIP_CHECKBOX        3111 // ツールチップにファイル一覧を表示する
 
 /* ------------------------------------------------------------------------- */
 //  「フィルタリング」タブ
