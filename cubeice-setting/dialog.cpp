@@ -472,7 +472,7 @@ namespace cubeice {
 	/* --------------------------------------------------------------------- */
 	//  create_propsheet
 	/* --------------------------------------------------------------------- */
-	int create_propsheet(HWND parent) {
+	INT_PTR create_propsheet(HWND parent) {
 		static const std::size_t pagenum = 5;
 		HPROPSHEETPAGE ref[pagenum] = {};
 		

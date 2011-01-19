@@ -476,11 +476,11 @@ namespace cubeice {
 			DWORD dwDisposition;
 			LONG lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
 			if (!lResult) {
-				DWORD value = ctx_flags_;
+				DWORD value = static_cast<DWORD>(ctx_flags_);
 				RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
 				
 				// ショートカットの処理．
-				value = sc_index_;
+				value = static_cast<DWORD>(sc_index_);
 				RegSetValueEx(hkResult, CUBEICE_REG_SCCOMPRESS, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
 				
 				TCHAR buffer[2048] ={};

@@ -329,11 +329,13 @@ namespace cube {
 				LARGE_INTEGER	li = { 0 };
 				SYSTEMTIME		st = { 0 };
 				if( hFile != INVALID_HANDLE_VALUE ) {
-					FILETIME		ft;
+					FILETIME		ft, localft;
 
 					GetFileSizeEx( hFile, &li );
 					GetFileTime( hFile, NULL, NULL, &ft );
-					FileTimeToSystemTime( &ft, &st );
+					
+					FileTimeToLocalFileTime(&ft, &localft);
+					FileTimeToSystemTime( &localft, &st );
 					CloseHandle( hFile );
 				}
 				tooltip += _T( "ÉTÉCÉY: " );
