@@ -39,6 +39,7 @@
 #include <string>
 #include <vector>
 #include <clx/date_time.h>
+#include <clx/tokenizer.h>
 #include "wpopen.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
@@ -601,7 +602,6 @@ namespace cube {
 				
 				flist.clear();
 
-				std::vector<string_type> v;
 				cube::popen proc;
 				if (!proc.open(cmdline.c_str(), _T("r"))) return;
 				string_type buffer, src;
@@ -610,8 +610,9 @@ namespace cube {
 					if (status == 2) break; // pipe closed
 					else if (status == 1 && !buffer.empty()) src = buffer;
 					
-					v.clear();
-					clx::split(buffer, v);
+					clx::escape_separator<TCHAR> sep(_T(" \t"), _T("\""), _T(""));
+					clx::basic_tokenizer<clx::escape_separator<TCHAR>, std::basic_string<TCHAR> > v(buffer, sep);
+					
 					if (v.size() == 6 && (v.at(5) == header || v.at(5) == footer || v.at(5) == separator)) {
 						buffer.clear();
 						continue;
