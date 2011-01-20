@@ -321,16 +321,18 @@ HRESULT CFieldPrinter::PrintItemInfo(const CArc &arc, UInt32 index, bool techMod
       RINOK(IsArchiveItemFolder(arc.Archive, index, isFolder));
       char s[8];
       GetAttribString(attrib, isFolder, s);
-      g_StdOut << s;
+      g_StdOut << '"' << s << '"';
     }
     else if (prop.vt == VT_EMPTY)
     {
       if (!techMode)
-        PrintSpaces(width);
+        g_StdOut << "\"-\"";
     }
     else if (fieldInfo.PropID == kpidMTime)
     {
+      g_StdOut << '"';
       PrintTime(prop);
+      g_StdOut << '"';
     }
     else if (prop.vt == VT_BSTR)
     {
@@ -349,10 +351,12 @@ HRESULT CFieldPrinter::PrintItemInfo(const CArc &arc, UInt32 index, bool techMod
       s.Replace(wchar_t(0xA), L' ');
       s.Replace(wchar_t(0xD), L' ');
 
-	  if (techMode)
+      g_StdOut << '"';
+      if (techMode)
         g_StdOut << s;
       else
         PrintString(fieldInfo.TextAdjustment, width, s);
+      g_StdOut << '"';
     }
     if (techMode)
       g_StdOut << endl;
@@ -590,7 +594,7 @@ HRESULT ListArchives(CCodecs *codecs, const CIntVector &formatIndices,
       RINOK(IsArchiveItemFolder(archive, i, isFolder));
       if (!wildcardCensor.CheckPath(filePath, !isFolder))
         continue;
-      
+      g_StdOut << "<> ";
       fieldPrinter.PrintItemInfo(arc, i, techMode);
       
       UInt64 packSize, unpackSize;
