@@ -343,12 +343,13 @@ namespace cubeice {
 				
 				// フォルダを開く
 				if (setting_.decompression().details() & DETAIL_OPEN) {
+					if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER) &&
+						(setting_.decompression().details() & DETAIL_SINGLE_FOLDER) &&
+						!folder.empty()) {
+						root += _T("\\") + folder;
+					}
+					
 					if ((setting_.decompression().details() & DETAIL_SKIP_DESKTOP) == 0 || !this->is_desktop(root)) {
-						if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER) &&
-							(setting_.decompression().details() & DETAIL_SINGLE_FOLDER) &&
-							!folder.empty()) {
-							root += _T("\\") + folder;
-						}
 						ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
 					}
 				}
