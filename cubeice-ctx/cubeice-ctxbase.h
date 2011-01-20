@@ -594,9 +594,6 @@ namespace cube {
 			/* ----------------------------------------------------------------- */
 			void decompress_filelist(const string_type& path, std::vector<fileinfo> &flist) {
 				string_type cmdline = cubeiceEnginePath;
-				string_type separator = _T("------------------------");
-				string_type header = _T("Name");
-				string_type footer = _T("folders");
 				cmdline += _T(" l ");
 				cmdline += _T("\"") + path + _T("\"");
 				
@@ -613,7 +610,7 @@ namespace cube {
 					clx::escape_separator<TCHAR> sep(_T(" \t"), _T("\""), _T(""));
 					clx::basic_tokenizer<clx::escape_separator<TCHAR>, std::basic_string<TCHAR> > v(buffer, sep);
 					
-					if (v.size() == 6 && (v.at(5) == header || v.at(5) == footer || v.at(5) == separator)) {
+					if (v.empty() || v.at(0) != _T("<>")) {
 						buffer.clear();
 						continue;
 					}
@@ -623,7 +620,7 @@ namespace cube {
 						fileinfo elem;
 						elem.name = v.at(5);
 						elem.size = clx::lexical_cast<std::size_t>(v.at(3));
-						elem.time.from_string(v.at(0) + _T("T") + v.at(1), string_type(_T("%Y-%m-dT%H:%M:%S")));
+						elem.time.from_string(v.at(1), string_type(_T("%Y-%m-d %H:%M:%S")));
 						elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
 						flist.push_back( elem );
 					}

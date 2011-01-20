@@ -570,16 +570,12 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		string_type decompress_filelist(const string_type& path, cubeice::dialog::progressbar& progress) {
 			string_type cmdline = CUBEICE_ENGINE;
-			string_type separator = _T("------------------------");
-			string_type header = _T("Name");
-			string_type footer = _T("folders");
 			cmdline += _T(" l ");
 			cmdline += _T("\"") + path + _T("\"");
 			
 			this->size_ = 0;
 			string_type dest;
 			
-			std::vector<string_type> v;
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return dest;
 			string_type buffer, src;
@@ -590,9 +586,10 @@ namespace cubeice {
 				if (status == 2) break; // pipe closed
 				else if (status == 1 && !buffer.empty()) src = buffer;
 				
-				v.clear();
-				clx::split(buffer, v);
-				if (v.size() == 6 && (v.at(5) == header || v.at(5) == footer || v.at(5) == separator)) {
+				clx::escape_separator<TCHAR> sep(_T(" \t"), _T("\""), _T(""));
+				clx::basic_tokenizer<clx::escape_separator<TCHAR>, std::basic_string<TCHAR> > v(buffer, sep);
+				
+				if (v.empty() || v.at(0) != _T("<>")) {
 					buffer.clear();
 					continue;
 				}
@@ -601,7 +598,7 @@ namespace cubeice {
 					// ファイルリストの更新
 					fileinfo elem;
 					elem.size = clx::lexical_cast<std::size_t>(v.at(3));
-					elem.time.from_string(v.at(0) + _T("T") + v.at(1), string_type(_T("%Y-%m-dT%H:%M:%S")));
+					elem.time.from_string(v.at(1), string_type(_T("%Y-%m-d %H:%M:%S")));
 					elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
 					filelist_[v.at(5)] = elem;
 					this->size_ += elem.size;
