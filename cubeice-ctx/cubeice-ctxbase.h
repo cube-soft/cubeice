@@ -313,7 +313,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			//  GetInfoTip
 			/* ------------------------------------------------------------- */
-			STDMETHODIMP GetInfoTip( DWORD, WCHAR **ppwszTip ) {
+			STDMETHODIMP GetInfoTip( DWORD dwFlags, WCHAR **ppwszTip ) {
 				tstring		tooltip;
 				TCHAR		*ext;
 				TCHAR		tmp[512];
@@ -348,10 +348,12 @@ namespace cube {
 				tooltip += tmp;
 				tooltip += _T( "\r\n" );
 
-				tooltip += _T( "ファイルリスト\r\n" );
+				if( dwFlags & QITIPF_USESLOWTIP ) {
+					tooltip += _T( "ファイルリスト\r\n" );
 
-				for( size_t i = 0 ; i < compFileList.size() ; ++i )
-					tooltip += _T( "  " ) + compFileList[i].name + _T( "\r\n" );
+					for( size_t i = 0 ; i < compFileList.size() ; ++i )
+						tooltip += _T( "  " ) + compFileList[i].name + _T( "\r\n" );
+				}
 
 				*ppwszTip = static_cast<wchar_t*>( CoTaskMemAlloc( ( tooltip.size() + 5 ) * sizeof( wchar_t ) ) );
 #ifdef	UNICODE
