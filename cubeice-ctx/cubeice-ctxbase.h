@@ -619,8 +619,8 @@ namespace cube {
 						// ファイルリストの更新
 						fileinfo elem;
 						elem.name = v.at(5);
-						elem.size = clx::lexical_cast<std::size_t>(v.at(3));
-						elem.time.from_string(v.at(1), string_type(_T("%Y-%m-d %H:%M:%S")));
+						elem.size = v.at(3) != _T("-") ? clx::lexical_cast<std::size_t>(v.at(3)) : 0;
+						if (v.at(1) != _T("-")) elem.time.from_string(v.at(1), string_type(_T("%Y-%m-d %H:%M:%S")));
 						elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
 						flist.push_back( elem );
 					}
