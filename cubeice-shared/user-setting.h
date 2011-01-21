@@ -121,6 +121,7 @@
 #define CUBEICE_REG_DETAILS	            _T("Details")
 #define CUBEICE_REG_OUTPUT_CONDITION    _T("OutputCondition")
 #define CUBEICE_REG_OUTPUT_PATH         _T("OutputPath")
+#define CUBEICE_REG_MAX_FILELIST        _T("MaxFilelist")
 #define CUBEICE_REG_CONTEXT             _T("ContextFlags")
 //#define CUBEICE_REG_SHORTCUT            _T("ShortcutFlags")
 #define CUBEICE_REG_SCCOMPRESS          _T("ScCompressIndex")
@@ -268,8 +269,8 @@ namespace cubeice {
 		//  constructor
 		/* ----------------------------------------------------------------- */
 		explicit archive_setting(const string_type& root) :
-			root_(root), flags_(0), details_(0), output_condition_(0), output_path_() {
-			this->load();
+			root_(root), flags_(0), details_(0), max_filelist_(0), output_condition_(0), output_path_() {
+			//this->load();
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -302,7 +303,10 @@ namespace cubeice {
 				
 				dwSize = sizeof(details_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_DETAILS, NULL, &dwType, (LPBYTE)&details_, &dwSize);
-
+				
+				dwSize = sizeof(max_filelist_);
+				RegQueryValueEx(hkResult, CUBEICE_REG_MAX_FILELIST, NULL, &dwType, (LPBYTE)&max_filelist_, &dwSize);
+				
 				dwSize = sizeof(output_condition_);
 				RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_CONDITION, NULL, &dwType, (LPBYTE)&output_condition_, &dwSize);
 				
@@ -312,7 +316,7 @@ namespace cubeice {
 					output_path_ = buffer;
 				}
 			}
-
+			
 			// Flagsはレジストリに置かず，それぞれの拡張子のキーの既定値が cubeice_XXX かどうかで判断
 			flags_ = 0;
 			const ext_map& exts = extensions();
@@ -335,6 +339,10 @@ namespace cubeice {
 				
 				DWORD value = static_cast<DWORD>(details_);
 				RegSetValueEx(hkResult, CUBEICE_REG_DETAILS, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
+				
+				value = static_cast<DWORD>(max_filelist_);
+				RegSetValueEx(hkResult, CUBEICE_REG_MAX_FILELIST, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
+				
 				value = static_cast<DWORD>(output_condition_);
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_CONDITION, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, 0, REG_SZ, (CONST BYTE*)output_path_.c_str(), (output_path_.length() + 1) * sizeof(char_type));
@@ -361,6 +369,12 @@ namespace cubeice {
 		const size_type& details() const { return details_; }
 
 		/* ----------------------------------------------------------------- */
+		//  max_filelist
+		/* ----------------------------------------------------------------- */
+		size_type& max_filelist() { return max_filelist_; }
+		const size_type& max_filelist() const { return max_filelist_; }
+		
+		/* ----------------------------------------------------------------- */
 		/*
 		 *  output_condition
 		 *
@@ -370,7 +384,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		size_type& output_condition() { return output_condition_; }
 		const size_type& output_condition() const { return output_condition_; }
-
+		
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  output_path
@@ -386,8 +400,10 @@ namespace cubeice {
 		string_type root_;
 		size_type flags_;
 		size_type details_;
+		size_type max_filelist_;
 		size_type output_condition_;
 		string_type output_path_;
+		
 	};
 	
 	/* --------------------------------------------------------------------- */
@@ -409,7 +425,7 @@ namespace cubeice {
 			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
 			ctx_flags_(0), sc_flags_(0), sc_index_(0), filters_(), update_(false) {
-			this->load();	
+			this->load();
 		}
 		
 		explicit user_setting(const string_type& root) :
