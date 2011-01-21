@@ -71,7 +71,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			//  constructor
 			/* ------------------------------------------------------------- */
-			CShlCtxMenuBase( ULONG &dllrc ) : refCount( 1UL ), hInstance( hDllInstance ), dllRefCount( dllrc ) {
+			CShlCtxMenuBase( ULONG &dllrc ) : ctxSetting(), refCount( 1UL ), hInstance( hDllInstance ), dllRefCount( dllrc ) {
 				InterlockedIncrement( reinterpret_cast<LONG*>(&dllRefCount) );
 
 				TCHAR	path[4096];
@@ -149,14 +149,14 @@ namespace cube {
 				if( uFlags & CMF_DEFAULTONLY )
 					return NO_ERROR;
 				
-				if( !ctxSetting )
+				if( !ctxSetting.context_flags() )
 					return NO_ERROR;
 				
 				// Add separator
 				InsertMenu( hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
 				
 				for( unsigned int i = 0 ; MenuItem[i].stringA ; ++i ) {
-					if( MenuItem[i].dispSetting && !( ctxSetting & MenuItem[i].dispSetting ) )
+					if( MenuItem[i].dispSetting && !( ctxSetting.context_flags() & MenuItem[i].dispSetting ) )
 						continue;
 					
 					if( MenuItem[i].dispSetting == DECOMPRESS_FLAG && !this->is_decompress(fileList.begin(), fileList.end()))
@@ -263,9 +263,6 @@ namespace cube {
 				HDROP			hDrop;
 				UINT			numoffiles;
 				
-				cubeice::user_setting	setting;
-				ctxSetting = setting.context_flags();
-				
 				fme.cfFormat	= CF_HDROP;
 				fme.ptd			= NULL;
 				fme.dwAspect	= DVASPECT_CONTENT;
@@ -314,6 +311,7 @@ namespace cube {
 			//  GetInfoTip
 			/* ------------------------------------------------------------- */
 			STDMETHODIMP GetInfoTip( DWORD dwFlags, WCHAR **ppwszTip ) {
+				static const size_type maxcolumn = 50; // 1行に出力する最大文字数
 				tstring		tooltip;
 				TCHAR		*ext;
 				TCHAR		tmp[512];
@@ -350,9 +348,21 @@ namespace cube {
 
 				if( dwFlags & QITIPF_USESLOWTIP ) {
 					tooltip += _T( "ファイルリスト\r\n" );
-
-					for( size_t i = 0 ; i < compFileList.size() ; ++i )
-						tooltip += _T( "  " ) + compFileList[i].name + _T( "\r\n" );
+					
+					for( size_t i = 0 ; i < compFileList.size() ; ++i ) {
+						if (i >= ctxSetting.decompression().max_filelist()) {
+							tooltip += _T("  ...\r\n");
+							break;
+						}
+						string_type name = compFileList[i].name;
+						if (name.size() > maxcolumn) {
+							name = name.substr(name.size() - maxcolumn + 3, maxcolumn - 3);
+							string_type::size_type pos = name.find_first_of(_T('\\'));
+							if (pos != string_type::npos) name = _T("...") + name.substr(pos);
+							else name = _T("...") + name;
+						}
+						tooltip += _T( "  " ) + name + _T( "\r\n" );
+					}
 				}
 
 				*ppwszTip = static_cast<wchar_t*>( CoTaskMemAlloc( ( tooltip.size() + 5 ) * sizeof( wchar_t ) ) );
@@ -459,7 +469,7 @@ namespace cube {
 				for( unsigned int i = 0 ; smi[i].stringA ; ++i ) {
 					MENUITEMINFO		miinfo;
 					
-					if( smi[i].dispSetting && !( ctxSetting & smi[i].dispSetting ) )
+					if( smi[i].dispSetting && !( ctxSetting.context_flags() & smi[i].dispSetting ) )
 						continue;
 					
 					ZeroMemory( &miinfo, sizeof( miinfo ) );
@@ -491,7 +501,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			void RecursiveInvokeCommand( const SUB_MENU_ITEM *smi, LPCMINVOKECOMMANDINFO lpcmi, DWORD &index ) {
 				for( unsigned int i = 0 ; smi[i].stringA && index <= LOWORD( lpcmi->lpVerb ) ; ++i ) {
-					if( smi[i].dispSetting && !( ctxSetting & smi[i].dispSetting ) )
+					if( smi[i].dispSetting && !( ctxSetting.context_flags() & smi[i].dispSetting ) )
 						continue;
 					
 					if( smi[i].dispSetting == DECOMPRESS_FLAG && !this->is_decompress(fileList.begin(), fileList.end()))
@@ -515,7 +525,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			void RecursiveGetCommandString( const SUB_MENU_ITEM *smi, unsigned int &index, UINT_PTR idCmd, UINT uFlags, LPSTR pszName, UINT cchMax ) {
 				for( unsigned int i = 0 ; smi[i].stringA && index <= idCmd ; ++i ) {
-					if( smi[i].dispSetting && !( ctxSetting & smi[i].dispSetting ) )
+					if( smi[i].dispSetting && !( ctxSetting.context_flags() & smi[i].dispSetting ) )
 						continue;
 
 					if( smi[i].dispSetting == DECOMPRESS_FLAG && !this->is_decompress(fileList.begin(), fileList.end()))
@@ -600,7 +610,7 @@ namespace cube {
 				cmdline += _T("\"") + path + _T("\"");
 				
 				flist.clear();
-
+				
 				cube::popen proc;
 				if (!proc.open(cmdline.c_str(), _T("r"))) return;
 				string_type buffer, src;
@@ -625,6 +635,10 @@ namespace cube {
 						if (v.at(1) != _T("-")) elem.time.from_string(v.at(1), string_type(_T("%Y-%m-d %H:%M:%S")));
 						elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
 						flist.push_back( elem );
+						if (flist.size() > ctxSetting.decompression().max_filelist()) {
+							proc.close();
+							break;
+						}
 					}
 					buffer.clear();
 				}
@@ -659,7 +673,7 @@ namespace cube {
 			}
 
 			std::vector<tstring>				fileList;
-			cubeice::user_setting::size_type	ctxSetting;
+			cubeice::user_setting				ctxSetting;
 			ULONG								refCount;
 			ULONG								&dllRefCount;
 			tstring								compFileName;

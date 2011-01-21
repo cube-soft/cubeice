@@ -304,7 +304,7 @@
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
+			CharacterSet="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -330,7 +330,7 @@
 				AdditionalIncludeDirectories="..\..\..\;..\..\..\..\"
 				PreprocessorDefinitions="NDEBUG;WIN32;_CONSOLE;WIN_LONG_PATH;EXTERNAL_CODECS;_7ZIP_LARGE_PAGES;SUPPORT_DEVICE_FILE"
 				StringPooling="true"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderThrough="StdAfx.h"
