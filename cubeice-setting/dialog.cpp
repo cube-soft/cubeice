@@ -140,7 +140,7 @@ namespace cubeice {
 				EnableWindow(GetDlgItem(hWnd, IDC_SKIP_DESKTOP_CHECKBOX), FALSE);
 			}
 		}
-
+		
 		/* ---------------------------------------------------------------- */
 		/*
 		 *  general_initdialog
@@ -274,35 +274,15 @@ namespace cubeice {
 					return TRUE;
 				}
 				
-				// コンテキストメニューの圧縮のサブ項目
-#ifdef nouse
-				const flag_map& comp = compress_map();
-				pos = comp.find(parameter);
-				if (pos != comp.end()) {
-					change_flag(Setting.compression().flags(), hWnd, pos->first, pos->second);
-					return TRUE;
-				}
-#endif
-				
 				// 「コンテキストメニュー」グループ
 				const flag_map& context = context_map();
 				pos = context.find(parameter);
 				if (pos != context.end()) {
 					change_flag(Setting.context_flags(), hWnd, pos->first, pos->second);
-					
-					// 圧縮のサブ項目の有効/無効を変更する．
-#ifdef nouse
-					if (pos->first == IDC_CT_COMPRESS_CHECKBOX) {
-						BOOL enabled = IsDlgButtonChecked(hWnd, IDC_CT_COMPRESS_CHECKBOX);
-						for (flag_map::const_iterator subpos = comp.begin(); subpos != comp.end(); ++subpos) {
-							EnableWindow(GetDlgItem(hWnd, subpos->first), enabled);
-						}
-					}
-#endif
 					return TRUE;
 				}
 				
-				// 「コンテキストメニュー」グループ
+				// 「ショートカット」グループ
 				const flag_map& shortcut = shortcut_map();
 				pos = shortcut.find(parameter);
 				if (pos != shortcut.end()) {
@@ -364,6 +344,12 @@ namespace cubeice {
 					EnableWindow(GetDlgItem(hWnd, IDC_SINGLE_FOLDER_CHECKBOX), enabled);
 				}
 				
+				if (pos->first == IDC_TOOLTIP_CHECKBOX) {
+					BOOL enabled = (setting.details() & DETAIL_TOOLTIP) ? TRUE : FALSE;
+					EnableWindow(GetDlgItem(hWnd, IDC_MAX_FILELIST_TEXTBOX), enabled);
+					EnableWindow(GetDlgItem(hWnd, IDC_FILELIST_UPDOWN), enabled);
+				}
+				
 				return TRUE;
 			}
 			
@@ -399,10 +385,31 @@ namespace cubeice {
 		static BOOL CALLBACK decompress_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_INITDIALOG:
+			{
+				// ツールチップに表示する最大件数の設定
+				HWND spin = GetDlgItem(hWnd, IDC_FILELIST_UPDOWN);
+				if (spin) {
+					std::size_t value = Setting.decompression().max_filelist();
+					SendMessage(spin, UDM_SETRANGE, 0, MAKELONG(20, 1));
+					SendMessage(spin, UDM_SETPOS, 0, MAKELONG(value, 0));
+					if ((Setting.decompression().details() & DETAIL_TOOLTIP) == 0) {
+						EnableWindow(GetDlgItem(hWnd, IDC_MAX_FILELIST_TEXTBOX), FALSE);
+						EnableWindow(spin, FALSE);
+					}
+				}
 				archive_initdialog(hWnd, Setting.decompression());
 				break;
+			}
 			case WM_COMMAND:
+			{
+				// ツールチップに表示する最大件数の変更
+				if (lp == (LPARAM)GetDlgItem(hWnd, IDC_MAX_FILELIST_TEXTBOX) && HIWORD(wp) == EN_CHANGE) {
+					std::size_t pos = (std::size_t)SendMessage(GetDlgItem(hWnd, IDC_FILELIST_UPDOWN), UDM_GETPOS, 0, 0);
+					if (pos > 0 && pos <= 20) Setting.decompression().max_filelist() = pos;
+					return TRUE;
+				}
 				return archive_dialogproc(Setting.decompression(), hWnd, msg, wp, lp);
+			}
 			default:
 				break;
 			}

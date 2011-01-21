@@ -102,6 +102,8 @@
 #define IDC_MAIL_REMOVE_CHECKBOX    3110 // メール添付の際にファイルを残さない
 #define IDC_REPORT_CHECKBOX         3108 // エラーレポートを表示する
 #define IDC_TOOLTIP_CHECKBOX        3111 // ツールチップにファイル一覧を表示する
+#define IDC_MAX_FILELIST_TEXTBOX    3112 // ツールチップの表示する最大件数
+#define IDC_FILELIST_UPDOWN         3113 // 同スピンコントロール
 
 /* ------------------------------------------------------------------------- */
 //  「フィルタリング」タブ
