@@ -165,7 +165,7 @@ namespace cubeice {
 			
 			if (status == 2) {
 				// *.tar の処理
-				if (ext.find(_T(".tar")) != string_type::npos) {
+				if (ext.find(_T(".tar")) != string_type::npos && (filetype == _T("gzip") || filetype == _T("bzip2"))) {
 					string_type prev = tmp;
 					tmp = tmpfile(_T("cubeice"));
 					this->compress_tar(prev, tmp, filetype, pass, progress);
@@ -227,7 +227,8 @@ namespace cubeice {
 			
 			for (; first != last; ++first) {
 				string_type src = *first;
-				if (!this->is_decompressable(src)) {
+				string_type filetype;
+				if (!this->decompress_filetype(src, filetype)) {
 					string_type message = src + _T(" は未対応のファイル形式のため解凍できません。");
 					MessageBox(NULL, message.c_str(), _T("CubeICE 解凍エラー"), MB_OK | MB_ICONERROR);
 					return;
@@ -253,7 +254,10 @@ namespace cubeice {
 				if (tmp.empty()) break;
 				
 				// *.tar 系の処理
-				if (this->is_tar(src)) src = this->decompress_tar(src, tmp, pass, progress);
+				// TODO: 現在，拡張子が本来の種類と異なるファイルも対象にしているが，
+				// それらの偽装（？）拡張子のファイルが *.tar かどうかをどう判断するか．
+				if ((filetype == _T("gzip") || filetype == _T("bzip2")) &&
+					this->is_tar(src)) src = this->decompress_tar(src, tmp, pass, progress);
 				
 				// プログレスバーの進行度の設定
 				string_type folder = this->decompress_filelist(src, progress);
@@ -558,6 +562,40 @@ namespace cubeice {
 			pos = dest.find_last_of(_T('.'));
 			if (pos != string_type::npos && dest.substr(pos) == _T(".tar")) dest.erase(pos);
 			return dest;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  decompress_filetype
+		/* ----------------------------------------------------------------- */
+		bool decompress_filetype(const string_type& path, string_type& filetype) {
+			if (PathIsDirectory(path.c_str())) return false;
+			
+			string_type cmdline = CUBEICE_ENGINE;
+			cmdline += _T(" l ");
+			cmdline += _T("\"") + path + _T("\"");
+			
+			cube::popen proc;
+			if (!proc.open(cmdline.c_str(), _T("r"))) return false;
+			string_type buffer;
+			int status = 0;
+			while ((status = proc.gets(buffer)) >= 0) {
+				if (status == 2) break; // pipe closed
+				else if (status == 0 || buffer.empty()) continue;
+				
+				clx::escape_separator<TCHAR> sep(_T(" \t"), _T("\""), _T(""));
+				clx::basic_tokenizer<clx::escape_separator<TCHAR>, std::basic_string<TCHAR> > v(buffer, sep);
+				
+				buffer.clear();
+				if (v.size() >= 3 && v.at(0) == _T("Type") && v.at(1) == _T("=")) {
+					// 対象外のファイルタイプを記述する．
+					if (v.at(2) == _T("Compound")) continue;
+					
+					filetype = v.at(2);
+					proc.close();
+					return true;
+				}
+			}
+			return false;
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -1051,43 +1089,6 @@ namespace cubeice {
 			// not fouond
 			p->Release();
 			return false;
-		}
-
-		/* ----------------------------------------------------------------- */
-		//  is_decompressable
-		/* ----------------------------------------------------------------- */
-		bool is_decompressable(const string_type& path) {
-			static bool init_ = false;
-			static std::set<string_type> lists_;
-			
-			if (!init_) {
-				lists_.insert(_T(".zip"));
-				lists_.insert(_T(".lzh"));
-				lists_.insert(_T(".rar"));
-				lists_.insert(_T(".tar"));
-				lists_.insert(_T(".gz"));
-				lists_.insert(_T(".7z"));
-				lists_.insert(_T(".arj"));
-				lists_.insert(_T(".bz2"));
-				lists_.insert(_T(".cab"));
-				lists_.insert(_T(".chm"));
-				lists_.insert(_T(".cpio"));
-				lists_.insert(_T(".deb"));
-				lists_.insert(_T(".dmg"));
-				lists_.insert(_T(".iso"));
-				lists_.insert(_T(".rpm"));
-				lists_.insert(_T(".tbz"));
-				lists_.insert(_T(".tgz"));
-				lists_.insert(_T(".wim"));
-				lists_.insert(_T(".xar"));
-				lists_.insert(_T(".xz"));
-				
-				init_ = true;
-			}
-			
-			string_type::size_type pos = path.find_last_of(_T('.'));
-			if (pos == string_type::npos || lists_.find(path.substr(pos)) == lists_.end()) return false;
-			return true;
 		}
 	};
 }

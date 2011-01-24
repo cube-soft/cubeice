@@ -322,7 +322,7 @@ namespace cube {
 					++ext;
 					tooltip += ext;
 				}
-				tooltip += _T( "ファイル\r\n" );
+				tooltip += _T( " ファイル\r\n" );
 
 				HANDLE			hFile = CreateFile( compFileName.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 				LARGE_INTEGER	li = { 0 };
@@ -339,19 +339,22 @@ namespace cube {
 				}
 				tooltip += _T( "サイズ: " );
 				tooltip += punct( li.QuadPart );
-				tooltip += _T( "バイト\r\n" );
-
+				tooltip += _T( " バイト\r\n" );
+				
 				tooltip += _T( "更新日時: " );
 				wsprintf( tmp, _T( "%d/%02d/%02d %d:%02d" ), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute );
 				tooltip += tmp;
-				tooltip += _T( "\r\n" );
-
-				if( dwFlags & QITIPF_USESLOWTIP ) {
-					tooltip += _T( "ファイルリスト\r\n" );
+				
+				if( dwFlags & QITIPF_USESLOWTIP &&
+					(ctxSetting.decompression().details() & DETAIL_TOOLTIP) &&
+					ctxSetting.decompression().max_filelist() > 0) {
+					tooltip += _T( "\r\n" );
+					tooltip += _T( "ファイルリスト" );
 					
 					for( size_t i = 0 ; i < compFileList.size() ; ++i ) {
+						tooltip += _T( "\r\n" );
 						if (i >= ctxSetting.decompression().max_filelist()) {
-							tooltip += _T("  ...\r\n");
+							tooltip += _T("  ...");
 							break;
 						}
 						string_type name = compFileList[i].name;
@@ -361,7 +364,7 @@ namespace cube {
 							if (pos != string_type::npos) name = _T("...") + name.substr(pos);
 							else name = _T("...") + name;
 						}
-						tooltip += _T( "  " ) + name + _T( "\r\n" );
+						tooltip += _T( "  " ) + name;
 					}
 				}
 
@@ -560,43 +563,51 @@ namespace cube {
 			}
 			
 			/* ------------------------------------------------------------- */
+			/*
+			 *  is_decompress
+			 *
+			 *  NOTE: 7zip はフォルダを指定すると中身を再帰的にチェックして
+			 *  しまう模様．そのため，フォルダかどうかを最初にチェックして
+			 *  フォルダの場合は false を返す．
+			 */
+			/* ------------------------------------------------------------- */
+			bool is_decompress(const string_type& path) {
+				if (PathIsDirectory(path.c_str())) return false;
+				
+				string_type cmdline = cubeiceEnginePath;
+				cmdline += _T(" l ");
+				cmdline += _T("\"") + path + _T("\"");
+				
+				cube::popen proc;
+				if (!proc.open(cmdline.c_str(), _T("r"))) return false;
+				string_type buffer;
+				int status = 0;
+				while ((status = proc.gets(buffer)) >= 0) {
+					if (status == 2) break; // pipe closed
+					else if (status == 0 || buffer.empty()) continue;
+					
+					clx::escape_separator<TCHAR> sep(_T(" \t"), _T("\""), _T(""));
+					clx::basic_tokenizer<clx::escape_separator<TCHAR>, std::basic_string<TCHAR> > v(buffer, sep);
+					
+					buffer.clear();
+					if (v.size() >= 3 && v.at(0) == _T("Type") && v.at(1) == _T("=")) {
+						// 対象外のファイルタイプを記述する．
+						if (v.at(2) == _T("Compound")) continue;
+						
+						proc.close();
+						return true;
+					}
+				}
+				return false;
+			}
+			
+			/* ------------------------------------------------------------- */
 			//  is_decompress
 			/* ------------------------------------------------------------- */
 			template <class InputIterator>
 			bool is_decompress(InputIterator first, InputIterator last) {
-				static bool init_ = false;
-				std::set<tstring> lists_;
-				if (!init_) {
-					lists_.insert(_T(".zip"));
-					lists_.insert(_T(".lzh"));
-					lists_.insert(_T(".rar"));
-					lists_.insert(_T(".tar"));
-					lists_.insert(_T(".gz"));
-					lists_.insert(_T(".7z"));
-					lists_.insert(_T(".arj"));
-					lists_.insert(_T(".bz2"));
-					lists_.insert(_T(".cab"));
-					lists_.insert(_T(".chm"));
-					lists_.insert(_T(".cpio"));
-					lists_.insert(_T(".deb"));
-					lists_.insert(_T(".dmg"));
-					lists_.insert(_T(".iso"));
-					lists_.insert(_T(".msi"));
-					lists_.insert(_T(".rpm"));
-					lists_.insert(_T(".tbz"));
-					lists_.insert(_T(".tgz"));
-					lists_.insert(_T(".udf"));
-					lists_.insert(_T(".vhd"));
-					lists_.insert(_T(".wim"));
-					lists_.insert(_T(".xar"));
-					lists_.insert(_T(".xz"));
-					lists_.insert(_T(".z"));
-				}
-				
-				for( ; first != last; ++first ) {
-					tstring src = *first;
-					tstring::size_type pos = src.find_last_of(_T("."));
-					if( pos != tstring::npos && lists_.find(src.substr(pos)) != lists_.end() ) return true;
+				for (; first != last; ++first) {
+					if (is_decompress(*first)) return true;
 				}
 				return false;
 			}
