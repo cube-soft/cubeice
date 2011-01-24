@@ -632,13 +632,15 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void associate(const string_type& key, const string_type& value, bool flag, bool tooltip) {
+			static const char_type* clsid_tooltip = _T("{00021500-0000-0000-C000-000000000046}");
 			HKEY subkey;
 			LONG status = RegOpenKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex" ) ).c_str(), 0, KEY_ALL_ACCESS, &subkey );
-
+			
 			if( !status ) {
-				RegDeleteKeyNT( subkey, _T( "{00021500-0000-0000-C000-000000000046}" ) );
+				RegDeleteKeyNT( subkey, clsid_tooltip );
 				RegCloseKey( subkey );
 			}
+			
 			if (flag) {
 				DWORD disposition = 0;
 				LONG status = RegCreateKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
@@ -651,11 +653,11 @@ namespace cubeice {
 					}
 					RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)value.c_str(), (value.size() + 1) * sizeof(char_type));
 				}
-				if( tooltip ) {
-					disposition = 0;
-					status = RegCreateKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex\\{00021500-0000-0000-C000-000000000046}" ) ).c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
-					if (!status)
-						RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)CLSID_CubeICE_STR, sizeof( CLSID_CubeICE_STR ));
+				
+				disposition = 0;
+				status = RegCreateKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex\\") + clsid_tooltip ).c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
+				if (!status) {
+					RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)CLSID_CubeICE_STR, sizeof( CLSID_CubeICE_STR ));
 				}
 			}
 			else {
