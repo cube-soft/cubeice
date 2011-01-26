@@ -71,7 +71,9 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			//  constructor
 			/* ------------------------------------------------------------- */
-			CShlCtxMenuBase( ULONG &dllrc ) : ctxSetting(), refCount( 1UL ), hInstance( hDllInstance ), dllRefCount( dllrc ) {
+			CShlCtxMenuBase( ULONG &dllrc ) :
+				ctxSetting(), refCount( 1UL ), hInstance( hDllInstance ), dllRefCount( dllrc ),
+				fileNum( 0 ), folderNum( 0 ) {
 				InterlockedIncrement( reinterpret_cast<LONG*>(&dllRefCount) );
 
 				TCHAR	path[4096];
@@ -323,13 +325,13 @@ namespace cube {
 					tooltip += ext;
 				}
 				tooltip += _T( " ファイル\r\n" );
-
+				
 				HANDLE			hFile = CreateFile( compFileName.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
 				LARGE_INTEGER	li = { 0 };
 				SYSTEMTIME		st = { 0 };
 				if( hFile != INVALID_HANDLE_VALUE ) {
 					FILETIME		ft, localft;
-
+					
 					GetFileSizeEx( hFile, &li );
 					GetFileTime( hFile, NULL, NULL, &ft );
 					
@@ -353,10 +355,6 @@ namespace cube {
 					
 					for( size_t i = 0 ; i < compFileList.size() ; ++i ) {
 						tooltip += _T( "\r\n" );
-						if (i >= ctxSetting.decompression().max_filelist()) {
-							tooltip += _T("  ...");
-							break;
-						}
 						string_type name = compFileList[i].name;
 						if (name.size() > maxcolumn) {
 							name = name.substr(name.size() - maxcolumn + 3, maxcolumn - 3);
@@ -366,6 +364,11 @@ namespace cube {
 						}
 						tooltip += _T( "  " ) + name;
 					}
+					
+					tooltip += _T("\r\n");
+					if (compFileList.size() > ctxSetting.decompression().max_filelist()) tooltip += _T("ほか、");
+					tooltip += _T("全 ") + clx::lexical_cast<string_type>(fileNum) + _T(" ファイル ");
+					tooltip += clx::lexical_cast<string_type>(folderNum) + _T(" フォルダ");
 				}
 
 				*ppwszTip = static_cast<wchar_t*>( CoTaskMemAlloc( ( tooltip.size() + 5 ) * sizeof( wchar_t ) ) );
@@ -633,6 +636,14 @@ namespace cube {
 					clx::escape_separator<TCHAR> sep(_T(" \t"), _T("\""), _T(""));
 					clx::basic_tokenizer<clx::escape_separator<TCHAR>, std::basic_string<TCHAR> > v(buffer, sep);
 					
+					if (buffer.find(_T("files")) != string_type::npos && buffer.find(_T("folders")) != string_type::npos && v.size() == 6) {
+						try {
+							fileNum = clx::lexical_cast<size_type>(v.at(2));
+							folderNum = clx::lexical_cast<size_type>(v.at(4));
+						}
+						catch (clx::bad_lexical_cast&) {}
+					}
+					
 					if (v.empty() || v.at(0) != _T("<>")) {
 						buffer.clear();
 						continue;
@@ -646,16 +657,12 @@ namespace cube {
 						if (v.at(1) != _T("-")) elem.time.from_string(v.at(1), string_type(_T("%Y-%m-d %H:%M:%S")));
 						elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
 						flist.push_back( elem );
-						if (flist.size() > ctxSetting.decompression().max_filelist()) {
-							proc.close();
-							break;
-						}
 					}
 					buffer.clear();
 				}
 				return;
 			}
-
+			
 			/* ----------------------------------------------------------------- */
 			/*
 			 *  punct
@@ -689,6 +696,8 @@ namespace cube {
 			ULONG								&dllRefCount;
 			tstring								compFileName;
 			std::vector<fileinfo>				compFileList;
+			size_type							fileNum;
+			size_type							folderNum;
 			tstring								cubeiceEnginePath;
 		};
 
