@@ -72,7 +72,11 @@ namespace cubeice {
 					TCHAR buffer[256] = {};
 					GetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, buffer, 256);
 					std::basic_string<TCHAR> pass(buffer);
-					if (!IsDlgButtonChecked(hWnd, IDC_SHOWPASS_CHECKBOX)) {
+					if (pass.empty()) {
+						MessageBox(hWnd, _T("パスワードを入力して下さい。"), _T("エラー"), MB_OK | MB_ICONERROR);
+						break;
+					}
+					else if (!IsDlgButtonChecked(hWnd, IDC_SHOWPASS_CHECKBOX)) {
 						if (GetDlgItemText(hWnd, IDC_CONFIRM_TEXTBOX, buffer, 256)) {
 							std::basic_string<TCHAR> confirm(buffer);
 							if (pass != confirm) {

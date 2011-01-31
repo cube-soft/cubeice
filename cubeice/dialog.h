@@ -16,13 +16,12 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
- *
- *  Last-modified: Tue 28 Dec 2010 20:42:00 JST
  */
 /* ------------------------------------------------------------------------- */
 #ifndef CUBE_DIALOG_H
 #define CUBE_DIALOG_H
 
+#include <vector>
 #include <set>
 #include <string>
 #include <tchar.h>
@@ -34,6 +33,9 @@
 #endif // NO_WIN32_LEAN_AND_MEAN
 
 #define CUBE_MAX_PATH 2048
+
+#include "progressbar.h"
+#include "runtime-setting.h"
 
 namespace cubeice {
 	extern std::basic_string<TCHAR>& password();
@@ -62,277 +64,98 @@ namespace cubeice {
 		extern int password(int which);
 		extern int overwrite(const std::basic_string<TCHAR>& message);
 		extern int report(const std::basic_string<TCHAR>& message);
+		extern int runtime_setting(cubeice::runtime_setting& setting);
+	}
+	
+	/* --------------------------------------------------------------------- */
+	//  ダイアログ用データ
+	/* --------------------------------------------------------------------- */
+	namespace dialog_data {
+		typedef std::vector<std::basic_string<TCHAR> > param_list;
 		
 		/* ----------------------------------------------------------------- */
-		//  progressbar
+		//  compress_types
 		/* ----------------------------------------------------------------- */
-		class progressbar {
-		public:
-			typedef TCHAR char_type;
-			typedef std::basic_string<TCHAR> string_type;
-			typedef std::size_t size_type;
-			
-			/* ------------------------------------------------------------- */
-			//  constructor
-			/* ------------------------------------------------------------- */
-			progressbar() :
-				handle_(NULL), pos_(0.0), min_(0), max_(10000), cancel_(false) {
-				this->initialize();
+		inline param_list& compress_types() {
+			static param_list v_;
+			static bool initialized_ = false;
+			if (!initialized_) {
+				v_.clear();
+				v_.push_back(_T("zip"));
+				v_.push_back(_T("7z"));
+				v_.push_back(_T("tar"));
+				v_.push_back(_T("gzip"));
+				v_.push_back(_T("bzip2"));
+				v_.push_back(_T("tgz"));
+				v_.push_back(_T("tbz"));
 			}
-
-			/* ------------------------------------------------------------- */
-			/*
-			 *  operator+=
-			 *
-			 *  プログレスバーを n 進める．．
-			 */
-			/* ------------------------------------------------------------- */
-			progressbar& operator+=(double n) {
-				this->position(pos_ + n);
-				return *this;
+			return v_;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  compress_levels
+		/* ----------------------------------------------------------------- */
+		inline param_list& compress_levels() {
+			static param_list v_;
+			static bool initialized_ = false;
+			if (!initialized_) {
+				v_.clear();
+				v_.push_back(_T("無圧縮"));
+				v_.push_back(_T("最速"));
+				v_.push_back(_T("高速"));
+				v_.push_back(_T("標準"));
+				v_.push_back(_T("最高"));
+				v_.push_back(_T("超圧縮"));
 			}
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  operator-=
-			 *
-			 *  プログレスバーを n 戻す．
-			 */
-			/* ------------------------------------------------------------- */
-			progressbar& operator-=(double n) {
-				this->position(pos_ - n);
-				return *this;
+			return v_;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  zip_methods
+		/* ----------------------------------------------------------------- */
+		inline param_list& zip_methods() {
+			static param_list v_;
+			static bool initialized_ = false;
+			if (!initialized_) {
+				v_.clear();
+				v_.push_back(_T("Deflate"));
+				v_.push_back(_T("Deflate64"));
+				v_.push_back(_T("LZMA"));
+				v_.push_back(_T("PPMd"));
+				v_.push_back(_T("BZip2"));
 			}
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  operator++
-			 *
-			 *  プログレスバーを 1 進める．
-			 */
-			/* ------------------------------------------------------------- */
-			progressbar& operator++() {
-				this->position(pos_ + 1);
-				return *this;
+			return v_;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  sevenzip_methods
+		/* ----------------------------------------------------------------- */
+		inline param_list& sevenzip_methods() {
+			static param_list v_;
+			static bool initialized_ = false;
+			if (!initialized_) {
+				v_.clear();
+				v_.push_back(_T("LZMA"));
+				v_.push_back(_T("LZMA2"));
+				v_.push_back(_T("PPMd"));
+				v_.push_back(_T("BZip2"));
 			}
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  operator++(int)
-			 *
-			 *  プログレスバーを 1 進める．
-			 */
-			/* ------------------------------------------------------------- */
-			progressbar& operator++(int) {
-				this->position(pos_ + 1);
-				return *this;
+			return v_;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  encode_methods
+		/* ----------------------------------------------------------------- */
+		inline param_list& encode_methods() {
+			static param_list v_;
+			static bool initialized_ = false;
+			if (!initialized_) {
+				v_.clear();
+				v_.push_back(_T("ZipCrypto"));
+				v_.push_back(_T("AES256"));
 			}
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  operator--
-			 *
-			 *  プログレスバーを 1 戻す．
-			 */
-			/* ------------------------------------------------------------- */
-			progressbar& operator--() {
-				this->position(pos_ - 1);
-				return *this;
-			}
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  operator--(int)
-			 *
-			 *  プログレスバーを 1 戻す．
-			 */
-			/* ------------------------------------------------------------- */
-			progressbar& operator--(int) {
-				this->position(pos_ - 1);
-				return *this;
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  position
-			/* ------------------------------------------------------------- */
-			double position() const { return pos_; }
-			
-			/* ------------------------------------------------------------- */
-			//  position
-			/* ------------------------------------------------------------- */
-			void position(double pos) {
-				if (pos < min_) pos_ = min_;
-				else if (pos > max_) pos_ = max_;
-				else pos_ = pos;
-				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, static_cast<int>(pos_), 0);
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  minimum
-			/* ------------------------------------------------------------- */
-			size_type minimum() const { return min_; }
-			
-			/* ------------------------------------------------------------- */
-			//  minimum
-			/* ------------------------------------------------------------- */
-			void minimum(size_type n) {
-				min_ = n;
-				if (min_ < max_) {
-					HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
-					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(min_, max_));
-				}
-			}
-
-			/* ------------------------------------------------------------- */
-			//  maximum
-			/* ------------------------------------------------------------- */
-			size_type maximum() const { return max_; }
-
-			/* ------------------------------------------------------------- */
-			//  maximum
-			/* ------------------------------------------------------------- */
-			void maximum(size_type n) {
-				max_ = n;
-				if (min_ < max_) {
-					HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
-					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(min_, max_));
-				}
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  text
-			/* ------------------------------------------------------------- */
-			string_type text() const {
-				TCHAR buffer[2048];
-				GetWindowText(GetDlgItem(handle_, IDC_INFO_LABEL), buffer, 2048);
-				return string_type(buffer);
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  text
-			/* ------------------------------------------------------------- */
-			void text(const string_type& s) {
-				SetWindowText(GetDlgItem(handle_, IDC_INFO_LABEL), s.c_str());
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  is_cancel
-			/* ------------------------------------------------------------- */
-			bool is_cancel() const { return cancel_; }
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  marquee
-			 *
-			 *  speed はミリ秒単位で指定する．値が大きくなるほど遅くなる．
-			 */
-			/* ------------------------------------------------------------- */
-			void marquee(bool enable, int speed = 50) {
-				HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
-				
-				LONG_PTR style = ::GetWindowLongPtr(handle, GWL_STYLE);
-				if (enable) style |= PBS_MARQUEE;
-				else style &= ~PBS_MARQUEE;
-				::SetWindowLongPtr(handle, GWL_STYLE, style);
-				
-				if (enable) SendMessage(handle, PBM_SETMARQUEE, (WPARAM)TRUE, (LPARAM)speed);
-				else SendMessage(handle, PBM_SETMARQUEE, (WPARAM)FALSE, (LPARAM)0);
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  refresh
-			/* ------------------------------------------------------------- */
-			void refresh() {
-				MSG msg = {};
-				if (PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
-					if (!GetMessage(&msg, NULL, 0, 0)) return;
-					if (!IsDialogMessage(handle_, &msg)) {
-						TranslateMessage(&msg);
-						DispatchMessage(&msg);
-					}
-					
-					if (progressbar::closed_handles().find(handle_) != progressbar::closed_handles().end()) {
-						progressbar::closed_handles().erase(handle_);
-						cancel_ = true;
-					}
-				}
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  handle
-			/* ------------------------------------------------------------- */
-			const HWND handle() const { return handle_; }
-			
-		private:
-			HWND handle_;
-			double pos_;
-			size_type min_;
-			size_type max_;
-			bool cancel_;
-			
-			/* ------------------------------------------------------------- */
-			//  initialize
-			/* ------------------------------------------------------------- */
-			void initialize() {
-				handle_ = CreateDialog(GetModuleHandle(NULL), _T("IDD_PROGRESS"), NULL, wndproc);
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  closed_handles
-			/* ------------------------------------------------------------- */
-			static std::set<HANDLE>& closed_handles() {
-				static std::set<HANDLE> handles;
-				return handles;
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  wndproc
-			/* ------------------------------------------------------------- */
-			static INT_PTR CALLBACK wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
-				switch (msg) {
-				case WM_INITDIALOG:
-				{
-					// アイコンの設定
-					HICON icon = LoadIcon(GetModuleHandle(NULL), _T("IDI_APP"));
-					SendMessage(hWnd, WM_SETICON, 0, LPARAM(icon));
-					
-					// 画面中央に表示
-					RECT rect = {};
-					GetWindowRect(hWnd, (LPRECT)&rect);
-					int x = (GetSystemMetrics(SM_CXSCREEN) - (rect.right - rect.left)) / 2;
-					int y = (GetSystemMetrics(SM_CYSCREEN) - (rect.bottom - rect.top)) / 2;
-					SetWindowPos(hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
-					
-					// プログレスバーの min, max, step の初期値を登録
-					HWND handle = GetDlgItem(hWnd, IDC_PROGRESS);
-					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(0, 10000));
-					SendMessage(handle, PBM_SETSTEP, 1, 0);
-					return TRUE;
-				}
-				case WM_COMMAND:
-					switch (LOWORD(wp)) {
-					case IDCANCEL:
-						DestroyWindow(hWnd);
-						progressbar::closed_handles().insert(hWnd);
-						break;
-					default:
-						break;
-					}
-					break;
-				default:
-					break;
-				}
-				
-				return FALSE;
-			}
-			
-		private:
-			/* ------------------------------------------------------------- */
-			//  non-copyable
-			/* ------------------------------------------------------------- */
-			progressbar(const progressbar& cp);
-			progressbar& operator=(const progressbar& cp);
-		};
+			return v_;
+		}
 	}
 }
 

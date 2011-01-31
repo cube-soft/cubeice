@@ -178,7 +178,7 @@ namespace cubeice {
 					}
 				}
 			}
-
+			
 			// 「ショートカット」グループ
 			const flag_map& shortcut = shortcut_map();
 			for (flag_map::const_iterator pos = shortcut.begin(); pos != shortcut.end(); ++pos) {
