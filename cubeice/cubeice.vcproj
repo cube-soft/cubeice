@@ -350,6 +350,10 @@
 				RelativePath=".\report.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\runtime-setting.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="ヘッダー ファイル"
@@ -370,6 +374,10 @@
 			</File>
 			<File
 				RelativePath=".\pathmatch.h"
+				>
+			</File>
+			<File
+				RelativePath=".\progressbar.h"
 				>
 			</File>
 			<File

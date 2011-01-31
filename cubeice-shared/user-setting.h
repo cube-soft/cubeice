@@ -2,34 +2,20 @@
 /*
  *  user-setting.h
  *
- *  Copyright (c) 2010 CubeSoft.
+ *  Copyright (c) 2010 CubeSoft Inc.
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *    - Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *    - Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in the
- *      documentation and/or other materials provided with the distribution.
- *    - No names of its contributors may be used to endorse or promote
- *      products derived from this software without specific prior written
- *      permission.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
- *  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *  Last-modified: Mon 13 Dec 2010 12:31:00 JST
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
 #ifndef CUBEICE_USER_SETTING_H
@@ -138,56 +124,58 @@
 #define CUBEICE_SC_SETTING              _T("CubeICE 設定.lnk")
 
 namespace cubeice {
-	typedef std::map<std::basic_string<TCHAR>, std::pair<std::basic_string<TCHAR>, std::size_t> > ext_map;
-	typedef std::map<std::size_t, std::pair<std::basic_string<TCHAR>, std::basic_string<TCHAR> > > param_map;
-	
-	/* --------------------------------------------------------------------- */
-	//  extensions
-	/* --------------------------------------------------------------------- */
-	inline ext_map& extensions() {
-		static bool initialized = false;
-		static ext_map exts;
-		if (!initialized) {
-			exts[_T(".zip")] = std::make_pair(_T("cubeice_zip"), ZIP_FLAG);
-			exts[_T(".lzh")] = std::make_pair(_T("cubeice_lzh"), LZH_FLAG);
-			exts[_T(".rar")] = std::make_pair(_T("cubeice_rar"), RAR_FLAG);
-			exts[_T(".tar")] = std::make_pair(_T("cubeice_tar"), TAR_FLAG);
-			exts[_T(".gz")]  = std::make_pair(_T("cubeice_gz"),  GZ_FLAG);
-			exts[_T(".7z")]  = std::make_pair(_T("cubeice_7z"),  SEVENZIP_FLAG);
-			exts[_T(".arj")] = std::make_pair(_T("cubeice_arj"), ARJ_FLAG);
-			exts[_T(".bz2")] = std::make_pair(_T("cubeice_bz2"), BZ2_FLAG);
-			exts[_T(".cab")] = std::make_pair(_T("cubeice_cab"), CAB_FLAG);
-			exts[_T(".chm")] = std::make_pair(_T("cubeice_chm"), CHM_FLAG);
-			exts[_T(".cpio")]= std::make_pair(_T("cubeice_cpio"),CPIO_FLAG);
-			exts[_T(".deb")] = std::make_pair(_T("cubeice_deb"), DEB_FLAG);
-			exts[_T(".dmg")] = std::make_pair(_T("cubeice_dmg"), DMG_FLAG);
-			exts[_T(".iso")] = std::make_pair(_T("cubeice_iso"), ISO_FLAG);
-			exts[_T(".rpm")] = std::make_pair(_T("cubeice_rpm"), RPM_FLAG);
-			exts[_T(".tbz")] = std::make_pair(_T("cubeice_tbz"), TBZ_FLAG);
-			exts[_T(".tgz")] = std::make_pair(_T("cubeice_tgz"), TGZ_FLAG);
-			exts[_T(".wim")] = std::make_pair(_T("cubeice_wim"), WIM_FLAG);
-			exts[_T(".xar")] = std::make_pair(_T("cubeice_xar"), XAR_FLAG);
-			exts[_T(".xz")]  = std::make_pair( _T("cubeice_xz"),  XZ_FLAG);
-			initialized = true;
+	namespace detail {
+		typedef std::map<std::basic_string<TCHAR>, std::pair<std::basic_string<TCHAR>, std::size_t> > ext_map;
+		typedef std::map<std::size_t, std::pair<std::basic_string<TCHAR>, std::basic_string<TCHAR> > > param_map;
+		
+		/* ----------------------------------------------------------------- */
+		//  extensions
+		/* ----------------------------------------------------------------- */
+		inline ext_map& extensions() {
+			static bool initialized = false;
+			static ext_map exts;
+			if (!initialized) {
+				exts[_T(".zip")] = std::make_pair(_T("cubeice_zip"), ZIP_FLAG);
+				exts[_T(".lzh")] = std::make_pair(_T("cubeice_lzh"), LZH_FLAG);
+				exts[_T(".rar")] = std::make_pair(_T("cubeice_rar"), RAR_FLAG);
+				exts[_T(".tar")] = std::make_pair(_T("cubeice_tar"), TAR_FLAG);
+				exts[_T(".gz")]  = std::make_pair(_T("cubeice_gz"),  GZ_FLAG);
+				exts[_T(".7z")]  = std::make_pair(_T("cubeice_7z"),  SEVENZIP_FLAG);
+				exts[_T(".arj")] = std::make_pair(_T("cubeice_arj"), ARJ_FLAG);
+				exts[_T(".bz2")] = std::make_pair(_T("cubeice_bz2"), BZ2_FLAG);
+				exts[_T(".cab")] = std::make_pair(_T("cubeice_cab"), CAB_FLAG);
+				exts[_T(".chm")] = std::make_pair(_T("cubeice_chm"), CHM_FLAG);
+				exts[_T(".cpio")]= std::make_pair(_T("cubeice_cpio"),CPIO_FLAG);
+				exts[_T(".deb")] = std::make_pair(_T("cubeice_deb"), DEB_FLAG);
+				exts[_T(".dmg")] = std::make_pair(_T("cubeice_dmg"), DMG_FLAG);
+				exts[_T(".iso")] = std::make_pair(_T("cubeice_iso"), ISO_FLAG);
+				exts[_T(".rpm")] = std::make_pair(_T("cubeice_rpm"), RPM_FLAG);
+				exts[_T(".tbz")] = std::make_pair(_T("cubeice_tbz"), TBZ_FLAG);
+				exts[_T(".tgz")] = std::make_pair(_T("cubeice_tgz"), TGZ_FLAG);
+				exts[_T(".wim")] = std::make_pair(_T("cubeice_wim"), WIM_FLAG);
+				exts[_T(".xar")] = std::make_pair(_T("cubeice_xar"), XAR_FLAG);
+				exts[_T(".xz")]  = std::make_pair( _T("cubeice_xz"),  XZ_FLAG);
+				initialized = true;
+			}
+			return exts;
 		}
-		return exts;
-	}
-	
-	/* --------------------------------------------------------------------- */
-	//  compress_parameters
-	/* --------------------------------------------------------------------- */
-	inline param_map& compress_parameters() {
-		static bool initialized = false;
-		static param_map params;
-		if (!initialized) {
-			params[0] = std::make_pair(_T("zip"), _T("/c:zip"));
-			params[1] = std::make_pair(_T("zip (パスワード)"), _T("/c:zip /p"));
-			params[2] = std::make_pair(_T("7z"), _T("/c:7z"));
-			params[3] = std::make_pair(_T("gzip"), _T("/c:gzip"));
-			params[4] = std::make_pair(_T("bzip2"), _T("/c:bzip2"));
-			initialized = true;
+		
+		/* ----------------------------------------------------------------- */
+		//  compress_parameters
+		/* ----------------------------------------------------------------- */
+		inline param_map& compress_parameters() {
+			static bool initialized = false;
+			static param_map params;
+			if (!initialized) {
+				params[0] = std::make_pair(_T("zip"), _T("/c:zip"));
+				params[1] = std::make_pair(_T("zip (パスワード)"), _T("/c:zip /p"));
+				params[2] = std::make_pair(_T("7z"), _T("/c:7z"));
+				params[3] = std::make_pair(_T("gzip"), _T("/c:gzip"));
+				params[4] = std::make_pair(_T("bzip2"), _T("/c:bzip2"));
+				initialized = true;
+			}
+			return params;
 		}
-		return params;
 	}
 	
 	/* --------------------------------------------------------------------- */
@@ -319,8 +307,8 @@ namespace cubeice {
 			
 			// Flagsはレジストリに置かず，それぞれの拡張子のキーの既定値が cubeice_XXX かどうかで判断
 			flags_ = 0;
-			const ext_map& exts = extensions();
-			for (ext_map::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
+			const detail::ext_map& exts = detail::extensions();
+			for (detail::ext_map::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
 				if (this->is_associated(pos->first, pos->second.first)) flags_ |= pos->second.second;
 			}
 		}
@@ -503,7 +491,7 @@ namespace cubeice {
 				GetModuleFileName(GetModuleHandle(NULL), buffer, 2048);
 				std::basic_string<TCHAR> tmp = buffer;
 				std::basic_string<TCHAR> current = tmp.substr(0, tmp.find_last_of(_T('\\')));
-				const param_map& v = compress_parameters();
+				const detail::param_map& v = detail::compress_parameters();
 				std::basic_string<TCHAR> params = (v.find(sc_index_) != v.end()) ? v.find(sc_index_)->second.second : _T("/c:zip");
 				if ((sc_flags_ & COMPRESS_FLAG)) this->create_shortcut(current + _T("\\cubeice.exe"), params, CUBEICE_SC_COMPRESS, 1);
 				else this->remove_shortcut(CUBEICE_SC_COMPRESS);
@@ -610,8 +598,8 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void associate(size_type flags, size_type details) {
-			const ext_map& exts = extensions();
-			for (ext_map::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
+			const detail::ext_map& exts = detail::extensions();
+			for (detail::ext_map::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
 				this->associate(pos->first, pos->second.first, ((flags & pos->second.second) != 0), ((details & DETAIL_TOOLTIP) != 0));
 			}
 			SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);

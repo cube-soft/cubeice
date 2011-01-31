@@ -44,6 +44,17 @@
 #define IDC_ALL_CHECKBOX        1004
 #define IDC_REPORT_TEXTBOX      2000
 
+// à≥èkÇÃè⁄ç◊ê›íË
+#define IDC_OUTPUT_TEXTBOX      3001
+#define IDC_OUTPUT_BUTTON       3002
+#define IDC_COMPTYPE_COMBOBOX   3102
+#define IDC_COMPLEVEL_COMBOBOX  3104
+#define IDC_COMPMETHOD_COMBOBOX 3106
+#define IDC_THREAD_TEXTBOX      3108
+#define IDC_THREAD_UPDOWN       3109
+#define IDC_PASSWORD_CHECKBOX   3201
+#define IDC_ENMETHOD_COMBOBOX   3206
+
 #define IDRENAME                0x020
 #define IDRENAMETOALL           0x120
 #define IDYESTOALL              0x106

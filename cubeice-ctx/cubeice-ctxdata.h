@@ -79,7 +79,8 @@ const SUB_MENU_ITEM		SubMenuCompress[] = {
 	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "tar" ),					NULL,				MAKE_AWSTRING( "tarà≥èk"),				TEXT( "/c:tar" ) },
 	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "bzip2" ),				NULL,				MAKE_AWSTRING( "bzip2à≥èk" ),			TEXT( "/c:bzip2" ) },
 	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "gzip" ),				NULL,				MAKE_AWSTRING( "gzipà≥èk" ),			TEXT( "/c:gzip" ) },
-//	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "é©å»âìÄå`éÆ" ),		TEXT( "/c:exe" ) },
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "è⁄ç◊ê›íË" ),			NULL,				MAKE_AWSTRING( "è⁄ç◊ê›íË" ),			TEXT( "/c:detail" ) },
+	//	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "é©å»âìÄå`éÆ" ),		TEXT( "/c:exe" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
 const SUB_MENU_ITEM		SubMenuCompAndMail[] = {
@@ -89,6 +90,7 @@ const SUB_MENU_ITEM		SubMenuCompAndMail[] = {
 	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "tar" ),					NULL,				MAKE_AWSTRING( "tarà≥èk" ),				TEXT( "/c:tar /m") },
 	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "bzip2" ),				NULL,				MAKE_AWSTRING( "bzip2à≥èk" ),			TEXT( "/c:bzip2 /m" ) },
 	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "gzip" ),				NULL,				MAKE_AWSTRING( "gzipà≥èk" ),			TEXT( "/c:gzip /m" ) },
+	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "è⁄ç◊ê›íË" ),			NULL,				MAKE_AWSTRING( "è⁄ç◊ê›íË" ),			TEXT( "/c:detail /m" ) },
 //	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "é©å»âìÄå`éÆ" ),		TEXT( "/c:exe /m" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };

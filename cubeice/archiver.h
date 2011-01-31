@@ -16,8 +16,6 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
- *
- *  Last-modified: Tue 28 Dec 2010 20:42:00 JST
  */
 /* ------------------------------------------------------------------------- */
 #ifndef CUBE_ARCHIVER_H
@@ -87,13 +85,42 @@ namespace cubeice {
 			}
 			if (first == last) return;
 			
-			// 保存先パスの決定
-			string_type ext = this->compress_extension(filetype, first, last);
-			string_type dest = this->compress_path(setting_.compression(), *first, ext);
-			if (dest.empty()) return;
-			
-			// パスワードの設定．
-			if (pass && cubeice::dialog::password(COMPRESS_FLAG) == IDCANCEL) return;
+			string_type ext;
+			string_type dest;
+			std::vector<string_type> options;
+			if (filetype == _T("detail")) {
+				cubeice::runtime_setting runtime;
+				ext = this->compress_extension(runtime.type(), first, last);
+				dest = first->substr(0, first->find_last_of(_T('.'))) + ext;
+				runtime.path() = dest;
+				if (cubeice::dialog::runtime_setting(runtime) == IDCANCEL) return;
+				
+				// ランタイム時の設定を反映する
+				runtime.save();
+				dest = runtime.path();
+				filetype = runtime.type();
+				ext = this->compress_extension(filetype, first, last);
+				if (filetype == _T("tgz")) filetype = _T("gzip");
+				else if (filetype == _T("tbz")) filetype = _T("bzip2");
+				options.push_back(_T("-mx=") + clx::lexical_cast<string_type>(runtime.level()));
+				if (runtime.type() == _T("zip")) options.push_back(_T("mm=") + runtime.method());
+				else if (runtime.type() == _T("7z")) options.push_back(_T("m0=") + runtime.method());
+				if (runtime.thread_size() > 1) options.push_back(_T("-mmt=") + clx::lexical_cast<string_type>(runtime.thread_size()));
+				if (runtime.enable_password()) {
+					pass = true;
+					cubeice::password() = runtime.password();
+					if (runtime.type() == _T("zip")) options.push_back(_T("-mem=") + runtime.encoding());
+				}
+			}
+			else {
+				// 保存先パスの決定
+				ext = this->compress_extension(filetype, first, last);
+				dest = this->compress_path(setting_.compression(), *first, ext);
+				if (dest.empty()) return;
+				
+				// パスワードの設定．
+				if (pass && cubeice::dialog::password(COMPRESS_FLAG) == IDCANCEL) return;
+			}
 			
 			// 一時ファイルのパスを決定
 			string_type tmp = tmpfile(_T("cubeice"));
@@ -111,11 +138,12 @@ namespace cubeice {
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" a");
 			if (filetype == _T("exe")) cmdline += _T(" -sfx7z.sfx");
-			else if (ext.find(_T(".tar")) != string_type::npos) cmdline += _T(" -ttar");
+			else if (ext == _T(".tgz") || ext == _T(".tbz") || ext.find(_T(".tar")) != string_type::npos) cmdline += _T(" -ttar");
 			else cmdline += _T(" -t") + filetype;
 			if (pass) cmdline += _T(" -p\"") + cubeice::password() + _T("\"");
 			cmdline += _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
 			for (InputIterator pos = first; pos != last; ++pos) cmdline += _T(" \"") + *pos + _T("\"");
+			for(std::vector<string_type>::const_iterator pos = options.begin(); pos != options.end(); ++pos) cmdline += _T(' ') + *pos;
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
 			progress.text(dest);
@@ -165,7 +193,8 @@ namespace cubeice {
 			
 			if (status == 2) {
 				// *.tar の処理
-				if (ext.find(_T(".tar")) != string_type::npos && (filetype == _T("gzip") || filetype == _T("bzip2"))) {
+				if ((filetype == _T("gzip") || filetype == _T("bzip2")) &&
+				    (ext.find(_T(".tar")) != string_type::npos || ext == _T(".tgz") || ext == _T(".tbz"))) {
 					string_type prev = tmp;
 					tmp = tmpfile(_T("cubeice"));
 					this->compress_tar(prev, tmp, filetype, pass, progress);
@@ -599,6 +628,15 @@ namespace cubeice {
 					return true;
 				}
 			}
+			
+			// NOTE: 7z の場合ファイルタイプが取得できない事がある．
+			// 拡張子が *.7z の場合はスルーする．
+			string_type::size_type pos = path.find_last_of(_T('.'));
+			if (pos != string_type::npos && path.substr(pos) == _T(".7z")) {
+				filetype = _T("7z");
+				return true;
+			}
+			
 			return false;
 		}
 		
