@@ -49,7 +49,7 @@ namespace cubeice {
 		//  constructor
 		/* ----------------------------------------------------------------- */
 		runtime_setting() :
-			path_(), type_(), level_(5), method_(), thread_size_(1),
+			path_(), type_(_T("zip")), level_(5), method_(), thread_size_(1),
 			enable_password_(false), show_password_(false), password_(), encoding_() {
 			this->load();
 		}
