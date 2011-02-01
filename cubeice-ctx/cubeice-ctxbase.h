@@ -354,8 +354,8 @@ namespace cube {
 					tooltip += _T( "ファイルリスト" );
 					
 					for( size_t i = 0 ; i < compFileList.size() ; ++i ) {
-						tooltip += _T( "\r\n" );
 						if (i >= ctxSetting.decompression().max_filelist()) break;
+						tooltip += _T( "\r\n" );
 						string_type name = compFileList[i].name;
 						if (name.size() > maxcolumn) {
 							name = name.substr(name.size() - maxcolumn + 3, maxcolumn - 3);
