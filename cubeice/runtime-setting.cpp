@@ -104,6 +104,8 @@ namespace cubeice {
 				HWND spin = GetDlgItem(hWnd, IDC_THREAD_UPDOWN);
 				SendMessage(spin, UDM_SETRANGE, 0, MAKELONG(info.dwNumberOfProcessors, 1));
 				SendMessage(spin, UDM_SETPOS, 0, MAKELONG(setting.thread_size(), 0));
+				std::basic_string<TCHAR> cpu = _T("/ ") + clx::lexical_cast<std::basic_string<TCHAR> >(info.dwNumberOfProcessors);
+				SetWindowText(GetDlgItem(hWnd, IDC_THREAD_MAX_LABEL), cpu.c_str());
 				
 				// à√çÜâªÇ∑ÇÈÇ©Ç«Ç§Ç©
 				if (setting.enable_password()) CheckDlgButton(hWnd, IDC_PASSWORD_CHECKBOX, BM_SETCHECK);
