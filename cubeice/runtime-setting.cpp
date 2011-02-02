@@ -236,6 +236,8 @@ namespace cubeice {
 			 */
 			/* ----------------------------------------------------------------- */
 			static INT_PTR runtime_setting_command(HWND hWnd, WPARAM wp, LPARAM lp, cubeice::runtime_setting& setting) {
+				static bool confirm = false;
+				
 				switch (LOWORD(wp)) {
 				case IDCANCEL:
 					EndDialog(hWnd, IDCANCEL);
@@ -250,6 +252,12 @@ namespace cubeice {
 					}
 					
 					runtime_setting_termdialog(hWnd, setting);
+					
+					if (!confirm && PathFileExists(setting.path().c_str())) {
+						std::basic_string<TCHAR> message = setting.path() + _T(" は既に存在します。上書きしますか？");
+						if (MessageBox(hWnd, message.c_str(), _T("上書きの確認"), MB_YESNO | MB_ICONWARNING) == IDNO) break;
+					}
+					
 					EndDialog(hWnd, IDOK);
 					break;
 				}
@@ -257,7 +265,10 @@ namespace cubeice {
 				{
 					const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
 					std::basic_string<TCHAR> path = cubeice::dialog::savefile(filter, setting.path().c_str());
-					if (!path.empty()) setting.path() = path;
+					if (!path.empty()) {
+						setting.path() = path;
+						confirm = true;
+					}
 					SetWindowText(GetDlgItem(hWnd, IDC_OUTPUT_TEXTBOX), setting.path().c_str());
 					break;
 				}
