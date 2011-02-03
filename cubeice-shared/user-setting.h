@@ -172,6 +172,7 @@ namespace cubeice {
 				params[2] = std::make_pair(_T("7z"), _T("/c:7z"));
 				params[3] = std::make_pair(_T("gzip"), _T("/c:gzip"));
 				params[4] = std::make_pair(_T("bzip2"), _T("/c:bzip2"));
+				params[5] = std::make_pair(_T("Ú×İ’è"), _T("/c:detail"));
 				initialized = true;
 			}
 			return params;

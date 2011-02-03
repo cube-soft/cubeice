@@ -83,7 +83,14 @@ namespace cubeice {
 				if (first->compare(0, 2, _T("/p")) == 0) pass = true;
 				if (first->compare(0, 2, _T("/m")) == 0) mail = true;
 			}
-			if (first == last) return;
+			
+			// NOTE: ドラッグ&ドロップの際にファイルが指定されなかった
+			// (ショートカットをダブルクリックした）と想定する．
+			// TODO: それ以外の場合も想定したメッセージを表示する必要があるかどうか．
+			if (first == last) {
+				MessageBox(NULL, _T("圧縮したいファイルやフォルダを「CubeICE 圧縮」ショートカットにドラッグ&ドロップして下さい。"), _T("CubeICE 圧縮"), MB_OK | MB_ICONINFORMATION);
+				return;
+			}
 			
 			string_type ext;
 			string_type dest;
@@ -252,7 +259,14 @@ namespace cubeice {
 			
 			// オプションを読み飛ばす．
 			while (first != last && first->at(0) == _T('/')) ++first;
-			if (first == last) return;
+			
+			// NOTE: ドラッグ&ドロップの際にファイルが指定されなかった
+			// (ショートカットをダブルクリックした）と想定する．
+			// TODO: それ以外の場合も想定したメッセージを表示する必要があるかどうか．
+			if (first == last) {
+				MessageBox(NULL, _T("解凍したい圧縮ファイルを「CubeICE 解凍」ショートカットにドラッグ&ドロップして下さい。"), _T("CubeICE 解凍"), MB_OK | MB_ICONINFORMATION);
+				return;
+			}
 			
 			for (; first != last; ++first) {
 				string_type src = *first;
