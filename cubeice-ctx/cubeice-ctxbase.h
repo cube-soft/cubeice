@@ -161,8 +161,11 @@ namespace cube {
 					if( MenuItem[i].dispSetting && !( ctxSetting.context_flags() & MenuItem[i].dispSetting ) )
 						continue;
 					
-					if( MenuItem[i].dispSetting == DECOMPRESS_FLAG && !this->is_decompress(fileList.begin(), fileList.end()))
+					if( MenuItem[i].dispSetting == DECOMPRESS_FLAG &&
+						( ctxSetting.decompression().details() & DETAIL_LITE ) == 0 &&
+						!this->is_decompress(fileList.begin(), fileList.end()) ) {
 						continue;
+					}
 					
 					MENUITEMINFO		miinfo;
 					
@@ -511,8 +514,11 @@ namespace cube {
 					if( smi[i].dispSetting && !( ctxSetting.context_flags() & smi[i].dispSetting ) )
 						continue;
 					
-					if( smi[i].dispSetting == DECOMPRESS_FLAG && !this->is_decompress(fileList.begin(), fileList.end()))
+					if( smi[i].dispSetting == DECOMPRESS_FLAG &&
+						( ctxSetting.decompression().details() & DETAIL_LITE ) == 0 &&
+						!this->is_decompress(fileList.begin(), fileList.end()) ) {
 						continue;
+					}
 					
 					if( index == LOWORD( lpcmi->lpVerb ) ) {
 						MenuSelectedCallback( smi[i].arg, this );
@@ -534,10 +540,13 @@ namespace cube {
 				for( unsigned int i = 0 ; smi[i].stringA && index <= idCmd ; ++i ) {
 					if( smi[i].dispSetting && !( ctxSetting.context_flags() & smi[i].dispSetting ) )
 						continue;
-
-					if( smi[i].dispSetting == DECOMPRESS_FLAG && !this->is_decompress(fileList.begin(), fileList.end()))
+					
+					if( smi[i].dispSetting == DECOMPRESS_FLAG &&
+						( ctxSetting.decompression().details() & DETAIL_LITE ) == 0 &&
+						!this->is_decompress(fileList.begin(), fileList.end()) ) {
 						continue;
-
+					}
+					
 					if( index == idCmd ) {
 						switch( uFlags ) {
 							case GCS_HELPTEXTA:
