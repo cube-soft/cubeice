@@ -479,7 +479,19 @@ namespace cubeice {
 	/* --------------------------------------------------------------------- */
 	//  create_propsheet
 	/* --------------------------------------------------------------------- */
-	INT_PTR create_propsheet(HWND parent) {
+	INT_PTR CALLBACK psh_proc(HWND handle,UINT msg, LPARAM param) {
+		if (msg == PSCB_INITIALIZED) {
+			EnableWindow(GetDlgItem(handle, IDCANCEL), FALSE);
+			HMENU menu = GetSystemMenu(handle, FALSE);
+			RemoveMenu(menu, SC_CLOSE, MF_BYCOMMAND);
+		}
+		return FALSE;
+	}
+	
+	/* --------------------------------------------------------------------- */
+	//  create_propsheet
+	/* --------------------------------------------------------------------- */
+	INT_PTR create_propsheet(HWND parent, bool install) {
 		static const std::size_t pagenum = 5;
 		HPROPSHEETPAGE ref[pagenum] = {};
 		
@@ -521,6 +533,11 @@ namespace cubeice {
 		psh.pszCaption = _T("CubeICE ê›íË");
 		psh.nPages = pagenum;
 		psh.phpage = ref;
+		
+		if (install) {
+			psh.dwFlags |= PSH_USECALLBACK;
+			psh.pfnCallback = (PFNPROPSHEETCALLBACK)psh_proc;
+		}
 		
 		return PropertySheet(&psh);
 	}

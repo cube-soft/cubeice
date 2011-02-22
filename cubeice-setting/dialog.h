@@ -47,7 +47,7 @@
 extern cubeice::user_setting Setting;
 
 namespace cubeice {
-	extern INT_PTR create_propsheet(HWND parent);
+	extern INT_PTR create_propsheet(HWND parent, bool install);
 	
 	typedef std::map<std::size_t, std::size_t> flag_map;
 	typedef std::map<std::size_t, std::basic_string<TCHAR> > sctype_map;
