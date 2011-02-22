@@ -43,6 +43,7 @@
 #include "wpopen.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
+#define CUBEICE_MAXFILESIZE 1000000000L
 
 extern HINSTANCE	hDllInstance;
 
@@ -160,12 +161,6 @@ namespace cube {
 				for( unsigned int i = 0 ; MenuItem[i].stringA ; ++i ) {
 					if( MenuItem[i].dispSetting && !( ctxSetting.context_flags() & MenuItem[i].dispSetting ) )
 						continue;
-					
-					if( MenuItem[i].dispSetting == DECOMPRESS_FLAG &&
-						( ctxSetting.decompression().details() & DETAIL_LITE ) == 0 &&
-						!this->is_decompress(fileList.begin(), fileList.end()) ) {
-						continue;
-					}
 					
 					MENUITEMINFO		miinfo;
 					
@@ -415,7 +410,13 @@ namespace cube {
 				WideCharToMultiByte( CP_OEMCP, 0, pszFileName, -1, fname, sizeof( fname ), NULL, NULL );
 #endif	// UNICODE
 				compFileName = pszFileName;
-				decompress_filelist( fname, compFileList );
+				HANDLE hFile = CreateFile( compFileName.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+				if( hFile != INVALID_HANDLE_VALUE ) {
+					LARGE_INTEGER li = {};
+					GetFileSizeEx( hFile, &li );
+					CloseHandle( hFile );
+					if (li.QuadPart < CUBEICE_MAXFILESIZE) decompress_filelist( fname, compFileList );
+				}
 				return S_OK;
 			}
 
@@ -514,12 +515,6 @@ namespace cube {
 					if( smi[i].dispSetting && !( ctxSetting.context_flags() & smi[i].dispSetting ) )
 						continue;
 					
-					if( smi[i].dispSetting == DECOMPRESS_FLAG &&
-						( ctxSetting.decompression().details() & DETAIL_LITE ) == 0 &&
-						!this->is_decompress(fileList.begin(), fileList.end()) ) {
-						continue;
-					}
-					
 					if( index == LOWORD( lpcmi->lpVerb ) ) {
 						MenuSelectedCallback( smi[i].arg, this );
 						++index;
@@ -540,12 +535,6 @@ namespace cube {
 				for( unsigned int i = 0 ; smi[i].stringA && index <= idCmd ; ++i ) {
 					if( smi[i].dispSetting && !( ctxSetting.context_flags() & smi[i].dispSetting ) )
 						continue;
-					
-					if( smi[i].dispSetting == DECOMPRESS_FLAG &&
-						( ctxSetting.decompression().details() & DETAIL_LITE ) == 0 &&
-						!this->is_decompress(fileList.begin(), fileList.end()) ) {
-						continue;
-					}
 					
 					if( index == idCmd ) {
 						switch( uFlags ) {
