@@ -43,7 +43,7 @@
 #include "wpopen.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
-#define CUBEICE_MAXFILESIZE 1000000000L
+#define CUBEICE_MAXFILESIZE (1024 * 1024 * 1024)
 
 extern HINSTANCE	hDllInstance;
 
@@ -347,7 +347,9 @@ namespace cube {
 				
 				if( dwFlags & QITIPF_USESLOWTIP &&
 					(ctxSetting.decompression().details() & DETAIL_TOOLTIP) &&
-					ctxSetting.decompression().max_filelist() > 0) {
+					ctxSetting.decompression().max_filelist() > 0 &&
+					compFileList.size() > 0)
+				{
 					tooltip += _T( "\r\n" );
 					tooltip += _T( "ファイルリスト" );
 					
