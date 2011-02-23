@@ -232,7 +232,7 @@ namespace cubeice {
 				if (setting_.compression().details() & DETAIL_OPEN) {
 					string_type root = dest.substr(0, dest.find_last_of(_T('\\')));
 					if ((setting_.compression().details() & DETAIL_SKIP_DESKTOP) == 0 || !this->is_desktop(root)) {
-						ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
+						ShellExecute(NULL, _T("open"), _T("explorer.exe"), root.c_str(), NULL, SW_SHOWNORMAL);
 					}
 				}
 			}
@@ -401,7 +401,7 @@ namespace cubeice {
 					}
 					
 					if ((setting_.decompression().details() & DETAIL_SKIP_DESKTOP) == 0 || !this->is_desktop(root)) {
-						ShellExecute(NULL, _T("open"), root.c_str(), NULL, NULL, SW_SHOWNORMAL);
+						ShellExecute(NULL, _T("open"), _T("explorer.exe"), root.c_str(), NULL, SW_SHOWNORMAL);
 					}
 				}
 				
