@@ -59,7 +59,7 @@ namespace cubeice {
 
 		extern std::basic_string<TCHAR> openfile(const TCHAR* filter, const TCHAR* init, const TCHAR* title = _T("ファイルを開く"));
 		extern std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* init, const TCHAR* title = _T("名前を付けて保存"));
-		extern std::basic_string<TCHAR> browsefolder(const TCHAR* description = _T("フォルダの参照"));
+		extern std::basic_string<TCHAR> browsefolder(const TCHAR* init, const TCHAR* description = _T("フォルダの参照"));
 		
 		extern int password(int which);
 		extern int overwrite(const std::basic_string<TCHAR>& message);
