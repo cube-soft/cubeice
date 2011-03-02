@@ -84,12 +84,12 @@ namespace cubeice {
 		//  browse_proc
 		/* ----------------------------------------------------------------- */
 		static int CALLBACK browse_proc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData) {
-			if(uMsg == BFFM_INITIALIZED){
+			if (uMsg == BFFM_INITIALIZED){
 				SendMessage(hwnd, BFFM_SETSELECTION, (WPARAM)TRUE, lpData);
 			}
 			return 0;
 		}
-
+		
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  browsefolder
@@ -99,19 +99,19 @@ namespace cubeice {
 		 *  http://msdn.microsoft.com/en-us/library/bb773205(VS.85).aspx
 		 */
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> browsefolder(const TCHAR* description) {
+		std::basic_string<TCHAR> browsefolder(const TCHAR* init, const TCHAR* description) {
 			typedef TCHAR char_type;
-			char_type path[CUBE_MAX_PATH] = {};
-			GetCurrentDirectory(CUBE_MAX_PATH, path);
 			
 			BROWSEINFO info = {};
-			info.pszDisplayName = path;
+			info.pszDisplayName = const_cast<TCHAR*>(init);
 			info.lpszTitle = description;
 			info.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
 			info.lpfn = &browse_proc;
-			info.lParam = (LPARAM)path;
+			info.lParam = (LPARAM)init;
 			LPITEMIDLIST dest = SHBrowseForFolder(&info);
 			
+			char_type path[CUBE_MAX_PATH] = {};
+			//GetCurrentDirectory(CUBE_MAX_PATH, path);
 			SHGetPathFromIDList(dest, path);
 			CoTaskMemFree(dest);
 			

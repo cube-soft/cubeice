@@ -592,7 +592,10 @@ namespace cubeice {
 		string_type decompress_path(const setting_type::archive_type& setting, const string_type& src, string_type force) {
 			// 保存先パスの決定
 			string_type root = this->rootdir(setting, src, force);
-			if (root.empty()) root = cubeice::dialog::browsefolder(_T("解凍するフォルダを指定して下さい。"));
+			if (root.empty()) {
+				string_type init = src.substr(0, src.find_last_of(_T('\\')));
+				root = cubeice::dialog::browsefolder(init.c_str(), _T("解凍するフォルダを指定して下さい。"));
+			}
 			return root;
 		}
 		
