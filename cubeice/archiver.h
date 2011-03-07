@@ -177,8 +177,10 @@ namespace cubeice {
 				
 				string_type::size_type pos = line.find(error);
 				if (pos != string_type::npos) {
-					if (progress.position() < progress.maximum()) ++progress;
-					report += line + _T("\r\n");
+					if (progress.position() < progress.maximum()  * 0.95) ++progress;
+					if (pos != 0) report += line.substr(0, pos) + _T("\r\n");
+					report += line.substr(pos) + _T("\r\n");
+					report += _T("\r\n");
 					continue;
 				}
 				
@@ -193,7 +195,7 @@ namespace cubeice {
 				if (this->size_ && progress.position() < calcpos) progress.position(calcpos);
 			}
 			
-			if (status < 0) report += error + _T(" broken pipe.\r\n");
+			if (status < 0) report += error + _T(" Broken pipe.\r\n");
 			if ((setting_.compression().details() & DETAIL_REPORT) && !report.empty()) {
 				cubeice::dialog::report(report);
 			}
@@ -352,13 +354,15 @@ namespace cubeice {
 					string_type::size_type pos = line.find(error);
 					if (pos != string_type::npos) {
 						if (progress.position() < progress.maximum()) ++progress;
-						report += line + _T("\r\n");
+						if (pos != 0) report += line.substr(0, pos) + _T("\r\n");
+						report += line.substr(pos) + _T("\r\n");
+						report += _T("\r\n");
 						continue;
 					}
 					
 					pos = line.find(keyword);
 					if (pos == string_type::npos || line.size() <= keyword.size()) {
-						if (progress.position() < progress.maximum()) ++progress;
+						if (progress.position() < progress.maximum() * 0.95) ++progress;
 						continue;
 					}
 					string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
@@ -383,11 +387,13 @@ namespace cubeice {
 						// report += _T("Filtering: ") + filename + _T("\r\n");
 					}
 					else if (!this->move(tmp + _T('\\') + filename, root + _T('\\') + filename, result == IDRENAME)) {
-						report += error + _T(" Can not move file. ") + filename + _T("\r\n");
+						report += keyword + _T(' ') + filename + _T("\r\n");
+						report += error + _T(" Can not move file.\r\n");
+						report += _T("\r\n");
 					}
 				}
 				
-				if (status < 0) report += error + _T(" broken pipe.");
+				if (status < 0) report += error + _T(" Broken pipe.");
 				if ((setting_.decompression().details() & DETAIL_REPORT) && !report.empty()) {
 					cubeice::dialog::report(report);
 				}
@@ -400,7 +406,8 @@ namespace cubeice {
 						root += _T("\\") + folder;
 					}
 					
-					if ((setting_.decompression().details() & DETAIL_SKIP_DESKTOP) == 0 || !this->is_desktop(root)) {
+					bool skip_flag = (setting_.decompression().details() & DETAIL_SKIP_DESKTOP) != 0;
+					if ((!skip_flag || !this->is_desktop(root)) && PathFileExists(root.c_str())) {
 						ShellExecute(NULL, _T("open"), _T("explorer.exe"), root.c_str(), NULL, SW_SHOWNORMAL);
 					}
 				}
