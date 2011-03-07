@@ -141,7 +141,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="shlwapi.lib"
-				OutputFile="$(OutDir)\cubeicectx-v3.dll"
+				OutputFile="$(OutDir)\cubeicectx.dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile="cubeice-ctx.def"
 				GenerateDebugInformation="false"
