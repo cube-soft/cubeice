@@ -413,7 +413,12 @@ namespace cubeice {
 			root_(CUBEICE_REG_ROOT),
 			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0), sc_flags_(0), sc_index_(0), filters_(), update_(false) {
+			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true) {
+			comp_.output_condition() = 0x02;
+			comp_.details() = 0x281;
+			comp_.max_filelist() = 5;
+			decomp_.output_condition() = 0x01;
+			decomp_.details() = 0x5ed;
 			this->load();
 		}
 		
@@ -421,7 +426,12 @@ namespace cubeice {
 			root_(root),
 			comp_(root + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(root + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0), sc_flags_(0), sc_index_(0), filters_(), update_(false) {
+			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true) {
+			comp_.output_condition() = 0x02;
+			comp_.details() = 0x281;
+			comp_.max_filelist() = 5;
+			decomp_.output_condition() = 0x01;
+			decomp_.details() = 0x5ed;
 			this->load();
 		}
 		

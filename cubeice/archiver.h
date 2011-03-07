@@ -169,7 +169,7 @@ namespace cubeice {
 				
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
-					if (progress.position() < progress.maximum()) ++progress;
+					if (progress.position() < progress.maximum() * 0.95) ++progress;
 					Sleep(10);
 					continue;
 				}
@@ -178,8 +178,8 @@ namespace cubeice {
 				string_type::size_type pos = line.find(error);
 				if (pos != string_type::npos) {
 					if (progress.position() < progress.maximum()  * 0.95) ++progress;
-					if (pos != 0) report += line.substr(0, pos) + _T("\r\n");
-					report += line.substr(pos) + _T("\r\n");
+					report += clx::strip_copy(line.substr(pos));
+					if (pos != 0) report += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
 					report += _T("\r\n");
 					continue;
 				}
@@ -271,6 +271,8 @@ namespace cubeice {
 			}
 			
 			for (; first != last; ++first) {
+				string_type report; // エラーレポート
+				
 				string_type src = *first;
 				string_type filetype;
 				if (!this->decompress_filetype(src, filetype)) {
@@ -285,7 +287,6 @@ namespace cubeice {
 				
 				cubeice::dialog::progressbar progress;
 				progress.marquee(true);
-				//progress.text(root);
 				
 				// パスワードの設定
 				bool pass = this->decompress_password(src, string_type(), progress);
@@ -295,18 +296,9 @@ namespace cubeice {
 					} while (this->decompress_password(src, cubeice::password(), progress));
 				}
 				
-				// フォルダの作成
-				if (!PathFileExists(root.c_str()) && CreateDirectory(root.c_str(), NULL) == 0) break;
-				
 				// 一時フォルダの作成
 				string_type tmp = tmpdir(_T("cubeice"));
 				if (tmp.empty()) break;
-				
-				// *.tar 系の処理
-				// TODO: 現在，拡張子が本来の種類と異なるファイルも対象にしているが，
-				// それらの偽装（？）拡張子のファイルが *.tar かどうかをどう判断するか．
-				if ((filetype == _T("gzip") || filetype == _T("bzip2")) &&
-					this->is_tar(src)) src = this->decompress_tar(src, tmp, pass, progress);
 				
 				// プログレスバーの進行度の設定
 				string_type folder = this->decompress_filelist(src, progress);
@@ -316,8 +308,19 @@ namespace cubeice {
 				// フォルダの作成
 				if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER)) {
 					if ((setting_.decompression().details() & DETAIL_SINGLE_FOLDER) == 0 || folder.empty()) {
-						root = this->decompress_createdir(setting_.decompression(), root, src);
+						root = this->decompress_dirname(setting_.decompression(), root, src);
 					}
+				}
+				
+				// *.tar 系の処理
+				// TODO: 現在，拡張子が本来の種類と異なるファイルも対象にしているが，
+				// それらの偽装（？）拡張子のファイルが *.tar かどうかをどう判断するか．
+				if ((filetype == _T("gzip") || filetype == _T("bzip2")) && this->is_tar(src)) {
+					src = this->decompress_tar(src, tmp, progress, report);
+					this->decompress_filelist(src, progress);
+					if (src.empty() || !PathFileExists(src.c_str())) break;
+					if (this->size_ == 0) progress.marquee(true);
+					else progress.marquee(false);
 				}
 				
 				// コマンドラインの生成
@@ -334,7 +337,6 @@ namespace cubeice {
 				int status = 0;
 				int to_all = 0; // はい/いいえ/リネーム
 				string_type line;
-				string_type report;
 				double calcpos = 0.0; // 計算上のプログレスバーの位置
 				while ((status = proc.gets(line)) >= 0) {
 					progress.refresh();
@@ -345,7 +347,7 @@ namespace cubeice {
 					
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
-						if (progress.position() < progress.maximum()) ++progress;
+						if (progress.position() < progress.maximum() * 0.95) ++progress;
 						Sleep(10);
 						continue;
 					}
@@ -354,8 +356,8 @@ namespace cubeice {
 					string_type::size_type pos = line.find(error);
 					if (pos != string_type::npos) {
 						if (progress.position() < progress.maximum()) ++progress;
-						if (pos != 0) report += line.substr(0, pos) + _T("\r\n");
-						report += line.substr(pos) + _T("\r\n");
+						report += clx::strip_copy(line.substr(pos));
+						if (pos != 0) report += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
 						report += _T("\r\n");
 						continue;
 					}
@@ -387,9 +389,8 @@ namespace cubeice {
 						// report += _T("Filtering: ") + filename + _T("\r\n");
 					}
 					else if (!this->move(tmp + _T('\\') + filename, root + _T('\\') + filename, result == IDRENAME)) {
-						report += keyword + _T(' ') + filename + _T("\r\n");
-						report += error + _T(" Can not move file.\r\n");
-						report += _T("\r\n");
+						report += error + _T(" Can not move file.");
+						report += _T(" (") + keyword + _T(' ') + filename + _T(")\r\n");
 					}
 				}
 				
@@ -607,9 +608,9 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  decompress_createdir
+		//  decompress_dirname
 		/* ----------------------------------------------------------------- */
-		string_type decompress_createdir(const setting_type::archive_type& setting, const string_type& root, const string_type& src) {
+		string_type decompress_dirname(const setting_type::archive_type& setting, const string_type& root, const string_type& src) {
 			string_type dest = root;
 			
 			// フォルダの作成
@@ -728,12 +729,13 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  decompress_tar
 		/* ----------------------------------------------------------------- */
-		string_type decompress_tar(const string_type& src, const string_type& root, bool pass, cubeice::dialog::progressbar& progress) {
+		string_type decompress_tar(const string_type& src, const string_type& root,
+			cubeice::dialog::progressbar& progress, string_type& report) {
 			static const string_type keyword = _T("Extracting");
+			static const string_type error = _T("ERROR:");
 			
 			string_type cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" x -bd -scsWIN -y");
-			if (pass) cmdline += _T(" -p") + cubeice::password();
 			cmdline += _T(" -o\"") + root + _T("\"");
 			cmdline += _T(" \"") + src + _T("\"");
 			cube::popen proc;
@@ -751,7 +753,16 @@ namespace cubeice {
 				}
 				assert(status == 1);
 				
-				string_type::size_type pos = line.find(keyword);
+				string_type::size_type pos = line.find(error);
+				if (pos != string_type::npos) {
+					if (progress.position() < progress.maximum()) ++progress;
+					report += clx::strip_copy(line.substr(pos));
+					if (pos != 0) report += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
+					report += _T("\r\n");
+					continue;
+				}
+				
+				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
 				filename = clx::strip_copy(line.substr(pos + keyword.size()));
 			}

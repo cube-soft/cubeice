@@ -94,7 +94,7 @@ STDMETHODIMP CExtractCallbackConsole::PrepareOperation(const wchar_t *name, bool
   };
   (*OutStream) << name << ' ';
   if (position != 0)
-    (*OutStream) << " <" << *position << ">";
+    (*OutStream) << "<" << *position << ">";
   return S_OK;
 }
 
@@ -116,7 +116,6 @@ STDMETHODIMP CExtractCallbackConsole::SetOperationResult(Int32 operationResult, 
     {
       NumFileErrorsInCurrentArchive++;
       NumFileErrors++;
-      //(*OutStream) << "     ";
       (*OutStream) << kError;
       switch(operationResult)
       {
