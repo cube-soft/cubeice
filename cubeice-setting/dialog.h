@@ -112,13 +112,82 @@ namespace cubeice {
 		if (!initialized) {
 			dest[IDC_CT_COMPRESS_CHECKBOX] = COMPRESS_FLAG;
 			dest[IDC_CT_DECOMPRESS_CHECKBOX] = DECOMPRESS_FLAG;
-			dest[IDC_CT_SETTING_CHECKBOX] = SETTING_FLAG;
 			dest[IDC_CT_MAIL_CHECKBOX] = MAIL_FLAG;
+			
+			// 圧縮メニューのサブメニュー
+			dest[IDC_COMP_ZIP_CHECKBOX] = COMP_ZIP_FLAG;
+			dest[IDC_COMP_ZIP_PASS_CHECKBOX] = COMP_ZIP_PASS_FLAG;
+			dest[IDC_COMP_SEVENZIP_CHECKBOX] = COMP_SEVENZIP_FLAG;
+			dest[IDC_COMP_BZIP2_CHECKBOX] = COMP_BZIP2_FLAG;
+			dest[IDC_COMP_GZIP_CHECKBOX] = COMP_GZIP_FLAG;
+			dest[IDC_COMP_DETAIL_CHECKBOX] = COMP_DETAIL_FLAG;
+			
+			// 解凍メニューのサブメニュー
+			dest[IDC_DECOMP_HERE_CHECKBOX] = DECOMP_HERE_FLAG;
+			dest[IDC_DECOMP_DESKTOP_CHECKBOX] = DECOMP_DESKTOP_FLAG;
+			dest[IDC_DECOMP_RUNTIME_CHECKBOX] = DECOMP_RUNTIME_FLAG;
+			
+			// 圧縮してメール送信のサブメニュー
+			dest[IDC_MAIL_ZIP_CHECKBOX] = MAIL_ZIP_FLAG;
+			dest[IDC_MAIL_ZIP_PASS_CHECKBOX] = MAIL_ZIP_PASS_FLAG;
+			dest[IDC_MAIL_SEVENZIP_CHECKBOX] = MAIL_SEVENZIP_FLAG;
+			dest[IDC_MAIL_BZIP2_CHECKBOX] = MAIL_BZIP2_FLAG;
+			dest[IDC_MAIL_GZIP_CHECKBOX] = MAIL_GZIP_FLAG;
+			dest[IDC_MAIL_DETAIL_CHECKBOX] = MAIL_DETAIL_FLAG;
+			
 			initialized = true;
 		}
 		return dest;
 	}
-
+	
+	/* ----------------------------------------------------------------- */
+	//  context_compress_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& context_compress_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_COMP_ZIP_CHECKBOX] = COMP_ZIP_FLAG;
+			dest[IDC_COMP_ZIP_PASS_CHECKBOX] = COMP_ZIP_PASS_FLAG;
+			dest[IDC_COMP_SEVENZIP_CHECKBOX] = COMP_SEVENZIP_FLAG;
+			dest[IDC_COMP_BZIP2_CHECKBOX] = COMP_BZIP2_FLAG;
+			dest[IDC_COMP_GZIP_CHECKBOX] = COMP_GZIP_FLAG;
+			dest[IDC_COMP_DETAIL_CHECKBOX] = COMP_DETAIL_FLAG;
+		}
+		return dest;
+	}
+	
+	/* ----------------------------------------------------------------- */
+	//  context_decompress_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& context_decompress_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_DECOMP_HERE_CHECKBOX] = DECOMP_HERE_FLAG;
+			dest[IDC_DECOMP_DESKTOP_CHECKBOX] = DECOMP_DESKTOP_FLAG;
+			dest[IDC_DECOMP_RUNTIME_CHECKBOX] = DECOMP_RUNTIME_FLAG;
+		}
+		return dest;
+	}
+	
+	/* ----------------------------------------------------------------- */
+	//  context_mail_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& context_mail_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_MAIL_ZIP_CHECKBOX] = MAIL_ZIP_FLAG;
+			dest[IDC_MAIL_ZIP_PASS_CHECKBOX] = MAIL_ZIP_PASS_FLAG;
+			dest[IDC_MAIL_SEVENZIP_CHECKBOX] = MAIL_SEVENZIP_FLAG;
+			dest[IDC_MAIL_BZIP2_CHECKBOX] = MAIL_BZIP2_FLAG;
+			dest[IDC_MAIL_GZIP_CHECKBOX] = MAIL_GZIP_FLAG;
+			dest[IDC_MAIL_DETAIL_CHECKBOX] = MAIL_DETAIL_FLAG;
+		}
+		return dest;
+	}
+	
 	/* ----------------------------------------------------------------- */
 	//  shortcut_map
 	/* ----------------------------------------------------------------- */
