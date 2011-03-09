@@ -112,7 +112,8 @@ namespace cubeice {
 				options.push_back(_T("-mx=") + clx::lexical_cast<string_type>(runtime.level()));
 				if (runtime.type() == _T("zip")) options.push_back(_T("mm=") + runtime.method());
 				else if (runtime.type() == _T("7z")) options.push_back(_T("m0=") + runtime.method());
-				if (runtime.thread_size() > 1) options.push_back(_T("-mmt=") + clx::lexical_cast<string_type>(runtime.thread_size()));
+				//if (runtime.thread_size() > 1) options.push_back(_T("-mmt=") + clx::lexical_cast<string_type>(runtime.thread_size()));
+				options.push_back(_T("-mmt=") + clx::lexical_cast<string_type>(runtime.thread_size()));
 				if (runtime.enable_password()) {
 					pass = true;
 					cubeice::password() = runtime.password();

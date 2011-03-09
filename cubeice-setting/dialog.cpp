@@ -157,23 +157,27 @@ namespace cubeice {
 				}
 			}
 			
-			// コンテキストメニューの圧縮のサブ項目
-			const flag_map& comp = compress_map();
-			for (flag_map::const_iterator pos = comp.begin(); pos != comp.end(); ++pos) {
-				if (Setting.compression().flags() & pos->second) {
-					CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
-				}
-			}
-			
 			// 「コンテキストメニュー」グループ
 			const flag_map& context = context_map();
+			const flag_map& ctxcomp = context_compress_map();
+			const flag_map& ctxmail = context_mail_map();
+			const flag_map& ctxdecomp = context_decompress_map();
 			for (flag_map::const_iterator pos = context.begin(); pos != context.end(); ++pos) {
 				if (Setting.context_flags() & pos->second) {
 					CheckDlgButton(hWnd, pos->first, BM_SETCHECK);
 				}
 				else if (pos->second == COMPRESS_FLAG) {
-					// 圧縮のサブ項目を無効化
-					for (flag_map::const_iterator subpos = comp.begin(); subpos != comp.end(); ++subpos) {
+					for (flag_map::const_iterator subpos = ctxcomp.begin(); subpos != ctxcomp.end(); ++subpos) {
+						EnableWindow(GetDlgItem(hWnd, subpos->first), FALSE);
+					}
+				}
+				else if (pos->second == DECOMPRESS_FLAG) {
+					for (flag_map::const_iterator subpos = ctxdecomp.begin(); subpos != ctxdecomp.end(); ++subpos) {
+						EnableWindow(GetDlgItem(hWnd, subpos->first), FALSE);
+					}
+				}
+				else if (pos->second == MAIL_FLAG) {
+					for (flag_map::const_iterator subpos = ctxmail.begin(); subpos != ctxmail.end(); ++subpos) {
 						EnableWindow(GetDlgItem(hWnd, subpos->first), FALSE);
 					}
 				}
@@ -279,6 +283,29 @@ namespace cubeice {
 				pos = context.find(parameter);
 				if (pos != context.end()) {
 					change_flag(Setting.context_flags(), hWnd, pos->first, pos->second);
+					
+					if (pos->first == IDC_CT_COMPRESS_CHECKBOX) {
+						BOOL enabled = (Setting.context_flags() & COMPRESS_FLAG) ? TRUE : FALSE;
+						const flag_map& submenu = context_compress_map();
+						for (flag_map::const_iterator subpos = submenu.begin(); subpos != submenu.end(); ++subpos) {
+							EnableWindow(GetDlgItem(hWnd, subpos->first), enabled);
+						}
+					}
+					else if (pos->first == IDC_CT_DECOMPRESS_CHECKBOX) {
+						BOOL enabled = (Setting.context_flags() & DECOMPRESS_FLAG) ? TRUE : FALSE;
+						const flag_map& submenu = context_decompress_map();
+						for (flag_map::const_iterator subpos = submenu.begin(); subpos != submenu.end(); ++subpos) {
+							EnableWindow(GetDlgItem(hWnd, subpos->first), enabled);
+						}
+					}
+					else if (pos->first == IDC_CT_MAIL_CHECKBOX) {
+						BOOL enabled = (Setting.context_flags() & MAIL_FLAG) ? TRUE : FALSE;
+						const flag_map& submenu = context_mail_map();
+						for (flag_map::const_iterator subpos = submenu.begin(); subpos != submenu.end(); ++subpos) {
+							EnableWindow(GetDlgItem(hWnd, subpos->first), enabled);
+						}
+					}
+					
 					return TRUE;
 				}
 				

@@ -25,7 +25,11 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 			BZ2_FLAG | CAB_FLAG | TBZ_FLAG | TGZ_FLAG | XZ_FLAG
 		);
 		
-		Setting.context_flags() |= (COMPRESS_FLAG | DECOMPRESS_FLAG);
+		Setting.context_flags() |= (
+			COMPRESS_FLAG | COMP_ALL_FLAG |
+			DECOMPRESS_FLAG | DECOMP_ALL_FLAG
+		);
+		
 		Setting.shortcut_flags() |= (COMPRESS_FLAG | DECOMPRESS_FLAG);
 	}
 	
