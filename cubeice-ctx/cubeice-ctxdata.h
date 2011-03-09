@@ -73,29 +73,29 @@ struct SUB_MENU_ITEM {
 const WORD		ICON_NOT_USED = -1;
 
 const SUB_MENU_ITEM		SubMenuCompress[] = {
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "zip" ),					NULL,				MAKE_AWSTRING( "zip圧縮" ),				TEXT( "/c:zip" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "zip (パスワード)" ),	NULL,				MAKE_AWSTRING( "zip圧縮(パス)" ),		TEXT( "/c:zip /p" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "7z" ),					NULL,				MAKE_AWSTRING( "7-zip圧縮" ),			TEXT( "/c:7z" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "bzip2" ),				NULL,				MAKE_AWSTRING( "bzip2圧縮" ),			TEXT( "/c:bzip2" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "gzip" ),				NULL,				MAKE_AWSTRING( "gzip圧縮" ),			TEXT( "/c:gzip" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "詳細設定" ),			NULL,				MAKE_AWSTRING( "詳細設定" ),			TEXT( "/c:detail" ) },
+	{ COMP_ZIP_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "zip" ),					NULL,				MAKE_AWSTRING( "zip圧縮" ),				TEXT( "/c:zip" ) },
+	{ COMP_ZIP_PASS_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "zip (パスワード)" ),	NULL,				MAKE_AWSTRING( "zip圧縮(パス)" ),		TEXT( "/c:zip /p" ) },
+	{ COMP_SEVENZIP_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "7z" ),					NULL,				MAKE_AWSTRING( "7-zip圧縮" ),			TEXT( "/c:7z" ) },
+	{ COMP_BZIP2_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "bzip2" ),				NULL,				MAKE_AWSTRING( "bzip2圧縮" ),			TEXT( "/c:bzip2" ) },
+	{ COMP_GZIP_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "gzip" ),				NULL,				MAKE_AWSTRING( "gzip圧縮" ),			TEXT( "/c:gzip" ) },
+	{ COMP_DETAIL_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "詳細設定" ),			NULL,				MAKE_AWSTRING( "詳細設定" ),			TEXT( "/c:detail" ) },
 	//	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "自己解凍形式" ),		TEXT( "/c:exe" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
 const SUB_MENU_ITEM		SubMenuCompAndMail[] = {
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "zip" ),					NULL,				MAKE_AWSTRING( "zip圧縮" ),				TEXT( "/c:zip /m" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "zip (パスワード)" ),	NULL,				MAKE_AWSTRING( "zip圧縮(パス)" ),		TEXT( "/c:zip /p /m" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "7z" ),					NULL,				MAKE_AWSTRING( "7-zip圧縮" ),			TEXT( "/c:7z /m" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "bzip2" ),				NULL,				MAKE_AWSTRING( "bzip2圧縮" ),			TEXT( "/c:bzip2 /m" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "gzip" ),				NULL,				MAKE_AWSTRING( "gzip圧縮" ),			TEXT( "/c:gzip /m" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "詳細設定" ),			NULL,				MAKE_AWSTRING( "詳細設定" ),			TEXT( "/c:detail /m" ) },
+	{ MAIL_ZIP_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "zip" ),					NULL,				MAKE_AWSTRING( "zip圧縮" ),				TEXT( "/c:zip /m" ) },
+	{ MAIL_ZIP_PASS_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "zip (パスワード)" ),	NULL,				MAKE_AWSTRING( "zip圧縮(パス)" ),		TEXT( "/c:zip /p /m" ) },
+	{ MAIL_SEVENZIP_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "7z" ),					NULL,				MAKE_AWSTRING( "7-zip圧縮" ),			TEXT( "/c:7z /m" ) },
+	{ MAIL_BZIP2_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "bzip2" ),				NULL,				MAKE_AWSTRING( "bzip2圧縮" ),			TEXT( "/c:bzip2 /m" ) },
+	{ MAIL_GZIP_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "gzip" ),				NULL,				MAKE_AWSTRING( "gzip圧縮" ),			TEXT( "/c:gzip /m" ) },
+	{ MAIL_DETAIL_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "詳細設定" ),			NULL,				MAKE_AWSTRING( "詳細設定" ),			TEXT( "/c:detail /m" ) },
 //	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "自己解凍形式" ),		TEXT( "/c:exe /m" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
 const SUB_MENU_ITEM		SubMenuDecompress[] = {
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "ここに解凍" ),			NULL,				MAKE_AWSTRING( "この場所に解凍" ),		TEXT( "/x:source" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "デスクトップに解凍" ),	NULL,				MAKE_AWSTRING( "デスクトップに解凍" ),	TEXT( "/x:desktop" ) },
-	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "場所を指定して解凍" ),	NULL,				MAKE_AWSTRING( "場所を指定して解凍" ),	TEXT( "/x:runtime" ) },
+	{ DECOMP_HERE_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "ここに解凍" ),			NULL,				MAKE_AWSTRING( "この場所に解凍" ),		TEXT( "/x:source" ) },
+	{ DECOMP_DESKTOP_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "デスクトップに解凍" ),	NULL,				MAKE_AWSTRING( "デスクトップに解凍" ),	TEXT( "/x:desktop" ) },
+	{ DECOMP_RUNTIME_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "場所を指定して解凍" ),	NULL,				MAKE_AWSTRING( "場所を指定して解凍" ),	TEXT( "/x:runtime" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
 
