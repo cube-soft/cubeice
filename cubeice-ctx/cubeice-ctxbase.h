@@ -159,7 +159,7 @@ namespace cube {
 				InsertMenu( hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
 				
 				for( unsigned int i = 0 ; MenuItem[i].stringA ; ++i ) {
-					if( MenuItem[i].dispSetting && !( ctxSetting.context_flags() & MenuItem[i].dispSetting ) )
+					if( MenuItem[i].dispSetting && !this->is_visible( MenuItem[i].dispSetting ) )
 						continue;
 					
 					MENUITEMINFO		miinfo;
@@ -482,7 +482,7 @@ namespace cube {
 				for( unsigned int i = 0 ; smi[i].stringA ; ++i ) {
 					MENUITEMINFO		miinfo;
 					
-					if( smi[i].dispSetting && !( ctxSetting.context_flags() & smi[i].dispSetting ) )
+					if( smi[i].dispSetting && !this->is_visible( smi[i].dispSetting ) )
 						continue;
 					
 					ZeroMemory( &miinfo, sizeof( miinfo ) );
@@ -514,7 +514,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			void RecursiveInvokeCommand( const SUB_MENU_ITEM *smi, LPCMINVOKECOMMANDINFO lpcmi, DWORD &index ) {
 				for( unsigned int i = 0 ; smi[i].stringA && index <= LOWORD( lpcmi->lpVerb ) ; ++i ) {
-					if( smi[i].dispSetting && !( ctxSetting.context_flags() & smi[i].dispSetting ) )
+					if( smi[i].dispSetting && !this->is_visible( smi[i].dispSetting ) )
 						continue;
 					
 					if( index == LOWORD( lpcmi->lpVerb ) ) {
@@ -535,7 +535,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			void RecursiveGetCommandString( const SUB_MENU_ITEM *smi, unsigned int &index, UINT_PTR idCmd, UINT uFlags, LPSTR pszName, UINT cchMax ) {
 				for( unsigned int i = 0 ; smi[i].stringA && index <= idCmd ; ++i ) {
-					if( smi[i].dispSetting && !( ctxSetting.context_flags() & smi[i].dispSetting ) )
+					if( smi[i].dispSetting && !this->is_visible( smi[i].dispSetting ) )
 						continue;
 					
 					if( index == idCmd ) {
@@ -564,6 +564,27 @@ namespace cube {
 				}
 				
 				return;
+			}
+			
+			/* ------------------------------------------------------------- */
+			//  is_visible
+			/* ------------------------------------------------------------- */
+			bool is_visible(std::size_t flag) {
+				bool dest = (ctxSetting.context_flags() & flag) != 0;
+				switch (flag) {
+				case COMPRESS_FLAG:
+					dest &= (ctxSetting.context_flags() & COMP_ALL_FLAG) != 0;
+					break;
+				case DECOMPRESS_FLAG:
+					dest &= (ctxSetting.context_flags() & DECOMP_ALL_FLAG) != 0;
+					break;
+				case MAIL_FLAG:
+					dest &= (ctxSetting.context_flags() & MAIL_ALL_FLAG) != 0;
+					break;
+				default:
+					break;
+				}
+				return dest;
 			}
 			
 			/* ------------------------------------------------------------- */
