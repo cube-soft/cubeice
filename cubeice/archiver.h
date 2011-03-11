@@ -63,7 +63,7 @@ namespace cubeice {
 		//  constructor
 		/* ----------------------------------------------------------------- */
 		explicit archiver(const setting_type& setting) :
-			setting_(setting), filelist_(), size_(0) {}
+			setting_(setting), files_(), size_(0) {}
 		
 		/* ----------------------------------------------------------------- */
 		//  compress
@@ -160,6 +160,7 @@ namespace cubeice {
 			string_type line;
 			string_type report;
 			double calcpos = 0.0; // 計算上のプログレスバーの位置
+			unsigned int index = 0;
 			while ((status = proc.gets(line)) >= 0) {
 				progress.refresh();
 				if (progress.is_cancel()) {
@@ -169,6 +170,10 @@ namespace cubeice {
 				
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
+					// TODO: プログレスバーの改善
+					//size_type fsize = this->filesize(tmp);
+					//double tmppos = (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize);
+					//progress.position(tmppos);
 					if (progress.position() < progress.maximum() * 0.95) ++progress;
 					Sleep(10);
 					continue;
@@ -187,12 +192,18 @@ namespace cubeice {
 				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
 				string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
+				if (files_[index].name.find(filename) == string_type::npos) {
+					string_type message = filename + _T("\r\n") + files_[index].name;
+					MessageBox(NULL, message.c_str(), NULL, MB_OK);
+				}
 				progress.text(filename);
 				
 				// プログレスバーの更新
 				fileinfo elem = this->compress_getinfo(first, last, filename);
 				calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)elem.size);
-				if (this->size_ && progress.position() < calcpos) progress.position(calcpos);
+				if (this->size_ > 0) progress.position(calcpos);
+				
+				if (index < files_.size() - 1) ++index;
 			}
 			
 			if (status < 0) report += error + _T(" Broken pipe.\r\n");
@@ -373,13 +384,8 @@ namespace cubeice {
 						continue;
 					}
 					string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
-					//progress.text(root + _T("\r\n") + filename);
-					if (filename != files_[index].name) {
-						MessageBox(NULL, _T("unmatch"), NULL, MB_OK);
-					}
 					
 					// プログレスバーの更新
-					//calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->filelist_[filename].size);
 					if (this->size_ > 0) {
 						calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->files_[index].size);
 						progress.position(calcpos);
@@ -442,7 +448,6 @@ namespace cubeice {
 		};
 		
 		const setting_type& setting_;
-		std::map<string_type, fileinfo> filelist_;
 		std::vector<fileinfo> files_;
 		size_type size_; // トータルサイズ
 		
@@ -499,14 +504,16 @@ namespace cubeice {
 		template <class InputIterator>
 		void compress_filelist(InputIterator first, InputIterator last, cubeice::dialog::progressbar& progress) {
 			this->size_ = 0;
-			this->filelist_.clear();
+			this->files_.clear();
 			
 			for (; first != last; ++first) {
 				progress.refresh();
 				if (PathIsDirectory(first->c_str())) compress_filelist_folder(*first);
-				fileinfo elem = this->createinfo(*first);
-				this->filelist_[*first] = elem;
-				this->size_ += elem.size;
+				else {
+					fileinfo elem = this->createinfo(*first);
+					this->files_.push_back(elem);
+					this->size_ += elem.size;
+				}
 			}
 		}
 		
@@ -523,9 +530,11 @@ namespace cubeice {
 				if (_tcscmp(wfd.cFileName, _T(".")) != 0 && _tcscmp(wfd.cFileName, _T("..")) != 0) {
 					string_type s = root + _T('\\') + wfd.cFileName;
 					if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) this->compress_filelist_folder(s);
-					fileinfo elem = this->createinfo(s);
-					this->filelist_[s] = elem;
-					this->size_ += elem.size;
+					else {
+						fileinfo elem = this->createinfo(s);
+						this->files_.push_back(elem);
+						this->size_ += elem.size;
+					}
 				}
 			} while (FindNextFile(handle, &wfd));
 			FindClose(handle);
@@ -601,8 +610,9 @@ namespace cubeice {
 			while (first != last) {
 				string_type path = first->substr(0, first->find_last_of(_T('\\')));
 				path += _T('\\') + filename;
-				std::map<string_type, fileinfo>::const_iterator pos = this->filelist_.find(path);
-				if (pos != this->filelist_.end()) return pos->second;
+				//std::map<string_type, fileinfo>::const_iterator pos = this->filelist_.find(path);
+				//if (pos != this->filelist_.end()) return pos->second;
+				if (PathFileExists(path.c_str())) return this->createinfo(path);
 				++first;
 			}
 			return fileinfo();
@@ -930,6 +940,7 @@ namespace cubeice {
 		fileinfo createinfo(const string_type& path) {
 			fileinfo dest;
 			
+			dest.name = path;
 			dest.directory = (PathIsDirectory(path.c_str()) == TRUE);
 			HANDLE h = CreateFile(path.c_str(), 0, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (h != INVALID_HANDLE_VALUE) {
