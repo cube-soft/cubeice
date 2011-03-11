@@ -56,7 +56,7 @@ namespace cubeice {
 	public:
 		typedef TCHAR char_type;
 		typedef std::basic_string<TCHAR> string_type;
-		typedef std::size_t size_type;
+		typedef __int64 size_type;
 		typedef cubeice::user_setting setting_type;
 		
 		/* ----------------------------------------------------------------- */
@@ -112,7 +112,6 @@ namespace cubeice {
 				options.push_back(_T("-mx=") + clx::lexical_cast<string_type>(runtime.level()));
 				if (runtime.type() == _T("zip")) options.push_back(_T("mm=") + runtime.method());
 				else if (runtime.type() == _T("7z")) options.push_back(_T("m0=") + runtime.method());
-				//if (runtime.thread_size() > 1) options.push_back(_T("-mmt=") + clx::lexical_cast<string_type>(runtime.thread_size()));
 				options.push_back(_T("-mmt=") + clx::lexical_cast<string_type>(runtime.thread_size()));
 				if (runtime.enable_password()) {
 					pass = true;
@@ -332,13 +331,15 @@ namespace cubeice {
 				cmdline += _T(" \"") + src + _T("\"");
 				cube::popen proc;
 				if (!proc.open(cmdline.c_str(), _T("r"))) return;
-				progress.text(root);
+				
+				unsigned int index = 0;
 				
 				// メイン処理
 				int status = 0;
 				int to_all = 0; // はい/いいえ/リネーム
 				string_type line;
 				double calcpos = 0.0; // 計算上のプログレスバーの位置
+				progress.position(1.0);
 				while ((status = proc.gets(line)) >= 0) {
 					progress.refresh();
 					if (progress.is_cancel()) {
@@ -346,9 +347,12 @@ namespace cubeice {
 						break;
 					}
 					
+					progress.text(root + _T("\r\n") + files_[index].name);
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
-						if (progress.position() < progress.maximum() * 0.95) ++progress;
+						size_type fsize = filesize(tmp + _T("\\") + files_[index].name);
+						double tmppos = calcpos + (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize);
+						progress.position(tmppos);
 						Sleep(10);
 						continue;
 					}
@@ -369,11 +373,17 @@ namespace cubeice {
 						continue;
 					}
 					string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
-					progress.text(root + _T("\r\n") + filename);
+					//progress.text(root + _T("\r\n") + filename);
+					if (filename != files_[index].name) {
+						MessageBox(NULL, _T("unmatch"), NULL, MB_OK);
+					}
 					
 					// プログレスバーの更新
-					calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->filelist_[filename].size);
-					if (this->size_ && progress.position() < calcpos) progress.position(calcpos);
+					//calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->filelist_[filename].size);
+					if (this->size_ > 0) {
+						calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->files_[index].size);
+						progress.position(calcpos);
+					}
 					
 					// 上書きの確認
 					int result = this->is_overwrite(root + _T('\\') + filename, tmp, filename, setting_.decompression(), to_all);
@@ -393,6 +403,8 @@ namespace cubeice {
 						report += error + _T(" Can not move file.");
 						report += _T(" (") + keyword + _T(' ') + filename + _T(")\r\n");
 					}
+					
+					if (index < files_.size() - 1) ++index;
 				}
 				
 				if (status < 0) report += error + _T(" Broken pipe.");
@@ -421,16 +433,18 @@ namespace cubeice {
 	private:
 		struct fileinfo {
 		public:
-			size_type size;
+			string_type    name;
+			size_type      size;
 			clx::date_time time;
-			bool directory;
+			bool           directory;
 			
-			fileinfo() : size(0), time(), directory(false) {}
+			fileinfo() : name(), size(0), time(), directory(false) {}
 		};
 		
 		const setting_type& setting_;
 		std::map<string_type, fileinfo> filelist_;
-		__int64 size_; // トータルサイズ
+		std::vector<fileinfo> files_;
+		size_type size_; // トータルサイズ
 		
 	private: // compress_xxx
 		/* ----------------------------------------------------------------- */
@@ -462,7 +476,7 @@ namespace cubeice {
 		string_type compress_path(const setting_type::archive_type& setting, const string_type& src, const string_type& ext) {
 			const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
 			string_type path = src.substr(0, src.find_last_of(_T('.')));
-			size_type pos = path.find_last_of(_T('.'));
+			string_type::size_type pos = path.find_last_of(_T('.'));
 			if (pos != string_type::npos && path.substr(pos) == _T(".tar")) path = path.substr(0, pos);
 			path += ext;
 			
@@ -703,10 +717,12 @@ namespace cubeice {
 				if (v.size() == 6) {
 					// ファイルリストの更新
 					fileinfo elem;
+					elem.name = v.at(5);
 					elem.size = v.at(3) != _T("-") ? clx::lexical_cast<std::size_t>(v.at(3)) : 0;
 					if (v.at(1) != _T("-")) elem.time.from_string(v.at(1), string_type(_T("%Y-%m-d %H:%M:%S")));
 					elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
-					filelist_[v.at(5)] = elem;
+					//filelist_[v.at(5)] = elem;
+					files_.push_back(elem);
 					this->size_ += elem.size;
 					
 					// 単一フォルダかどうかのチェック
@@ -1172,6 +1188,17 @@ namespace cubeice {
 			// not fouond
 			p->Release();
 			return false;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  filesize
+		/* ----------------------------------------------------------------- */
+		size_type filesize(const string_type& path) {
+			HANDLE handle = CreateFile(path.c_str(), 0, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			DWORD dwSizeHigh = 0;
+			DWORD dwSizeLow = GetFileSize(handle, &dwSizeHigh);
+			CloseHandle(handle);
+			return (static_cast<size_type>(dwSizeHigh) << sizeof(DWORD) * CHAR_BIT) | dwSizeLow;
 		}
 	};
 }

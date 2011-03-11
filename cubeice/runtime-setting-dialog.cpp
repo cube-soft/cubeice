@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------- */
 /*
- *  runtime-setting.cpp
+ *  runtime-setting-dialog.cpp
  *
  *  Copyright (c) 2010 CubeSoft Inc.
  *

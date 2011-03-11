@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------- */
 /*
- *  password.cpp
+ *  password-dialog.cpp
  *
  *  Copyright (c) 2010 CubeSoft Inc.
  *

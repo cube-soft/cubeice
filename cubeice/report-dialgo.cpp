@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------- */
 /*
- *  overwrite.cpp
+ *  report-dialog.cpp
  *
  *  Copyright (c) 2010 CubeSoft Inc.
  *
@@ -27,19 +27,16 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  overwrite_wndproc
 		/* ----------------------------------------------------------------- */
-		static INT_PTR CALLBACK overwrite_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+		static INT_PTR CALLBACK report_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_INITDIALOG:
 			{
 				// アイコン
 				HICON app = LoadIcon(GetModuleHandle(NULL), _T("IDI_APP"));
 				SendMessage(hWnd, WM_SETICON, 0, LPARAM(app));
-				HICON info = LoadIcon(NULL, IDI_WARNING);
-				HWND pic = GetDlgItem(hWnd, IDC_ICON_PICTUREBOX);
-				SendMessage(pic, STM_SETIMAGE, IMAGE_ICON, LPARAM(info));
 				
 				// テキスト
-				SetWindowText(GetDlgItem(hWnd, IDC_INFO_LABEL), (const TCHAR*)lp);
+				SetWindowText(GetDlgItem(hWnd, IDC_REPORT_TEXTBOX), (const TCHAR*)lp);
 				
 				// 画面中央に表示
 				RECT rect = {};
@@ -51,13 +48,9 @@ namespace cubeice {
 			}
 			case WM_COMMAND:
 				switch (LOWORD(wp)) {
-				case IDYES:
-				case IDNO:
-				case IDYESTOALL:
-				case IDNOTOALL:
+				case IDOK:
 				case IDCANCEL:
-				case IDRENAMETOALL:
-					EndDialog(hWnd, LOWORD(wp));
+					EndDialog(hWnd, 0);
 					break;
 				default:
 					break;
@@ -71,10 +64,10 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  overwrite
+		//  report
 		/* ----------------------------------------------------------------- */
-		int overwrite(const std::basic_string<TCHAR>& message) {
-			return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_OVERWRITE"), NULL, overwrite_wndproc, (LPARAM)message.c_str());
+		int report(const std::basic_string<TCHAR>& message) {
+			return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_REPORT"), NULL, report_wndproc, (LPARAM)message.c_str());
 		}
 	}
 }
