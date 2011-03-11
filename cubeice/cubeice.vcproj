@@ -335,23 +335,23 @@
 				>
 			</File>
 			<File
-				RelativePath=".\dialog.cpp"
+				RelativePath=".\file-dialog.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\overwrite.cpp"
+				RelativePath=".\overwrite-dialog.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\password.cpp"
+				RelativePath=".\password-dialog.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\report.cpp"
+				RelativePath=".\report-dialgo.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\runtime-setting.cpp"
+				RelativePath=".\runtime-setting-dialog.cpp"
 				>
 			</File>
 		</Filter>
