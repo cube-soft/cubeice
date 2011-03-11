@@ -84,6 +84,7 @@ CStdOutStream & CStdOutStream::operator<<(const char *s)
   }
 
   *this << babel::utf8_to_unicode( str ).c_str();
+  this->Flush();
   return *this;
 }
 
@@ -116,7 +117,7 @@ CStdOutStream & CStdOutStream::operator<<(const wchar_t *s)
   }
 
   fwrite( wstr.c_str(), sizeof( wchar_t ), wstr.size(), _stream );
-
+  this->Flush();
   return *this;
 }
 
@@ -128,6 +129,7 @@ CStdOutStream & CStdOutStream::operator<<(char c)
   str[0] = c;
   str[1] = '\0';
   *this << str;
+  this->Flush();
   return *this;
 }
 
