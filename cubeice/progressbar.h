@@ -36,7 +36,7 @@ namespace cubeice {
 			//  constructor
 			/* ------------------------------------------------------------- */
 			progressbar() :
-				handle_(NULL), pos_(0.0), min_(0), max_(10000), cancel_(false) {}
+				handle_(NULL), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false) {}
 			
 			/* ------------------------------------------------------------- */
 			//  show
@@ -133,6 +133,21 @@ namespace cubeice {
 			}
 			
 			/* ------------------------------------------------------------- */
+			//  subposition
+			/* ------------------------------------------------------------- */
+			double subposition() const { return sub_; }
+			
+			/* ------------------------------------------------------------- */
+			//  subposition
+			/* ------------------------------------------------------------- */
+			void subposition(double pos) {
+				if (pos < min_) sub_ = min_;
+				else if (pos > max_) sub_ = max_;
+				else sub_ = pos;
+				SendMessage(GetDlgItem(handle_, IDC_PROGRESS_SUB), PBM_SETPOS, static_cast<int>(sub_), 0);
+			}
+			
+			/* ------------------------------------------------------------- */
 			//  minimum
 			/* ------------------------------------------------------------- */
 			size_type minimum() const { return min_; }
@@ -144,6 +159,8 @@ namespace cubeice {
 				min_ = n;
 				if (min_ < max_) {
 					HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
+					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(min_, max_));
+					handle = GetDlgItem(handle_, IDC_PROGRESS_SUB);
 					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(min_, max_));
 				}
 			}
@@ -160,6 +177,8 @@ namespace cubeice {
 				max_ = n;
 				if (min_ < max_) {
 					HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
+					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(min_, max_));
+					handle = GetDlgItem(handle_, IDC_PROGRESS_SUB);
 					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(min_, max_));
 				}
 			}
@@ -231,6 +250,7 @@ namespace cubeice {
 		private:
 			HWND handle_;
 			double pos_;
+			double sub_;
 			size_type min_;
 			size_type max_;
 			bool cancel_;
@@ -265,6 +285,12 @@ namespace cubeice {
 					HWND handle = GetDlgItem(hWnd, IDC_PROGRESS);
 					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(0, 10000));
 					SendMessage(handle, PBM_SETSTEP, 1, 0);
+					
+					// サブバーの min, max, step の初期値を登録
+					handle = GetDlgItem(hWnd, IDC_PROGRESS_SUB);
+					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(0, 10000));
+					SendMessage(handle, PBM_SETSTEP, 1, 0);
+					
 					return TRUE;
 				}
 				case WM_COMMAND:
