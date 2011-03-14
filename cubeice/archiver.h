@@ -134,6 +134,7 @@ namespace cubeice {
 			if (tmp.empty()) return;
 			
 			cubeice::dialog::progressbar progress;
+			progress.show();
 			progress.marquee(true);
 			
 			// プログレスバーの設定
@@ -192,10 +193,6 @@ namespace cubeice {
 				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
 				string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
-				if (files_[index].name.find(filename) == string_type::npos) {
-					string_type message = filename + _T("\r\n") + files_[index].name;
-					MessageBox(NULL, message.c_str(), NULL, MB_OK);
-				}
 				progress.text(filename);
 				
 				// プログレスバーの更新
@@ -297,6 +294,7 @@ namespace cubeice {
 				if (root.empty()) break;
 				
 				cubeice::dialog::progressbar progress;
+				progress.show();
 				progress.marquee(true);
 				
 				// パスワードの設定

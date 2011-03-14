@@ -36,8 +36,13 @@ namespace cubeice {
 			//  constructor
 			/* ------------------------------------------------------------- */
 			progressbar() :
-				handle_(NULL), pos_(0.0), min_(0), max_(10000), cancel_(false) {
-				this->initialize();
+				handle_(NULL), pos_(0.0), min_(0), max_(10000), cancel_(false) {}
+			
+			/* ------------------------------------------------------------- */
+			//  show
+			/* ------------------------------------------------------------- */
+			void show() {
+				handle_ = CreateDialog(GetModuleHandle(NULL), _T("IDD_PROGRESS"), NULL, wndproc);
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -229,13 +234,6 @@ namespace cubeice {
 			size_type min_;
 			size_type max_;
 			bool cancel_;
-			
-			/* ------------------------------------------------------------- */
-			//  initialize
-			/* ------------------------------------------------------------- */
-			void initialize() {
-				handle_ = CreateDialog(GetModuleHandle(NULL), _T("IDD_PROGRESS"), NULL, wndproc);
-			}
 			
 			/* ------------------------------------------------------------- */
 			//  closed_handles
