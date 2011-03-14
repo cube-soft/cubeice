@@ -362,7 +362,10 @@ namespace cubeice {
 						size_type fsize = filesize(tmp + _T("\\") + files_[index].name);
 						double tmppos = calcpos + (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize);
 						progress.position(tmppos);
-						Sleep(10);
+						double subpos = (progress.maximum() - progress.minimum()) / (files_[index].size / (double)fsize);
+						progress.subposition(subpos);
+						
+						Sleep(1);
 						continue;
 					}
 					assert(status == 1);
@@ -387,6 +390,7 @@ namespace cubeice {
 					if (this->size_ > 0) {
 						calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->files_[index].size);
 						progress.position(calcpos);
+						progress.subposition(progress.maximum());
 					}
 					
 					// ã‘‚«‚ÌŠm”F
