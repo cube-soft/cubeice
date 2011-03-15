@@ -381,12 +381,14 @@ namespace cubeice {
 						// プログレスバーの更新
 						size_type fsize = filesize(tmp + _T("\\") + files_[index].name);
 						double tmppos = calcpos + (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize);
+						if (tmppos > progress.maximum()) tmppos = progress.maximum();
 						progress.position(tmppos);
 						double subpos = (progress.maximum() - progress.minimum()) / (files_[index].size / (double)fsize);
+						if (subpos > progress.maximum()) subpos = progress.maximum();
 						progress.subposition(subpos);
 						
 						// タイトルの更新
-						size_type percent = static_cast<size_type>(tmppos / 100.0);
+						size_type percent = (tmppos > 1.0) ? static_cast<size_type>(tmppos / 100.0) : 0;
 						string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE");
 						progress.title(title);
 						
