@@ -163,6 +163,9 @@ namespace cubeice {
 			string_type report;
 			double calcpos = 0.0; // 計算上のプログレスバーの位置
 			unsigned int index = 0;
+			progress.position(progress.minimum());
+			progress.subposition(progress.minimum());
+			progress.title(_T("0% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE"));
 			while ((status = proc.gets(line)) >= 0) {
 				progress.refresh();
 				if (progress.is_cancel()) {
@@ -361,8 +364,11 @@ namespace cubeice {
 				int to_all = 0; // はい/いいえ/リネーム
 				string_type line;
 				double calcpos = 0.0; // 計算上のプログレスバーの位置
-				progress.position(1.0);
+				progress.position(progress.minimum());
+				progress.subposition(progress.minimum());
+				progress.title(_T("0% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE"));
 				while ((status = proc.gets(line)) >= 0) {
+					if (progress.subposition() > progress.maximum() - 1.0) progress.subposition(progress.minimum());
 					progress.refresh();
 					if (progress.is_cancel()) {
 						proc.close();
@@ -408,11 +414,12 @@ namespace cubeice {
 					// プログレスバーの更新
 					if (this->size_ > 0) {
 						calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->files_[index].size);
+						if (calcpos > progress.maximum()) calcpos = progress.maximum();
 						progress.position(calcpos);
 						progress.subposition(progress.maximum());
 						
 						// タイトルの更新
-						size_type percent = static_cast<size_type>(calcpos / 100.0);
+						size_type percent = (calcpos > 1.0) ? static_cast<size_type>(calcpos / 100.0) : 0;
 						string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE");
 						progress.title(title);
 					}
