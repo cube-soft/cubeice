@@ -149,7 +149,8 @@ namespace cubeice {
 			else if (ext == _T(".tgz") || ext == _T(".tbz") || ext.find(_T(".tar")) != string_type::npos) cmdline += _T(" -ttar");
 			else cmdline += _T(" -t") + filetype;
 			if (pass) cmdline += _T(" -p\"") + cubeice::password() + _T("\"");
-			cmdline += _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
+			//cmdline += _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
+			cmdline += _T(" -scsWIN -y \"") + tmp + _T("\"");
 			for (InputIterator pos = first; pos != last; ++pos) cmdline += _T(" \"") + *pos + _T("\"");
 			for(std::vector<string_type>::const_iterator pos = options.begin(); pos != options.end(); ++pos) cmdline += _T(' ') + *pos;
 			cube::popen proc;
@@ -175,8 +176,8 @@ namespace cubeice {
 					//size_type fsize = this->filesize(tmp);
 					//double tmppos = (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize);
 					//progress.position(tmppos);
-					if (progress.position() < progress.maximum() * 0.95) ++progress;
-					Sleep(10);
+					//if (progress.position() < progress.maximum() * 0.95) ++progress;
+					Sleep(1);
 					continue;
 				}
 				assert(status == 1);
@@ -190,15 +191,26 @@ namespace cubeice {
 					continue;
 				}
 				
+				pos = line.find(_T(":%")); // :%n% と言う形で進捗率が表示される
+				if (pos != string_type::npos) {
+					string_type percent = line.substr(pos);
+					clx::strip_if(percent, clx::is_any_of(_T(":% ")));
+					line.erase(pos);
+					calcpos = clx::lexical_cast<double>(percent) * 100.0;
+					progress.position(calcpos);
+					string_type title = percent + _T("% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE");
+					progress.title(title);
+				}
+				
 				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
 				string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
 				progress.text(filename);
 				
 				// プログレスバーの更新
-				fileinfo elem = this->compress_getinfo(first, last, filename);
-				calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)elem.size);
-				if (this->size_ > 0) progress.position(calcpos);
+				//fileinfo elem = this->compress_getinfo(first, last, filename);
+				//calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)elem.size);
+				//if (this->size_ > 0) progress.position(calcpos);
 				
 				if (index < files_.size() - 1) ++index;
 			}
@@ -282,6 +294,7 @@ namespace cubeice {
 				string_type report; // エラーレポート
 				
 				string_type src = *first;
+				string_type srcname = src;
 				string_type filetype;
 				if (!this->decompress_filetype(src, filetype)) {
 					string_type message = src + _T(" は未対応のファイル形式のため解凍できません。");
@@ -359,11 +372,17 @@ namespace cubeice {
 					progress.text(root + _T("\r\n") + files_[index].name);
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
+						// プログレスバーの更新
 						size_type fsize = filesize(tmp + _T("\\") + files_[index].name);
 						double tmppos = calcpos + (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize);
 						progress.position(tmppos);
 						double subpos = (progress.maximum() - progress.minimum()) / (files_[index].size / (double)fsize);
 						progress.subposition(subpos);
+						
+						// タイトルの更新
+						size_type percent = static_cast<size_type>(tmppos / 100.0);
+						string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE");
+						progress.title(title);
 						
 						Sleep(1);
 						continue;
@@ -391,6 +410,11 @@ namespace cubeice {
 						calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->files_[index].size);
 						progress.position(calcpos);
 						progress.subposition(progress.maximum());
+						
+						// タイトルの更新
+						size_type percent = static_cast<size_type>(calcpos / 100.0);
+						string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE");
+						progress.title(title);
 					}
 					
 					// 上書きの確認
@@ -1212,6 +1236,14 @@ namespace cubeice {
 			DWORD dwSizeLow = GetFileSize(handle, &dwSizeHigh);
 			CloseHandle(handle);
 			return (static_cast<size_type>(dwSizeHigh) << sizeof(DWORD) * CHAR_BIT) | dwSizeLow;
+		}
+
+		/* ----------------------------------------------------------------- */
+		//  filename
+		/* ----------------------------------------------------------------- */
+		string_type filename(const string_type& path) {
+			string_type::size_type pos = path.find_last_of(_T('\\'));
+			return (pos == string_type::npos) ? path : path.substr(pos + 1);
 		}
 	};
 }
