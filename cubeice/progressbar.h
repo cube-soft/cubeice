@@ -33,21 +33,25 @@ namespace cubeice {
 			typedef std::size_t size_type;
 			
 			enum {
-				mainbar = 0x01,
-				subbar  = 0x02
+				normal = 0x01,
+				simple = 0x02
 			};
 			
 			/* ------------------------------------------------------------- */
 			//  constructor
 			/* ------------------------------------------------------------- */
 			progressbar() :
-				handle_(NULL), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false) {}
+				handle_(NULL), style_(normal), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false) {}
+			
+			explicit progressbar(int style) :
+				handle_(NULL), style_(style), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false) {}
 			
 			/* ------------------------------------------------------------- */
 			//  show
 			/* ------------------------------------------------------------- */
 			void show() {
-				handle_ = CreateDialog(GetModuleHandle(NULL), _T("IDD_PROGRESS"), NULL, wndproc);
+				string_type name = (style_ == simple) ? _T("IDD_PROGRESS_SIMPLE") : _T("IDD_PROGRESS");
+				handle_ = CreateDialog(GetModuleHandle(NULL), name.c_str(), NULL, wndproc);
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -72,24 +76,6 @@ namespace cubeice {
 			progressbar& operator++(int) {
 				this->position(pos_ + 1);
 				return *this;
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  enable
-			/* ------------------------------------------------------------- */
-			void enable(int kind) {
-				if ((kind & mainbar) != 0) EnableWindow(GetDlgItem(handle_, IDC_PROGRESS), TRUE);
-				if ((kind & subbar) != 0)  EnableWindow(GetDlgItem(handle_, IDC_PROGRESS_SUB), TRUE);
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  disable
-			/* ------------------------------------------------------------- */
-			void disable(int kind) {
-				if ((kind & mainbar) != 0) EnableWindow(GetDlgItem(handle_, IDC_PROGRESS), FALSE);
-				if ((kind & subbar) != 0)  {
-					EnableWindow(GetDlgItem(handle_, IDC_PROGRESS_SUB), FALSE);
-				}
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -231,6 +217,7 @@ namespace cubeice {
 			
 		private:
 			HWND handle_;
+			int style_;
 			double pos_;
 			double sub_;
 			size_type min_;
