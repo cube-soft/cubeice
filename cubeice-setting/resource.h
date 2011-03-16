@@ -124,6 +124,7 @@
 #define IDC_TOOLTIP_CHECKBOX        3111 // ツールチップにファイル一覧を表示する
 #define IDC_MAX_FILELIST_TEXTBOX    3112 // ツールチップの表示する最大件数
 #define IDC_FILELIST_UPDOWN         3113 // 同スピンコントロール
+#define IDC_REMOVE_SRC_CHECKBOX     3115 // 元ファイルを削除する
 
 /* ------------------------------------------------------------------------- */
 //  「フィルタリング」タブ

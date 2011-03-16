@@ -134,9 +134,8 @@ namespace cubeice {
 			string_type tmp = tmpfile(_T("cubeice"));
 			if (tmp.empty()) return;
 			
-			cubeice::dialog::progressbar progress;
+			cubeice::dialog::progressbar progress(cubeice::dialog::progressbar::simple);
 			progress.show();
-			progress.disable(cubeice::dialog::progressbar::subbar);
 			progress.marquee(true);
 			
 			// プログレスバーの設定
@@ -283,6 +282,8 @@ namespace cubeice {
 		void decompress(InputIterator first, InputIterator last) {
 			static const string_type keyword = _T("Extracting");
 			static const string_type error = _T("ERROR:");
+			static const string_type password(_T("Enter password"));
+			static const string_type password_error(_T("Wrong password?"));
 			
 			// レジストリの設定を無視するコマンドかどうか．
 			string_type force;
@@ -319,14 +320,6 @@ namespace cubeice {
 				progress.show();
 				progress.marquee(true);
 				
-				// パスワードの設定
-				bool pass = this->decompress_password(src, string_type(), progress);
-				if (pass) {
-					do {
-						if (cubeice::dialog::password(DECOMPRESS_FLAG) == IDCANCEL) return;
-					} while (this->decompress_password(src, cubeice::password(), progress));
-				}
-				
 				// 一時フォルダの作成
 				string_type tmp = tmpdir(_T("cubeice"));
 				if (tmp.empty()) break;
@@ -355,17 +348,12 @@ namespace cubeice {
 				}
 				
 				// コマンドラインの生成
-				string_type cmdline = CUBEICE_ENGINE;
-				cmdline += _T(" x -bd -scsWIN -y");
-				if (pass) cmdline += _T(" -p") + cubeice::password();
-				cmdline += _T(" -o\"") + tmp + _T("\"");
-				cmdline += _T(" \"") + src + _T("\"");
+				string_type cmdline = decompress_cmdline(src, tmp, false);
 				cube::popen proc;
 				if (!proc.open(cmdline.c_str(), _T("r"))) return;
 				
-				unsigned int index = 0;
-				
 				// メイン処理
+				unsigned int index = 0;
 				int status = 0;
 				int to_all = 0; // はい/いいえ/リネーム
 				string_type line;
@@ -408,6 +396,26 @@ namespace cubeice {
 						continue;
 					}
 					assert(status == 1);
+					
+					// パスワード処理
+					if (line.find(password) != string_type::npos || line.find(password_error) != string_type::npos) {
+						proc.close();
+						string_type remove_file = root + _T("\\") + files_[index - 1].name;
+						if (PathFileExists(remove_file.c_str()) == TRUE && this->filesize(remove_file) == 0) {
+							DeleteFile(remove_file.c_str());
+						}
+						if (cubeice::dialog::password(DECOMPRESS_FLAG) == IDCANCEL) break;
+						cmdline = decompress_cmdline(src, tmp, true);
+						if (!proc.open(cmdline.c_str(), _T("r"))) break;
+						index = 0;
+						status = 0;
+						to_all = 0;
+						calcpos = 0.0;
+						progress.position(progress.minimum());
+						progress.subposition(progress.minimum());
+						progress.title(_T("0% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE"));
+						continue;
+					}
 					
 					string_type::size_type pos = line.find(error);
 					if (pos != string_type::npos) {
@@ -479,6 +487,10 @@ namespace cubeice {
 				}
 				
 				this->remove(tmp.c_str());
+				
+				if ((setting_.decompression().details() & DETAIL_REMOVE_SRC) && report.empty()) {
+					DeleteFile(srcname.c_str());
+				}
 			}
 		}
 		
@@ -666,6 +678,18 @@ namespace cubeice {
 		
 	private: // decompress_xxx
 		/* ----------------------------------------------------------------- */
+		//  decompress_cmdline
+		/* ----------------------------------------------------------------- */
+		string_type decompress_cmdline(const string_type& src, const string_type& tmp, bool is_password) {
+			string_type cmdline = CUBEICE_ENGINE;
+			cmdline += _T(" x -bd -scsWIN -y");
+			if (is_password) cmdline += _T(" -p") + cubeice::password();
+			cmdline += _T(" -o\"") + tmp + _T("\"");
+			cmdline += _T(" \"") + src + _T("\"");
+			return cmdline;
+		}
+		
+		/* ----------------------------------------------------------------- */
 		//  decompress_path
 		/* ----------------------------------------------------------------- */
 		string_type decompress_path(const setting_type::archive_type& setting, const string_type& src, string_type force) {
@@ -841,49 +865,6 @@ namespace cubeice {
 			}
 			
 			return root + _T('\\') + filename;
-		}
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  decompress_password
-		 *
-		 *  アーカイブファイルにパスワードが設定されているかどうかを
-		 *  判定する．
-		 */
-		/* ----------------------------------------------------------------- */
-		bool decompress_password(const string_type& path, const string_type& password, cubeice::dialog::progressbar& progress) {
-			static const string_type keyword(_T("Enter password"));
-			static const string_type pass(_T("Testing"));
-			static const string_type error(_T("Wrong password?"));
-			static const int limit = 10;
-			
-			string_type cmdline = CUBEICE_ENGINE;
-			cmdline += _T(" t");
-			if (!password.empty()) cmdline += _T(" -p\"") + password + _T("\"");
-			cmdline += _T(" \"") + path + _T("\"");
-			cube::popen proc;
-			if (!proc.open(cmdline.c_str(), _T("r"))) return false;
-			
-			int n = 0;
-			int status = 0;
-			string_type line;
-			while ((status = proc.gets(line)) >= 0) {
-				progress.refresh();
-				if (status == 2) break; // closed pipe
-				else if (status == 0 || line.empty()) {
-					Sleep(10);
-					continue;
-				}
-				assert(status == 1);
-				
-				if (line.find(keyword) != string_type::npos) return true;
-				else if (line.find(error) != string_type::npos) return true; // try again
-				else if (line.find(pass) != string_type::npos) {
-					if (++n >= limit) break;
-				}
-			}
-			
-			return false;
 		}
 		
 	private: // others
