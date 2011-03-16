@@ -32,6 +32,11 @@ namespace cubeice {
 			typedef std::basic_string<TCHAR> string_type;
 			typedef std::size_t size_type;
 			
+			enum {
+				mainbar = 0x01,
+				subbar  = 0x02
+			};
+			
 			/* ------------------------------------------------------------- */
 			//  constructor
 			/* ------------------------------------------------------------- */
@@ -67,6 +72,24 @@ namespace cubeice {
 			progressbar& operator++(int) {
 				this->position(pos_ + 1);
 				return *this;
+			}
+			
+			/* ------------------------------------------------------------- */
+			//  enable
+			/* ------------------------------------------------------------- */
+			void enable(int kind) {
+				if ((kind & mainbar) != 0) EnableWindow(GetDlgItem(handle_, IDC_PROGRESS), TRUE);
+				if ((kind & subbar) != 0)  EnableWindow(GetDlgItem(handle_, IDC_PROGRESS_SUB), TRUE);
+			}
+			
+			/* ------------------------------------------------------------- */
+			//  disable
+			/* ------------------------------------------------------------- */
+			void disable(int kind) {
+				if ((kind & mainbar) != 0) EnableWindow(GetDlgItem(handle_, IDC_PROGRESS), FALSE);
+				if ((kind & subbar) != 0)  {
+					EnableWindow(GetDlgItem(handle_, IDC_PROGRESS_SUB), FALSE);
+				}
 			}
 			
 			/* ------------------------------------------------------------- */
