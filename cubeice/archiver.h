@@ -45,6 +45,7 @@
 #include "sendmail.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
+#define CUBEICE_MAXCOLUMN 60
 #define MAIL_SUBJECT ""
 #define MAIL_BODY ""
 
@@ -135,6 +136,7 @@ namespace cubeice {
 			
 			cubeice::dialog::progressbar progress;
 			progress.show();
+			progress.disable(cubeice::dialog::progressbar::subbar);
 			progress.marquee(true);
 			
 			// プログレスバーの設定
@@ -208,6 +210,10 @@ namespace cubeice {
 				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
 				string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
+				if (filename.size() > CUBEICE_MAXCOLUMN) {
+					string_type::size_type startpos = filename.size() - CUBEICE_MAXCOLUMN;
+					filename = _T("...") + filename.substr(startpos);
+				}
 				progress.text(filename);
 				
 				// プログレスバーの更新
@@ -375,7 +381,13 @@ namespace cubeice {
 						break;
 					}
 					
-					progress.text(root + _T("\r\n") + files_[index].name);
+					string_type message = (root.size() > CUBEICE_MAXCOLUMN) ? _T("...") + root.substr(root.size() - CUBEICE_MAXCOLUMN) : root;
+					message += _T("\r\n");
+					message += (files_[index].name.size() > CUBEICE_MAXCOLUMN) ?
+						_T("...") + files_[index].name.substr(files_[index].name.size() - CUBEICE_MAXCOLUMN) :
+						files_[index].name;
+					progress.text(message);
+					
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
 						// プログレスバーの更新
@@ -436,7 +448,6 @@ namespace cubeice {
 					else if (result == IDNO) continue;
 					
 					// フィルタリング
-					string_type message = root + _T("\r\n");
 					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
 						// report += _T("Filtering: ") + filename + _T("\r\n");
 					}
