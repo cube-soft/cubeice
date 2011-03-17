@@ -53,7 +53,7 @@ namespace clx {
 		/* ----------------------------------------------------------------- */
 		//  xlocaltime
 		/* ----------------------------------------------------------------- */
-		void xlocaltime(const std::time_t* timep, struct tm* result) {
+		inline void xlocaltime(const std::time_t* timep, struct tm* result) {
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
 			localtime_s(result, timep);
 #else
@@ -74,7 +74,7 @@ namespace clx {
 		/* ----------------------------------------------------------------- */
 		//  xgmtime
 		/* ----------------------------------------------------------------- */
-		void xgmtime(const std::time_t* timep, struct tm* result) {
+		inline void xgmtime(const std::time_t* timep, struct tm* result) {
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
 			gmtime_s(result, timep);
 #else
@@ -100,7 +100,7 @@ namespace clx {
 		 *  The xstrptime provides limited function compared with strptime.
 		 */
 		/* ----------------------------------------------------------------- */
-		void get_from_monthname(const std::basic_string<char>& name, struct tm* dest,
+		inline void get_from_monthname(const std::basic_string<char>& name, struct tm* dest,
 			const std::time_get<char>& tg) {
 			std::basic_stringstream<char> ss;
 			ss << name;
@@ -110,7 +110,7 @@ namespace clx {
 			tg.get_monthname(from, to, ss, err, dest);
 		}
 		
-		void get_from_weekname(const std::basic_string<char>& name, struct tm* dest,
+		inline void get_from_weekname(const std::basic_string<char>& name, struct tm* dest,
 			const std::time_get<char>& tg) {
 			std::basic_stringstream<char> ss;
 			ss << name;
@@ -120,7 +120,7 @@ namespace clx {
 			tg.get_weekday(from, to, ss, err, dest);
 		}
 		
-		void xstrptime(const char* src, const char* fmt, struct tm* dest) {
+		inline void xstrptime(const char* src, const char* fmt, struct tm* dest) {
 			std::basic_string<char> tmp_fmt(fmt);
 			clx::replace(tmp_fmt, std::basic_string<char>("%F"), std::basic_string<char>("%Y-%m-%d"));
 			clx::replace(tmp_fmt, std::basic_string<char>("%T"), std::basic_string<char>("%H:%M:%S"));
@@ -166,13 +166,13 @@ namespace clx {
 		//  string_to_time
 		/* ----------------------------------------------------------------- */
 		template <class CharT>
-		void string_to_time(const CharT* src, const CharT* fmt, struct tm* dest) {
+		inline void string_to_time(const CharT* src, const CharT* fmt, struct tm* dest) {
 			xstrptime(src, fmt, dest);
 		}
 		
 #ifdef CLX_USE_WCHAR
 		template <>
-		void string_to_time<wchar_t>(const wchar_t* src, const wchar_t* fmt, struct tm* dest) {
+		inline void string_to_time<wchar_t>(const wchar_t* src, const wchar_t* fmt, struct tm* dest) {
 			std::basic_string<char> tmp_src = clx::code_convert<char>(src);
 			std::basic_string<char> tmp_fmt = clx::code_convert<char>(fmt);
 			xstrptime(tmp_src.c_str(), tmp_fmt.c_str(), dest);

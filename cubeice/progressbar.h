@@ -21,6 +21,8 @@
 #ifndef CUBEICE_PROGRESSBAR_H
 #define CUBEICE_PROGRESSBAR_H
 
+#include <clx/time.h>
+
 namespace cubeice {
 	namespace dialog {
 		/* ----------------------------------------------------------------- */
@@ -41,17 +43,17 @@ namespace cubeice {
 			//  constructor
 			/* ------------------------------------------------------------- */
 			progressbar() :
-				handle_(NULL), style_(normal), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false) {}
+				handle_(NULL), style_(normal), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false), denominator_(0), numerator_(0) {}
 			
 			explicit progressbar(int style) :
-				handle_(NULL), style_(style), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false) {}
+				handle_(NULL), style_(style), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false), denominator_(0), numerator_(0) {}
 			
 			/* ------------------------------------------------------------- */
 			//  show
 			/* ------------------------------------------------------------- */
 			void show() {
 				string_type name = (style_ == simple) ? _T("IDD_PROGRESS_SIMPLE") : _T("IDD_PROGRESS");
-				handle_ = CreateDialog(GetModuleHandle(NULL), name.c_str(), NULL, wndproc);
+				handle_ = CreateDialogParam(GetModuleHandle(NULL), name.c_str(), NULL, wndproc, (LPARAM)this);
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -211,6 +213,53 @@ namespace cubeice {
 			}
 			
 			/* ------------------------------------------------------------- */
+			//  timer_refresh
+			/* ------------------------------------------------------------- */
+			void timer_refresh() {
+				TCHAR		elapse_time[128];
+				TCHAR		remain_time[128];
+
+				format_time( elapse_time, (int)timer_.total_elapsed() );
+				SetDlgItemText( handle_, IDC_ELAPSE_LABEL, elapse_time );
+				if( pos_ != min_ ) {
+					format_time( remain_time, (int)( timer_.elapsed() * ( max_ - pos_ ) / ( pos_ - min_ ) ) );
+					SetDlgItemText( handle_, IDC_REMAIN_LABEL, remain_time );
+				} else {
+					SetDlgItemText( handle_, IDC_REMAIN_LABEL, _T("--:--:--") );
+				}
+			}
+
+			/* ------------------------------------------------------------- */
+			//  start
+			/* ------------------------------------------------------------- */
+			void start() { timer_.update(); }
+
+
+			/* ------------------------------------------------------------- */
+			//  denomcount
+			/* ------------------------------------------------------------- */
+			void denomcount(int diff = 1) {
+				std::basic_string<TCHAR>	str;
+
+				denominator_ += diff;
+
+				str = clx::lexical_cast<std::basic_string<TCHAR> >(denominator_);
+				SetDlgItemText( handle_, IDC_FN_DENOM_LABEL, str.c_str() );
+			}
+
+			/* ------------------------------------------------------------- */
+			//  numcount
+			/* ------------------------------------------------------------- */
+			void numcount(int diff = 1) {
+				std::basic_string<TCHAR>	str;
+
+				numerator_ += diff;
+
+				str = clx::lexical_cast<std::basic_string<TCHAR> >(numerator_);
+				SetDlgItemText( handle_, IDC_FN_NUM_LABEL, str.c_str() );
+			}
+
+			/* ------------------------------------------------------------- */
 			//  handle
 			/* ------------------------------------------------------------- */
 			const HWND handle() const { return handle_; }
@@ -223,6 +272,9 @@ namespace cubeice {
 			size_type min_;
 			size_type max_;
 			bool cancel_;
+			clx::timer timer_;
+			int denominator_;
+			int numerator_;
 			
 			/* ------------------------------------------------------------- */
 			//  closed_handles
@@ -236,6 +288,9 @@ namespace cubeice {
 			//  wndproc
 			/* ------------------------------------------------------------- */
 			static INT_PTR CALLBACK wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
+				static progressbar	*prog;
+				const UINT_PTR		TIMER_ID = WM_APP;
+
 				switch (msg) {
 				case WM_INITDIALOG:
 				{
@@ -260,11 +315,15 @@ namespace cubeice {
 					SendMessage(handle, PBM_SETRANGE, (WPARAM)0, MAKELPARAM(0, 10000));
 					SendMessage(handle, PBM_SETSTEP, 1, 0);
 					
+					// ƒ^ƒCƒ}‚ÌÝ’è
+					SetTimer(hWnd, TIMER_ID, 1000, NULL);
+					prog = (progressbar*)lp;
 					return TRUE;
 				}
 				case WM_COMMAND:
 					switch (LOWORD(wp)) {
 					case IDCANCEL:
+						KillTimer(hWnd, TIMER_ID);
 						DestroyWindow(hWnd);
 						progressbar::closed_handles().insert(hWnd);
 						break;
@@ -272,6 +331,11 @@ namespace cubeice {
 						break;
 					}
 					break;
+				case WM_TIMER:
+					if(wp != TIMER_ID)
+						break;
+					prog->timer_refresh();
+					return TRUE;
 				default:
 					break;
 				}
@@ -279,6 +343,14 @@ namespace cubeice {
 				return FALSE;
 			}
 			
+			/* ------------------------------------------------------------- */
+			//  format_time
+			/* ------------------------------------------------------------- */
+			void format_time( TCHAR *dest, int time )
+			{
+				_stprintf( dest, _T("%02d:%02d:%02d"), time / 3600, ( time % 3600 ) / 60, time % 60);
+			}
+
 		private:
 			/* ------------------------------------------------------------- */
 			//  non-copyable

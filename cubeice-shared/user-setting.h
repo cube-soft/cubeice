@@ -21,7 +21,9 @@
 #ifndef CUBEICE_USER_SETTING_H
 #define CUBEICE_USER_SETTING_H
 
+#ifndef CLX_USE_WCHAR
 #define CLX_USE_WCHAR
+#endif
 
 #include <tchar.h>
 #include <cstdlib>

@@ -44,6 +44,10 @@
 #define IDC_ICON_PICTUREBOX     1003
 #define IDC_ALL_CHECKBOX        1004
 #define IDC_REPORT_TEXTBOX      2000
+#define IDC_ELAPSE_LABEL		1020
+#define IDC_REMAIN_LABEL		1021
+#define IDC_FN_NUM_LABEL		1022
+#define IDC_FN_DENOM_LABEL		1023
 
 // à≥èkÇÃè⁄ç◊ê›íË
 #define IDC_OUTPUT_TEXTBOX      3001
