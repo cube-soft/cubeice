@@ -168,6 +168,7 @@ namespace cubeice {
 			progress.position(progress.minimum());
 			progress.subposition(progress.minimum());
 			progress.title(_T("0% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE"));
+			progress.start();
 			while ((status = proc.gets(line)) >= 0) {
 				progress.refresh();
 				if (progress.is_cancel()) {
@@ -221,6 +222,7 @@ namespace cubeice {
 				//if (this->size_ > 0) progress.position(calcpos);
 				
 				if (index < files_.size() - 1) ++index;
+				progress.numcount();
 			}
 			
 			if (status < 0) report += error + _T(" Broken pipe.\r\n");
@@ -361,6 +363,7 @@ namespace cubeice {
 				progress.position(progress.minimum());
 				progress.subposition(progress.minimum());
 				progress.title(_T("0% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE"));
+				progress.start();
 				while ((status = proc.gets(line)) >= 0) {
 					if (progress.subposition() > progress.maximum() - 1.0) progress.subposition(progress.minimum());
 					progress.refresh();
@@ -380,7 +383,7 @@ namespace cubeice {
 					else if (status == 0 || line.empty()) {
 						// プログレスバーの更新
 						size_type fsize = filesize(tmp + _T("\\") + files_[index].name);
-						double tmppos = calcpos + (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize);
+						double tmppos = (fsize > 0) ? calcpos + (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize) : calcpos;
 						if (tmppos > progress.maximum()) tmppos = progress.maximum();
 						progress.position(tmppos);
 						double subpos = (progress.maximum() - progress.minimum()) / (files_[index].size / (double)fsize);
@@ -465,6 +468,9 @@ namespace cubeice {
 					}
 					
 					if (index < files_.size() - 1) ++index;
+
+					// 進行状況の更新
+					progress.numcount();
 				}
 				
 				if (status < 0) report += error + _T(" Broken pipe.");
@@ -566,11 +572,12 @@ namespace cubeice {
 			
 			for (; first != last; ++first) {
 				progress.refresh();
-				if (PathIsDirectory(first->c_str())) compress_filelist_folder(*first);
+				if (PathIsDirectory(first->c_str())) compress_filelist_folder(*first, progress);
 				else {
 					fileinfo elem = this->createinfo(*first);
 					this->files_.push_back(elem);
 					this->size_ += elem.size;
+					progress.denomcount();
 				}
 			}
 		}
@@ -578,20 +585,22 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  compress_filelist_folder
 		/* ----------------------------------------------------------------- */
-		void compress_filelist_folder(const string_type& root) {
+		void compress_filelist_folder(const string_type& root, cubeice::dialog::progressbar& progress) {
 			string_type path = root + _T("\\*.*");
 			WIN32_FIND_DATA wfd = {};
 			HANDLE handle = FindFirstFile(path.c_str(), &wfd);
 			if (handle == INVALID_HANDLE_VALUE) return;
 			
+			progress.refresh();
 			do {
 				if (_tcscmp(wfd.cFileName, _T(".")) != 0 && _tcscmp(wfd.cFileName, _T("..")) != 0) {
 					string_type s = root + _T('\\') + wfd.cFileName;
-					if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) this->compress_filelist_folder(s);
+					if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) this->compress_filelist_folder(s, progress);
 					else {
 						fileinfo elem = this->createinfo(s);
 						this->files_.push_back(elem);
 						this->size_ += elem.size;
+						progress.denomcount();
 					}
 				}
 			} while (FindNextFile(handle, &wfd));
@@ -803,6 +812,7 @@ namespace cubeice {
 					elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
 					//filelist_[v.at(5)] = elem;
 					files_.push_back(elem);
+					progress.denomcount();
 					this->size_ += elem.size;
 					
 					// 単一フォルダかどうかのチェック

@@ -58,13 +58,13 @@ namespace clx {
 		//  now
 		/* ----------------------------------------------------------------- */
 		template <int TimeZone>
-		void now(struct tm *result) {
+		inline void now(struct tm *result) {
 			std::time_t t = std::time(NULL);
 			xlocaltime(&t, result);
 		}
 		
 		template <>
-		void now<CLX_TZ_UTC>(struct tm *result) {
+		inline void now<CLX_TZ_UTC>(struct tm *result) {
 			std::time_t t = std::time(NULL);
 			xgmtime(&t, result);
 		}
