@@ -136,7 +136,7 @@ namespace cubeice {
 			
 			cubeice::dialog::progressbar progress(cubeice::dialog::progressbar::simple);
 			progress.show();
-			progress.marquee(true);
+			//progress.marquee(true);
 			
 			// プログレスバーの設定
 			this->compress_filelist(first, last, progress);
@@ -155,6 +155,7 @@ namespace cubeice {
 			for (InputIterator pos = first; pos != last; ++pos) cmdline += _T(" \"") + *pos + _T("\"");
 			for(std::vector<string_type>::const_iterator pos = options.begin(); pos != options.end(); ++pos) cmdline += _T(' ') + *pos;
 			cube::popen proc;
+			//MessageBox(NULL, cmdline.c_str(), _T("debug"), MB_OK);
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
 			progress.text(dest);
 			
@@ -176,12 +177,7 @@ namespace cubeice {
 				
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
-					// TODO: プログレスバーの改善
-					//size_type fsize = this->filesize(tmp);
-					//double tmppos = (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize);
-					//progress.position(tmppos);
-					//if (progress.position() < progress.maximum() * 0.95) ++progress;
-					Sleep(1);
+					Sleep(5);
 					continue;
 				}
 				assert(status == 1);
@@ -214,6 +210,10 @@ namespace cubeice {
 					filename = _T("...") + filename.substr(startpos);
 				}
 				progress.text(filename);
+				
+				// debug
+				//report += filename;
+				//report += _T("\r\n");
 				
 				// プログレスバーの更新
 				//fileinfo elem = this->compress_getinfo(first, last, filename);
@@ -392,7 +392,7 @@ namespace cubeice {
 						string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE");
 						progress.title(title);
 						
-						Sleep(1);
+						Sleep(5);
 						continue;
 					}
 					assert(status == 1);
