@@ -136,15 +136,13 @@ namespace cubeice {
 			
 			cubeice::dialog::progressbar progress(cubeice::dialog::progressbar::simple);
 			progress.show();
-			progress.position(progress.minimum());
-			progress.subposition(progress.minimum());
 			progress.title(_T("0% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE"));
-			//progress.marquee(true);
+			progress.marquee(true);
 			
 			// プログレスバーの設定
 			this->compress_filelist(first, last, progress);
-			if (this->size_ == 0) progress.marquee(true);
-			else progress.marquee(false);
+			if (this->size_ == 0 && !progress.is_marquee()) progress.marquee(true);
+			else if (progress.is_marquee()) progress.marquee(false);
 			
 			// コマンドラインの作成
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
@@ -153,12 +151,18 @@ namespace cubeice {
 			else if (ext == _T(".tgz") || ext == _T(".tbz") || ext.find(_T(".tar")) != string_type::npos) cmdline += _T(" -ttar");
 			else cmdline += _T(" -t") + filetype;
 			if (pass) cmdline += _T(" -p\"") + cubeice::password() + _T("\"");
-			//cmdline += _T(" -bd -scsWIN -y \"") + tmp + _T("\"");
 			cmdline += _T(" -scsWIN -y \"") + tmp + _T("\"");
 			for (InputIterator pos = first; pos != last; ++pos) cmdline += _T(" \"") + *pos + _T("\"");
 			for(std::vector<string_type>::const_iterator pos = options.begin(); pos != options.end(); ++pos) cmdline += _T(' ') + *pos;
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
+			
+			// NOTE: marquee スタイルから復帰する際，バーが 1% まで進まないと再描画されない．
+			// そのため，一瞬だけ 1% に進めて強制的に再描画を行っている．
+			progress.position(100);
+			progress.refresh();
+			progress.position(progress.minimum());
+			progress.refresh();
 			progress.text(dest);
 			
 			// メイン処理
@@ -336,8 +340,8 @@ namespace cubeice {
 					src = this->decompress_tar(src, tmp, progress, report);
 					this->decompress_filelist(src, progress);
 					if (src.empty() || !PathFileExists(src.c_str())) break;
-					if (this->size_ == 0) progress.marquee(true);
-					else progress.marquee(false);
+					if (this->size_ == 0 && !progress.is_marquee()) progress.marquee(true);
+					else if (progress.is_marquee()) progress.marquee(false);
 				}
 				
 				// コマンドラインの生成
@@ -351,8 +355,16 @@ namespace cubeice {
 				int to_all = 0; // はい/いいえ/リネーム
 				string_type line;
 				double calcpos = 0.0; // 計算上のプログレスバーの位置
+				
+				// NOTE: marquee スタイルから復帰する際，バーが 1% まで進まないと再描画されない．
+				// そのため，一瞬だけ 1% に進めて強制的に再描画を行っている．
+				progress.position(100);
+				progress.subposition(100);
+				progress.refresh();
 				progress.position(progress.minimum());
 				progress.subposition(progress.minimum());
+				progress.refresh();
+				
 				progress.start();
 				while ((status = proc.gets(line)) >= 0) {
 					if (progress.subposition() > progress.maximum() - 1.0) progress.subposition(progress.minimum());
@@ -373,10 +385,15 @@ namespace cubeice {
 					else if (status == 0 || line.empty()) {
 						// プログレスバーの更新
 						size_type fsize = filesize(tmp + _T("\\") + files_[index].name);
-						double tmppos = (fsize > 0) ? calcpos + (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize) : calcpos;
+						double tmppos = (this->size_ > 0 && fsize > 0) ?
+							calcpos + (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize) :
+							calcpos;
 						if (tmppos > progress.maximum()) tmppos = progress.maximum();
 						progress.position(tmppos);
-						double subpos = (progress.maximum() - progress.minimum()) / (files_[index].size / (double)fsize);
+						
+						double subpos = (files_[index].size > 0 && fsize > 0) ?
+							(progress.maximum() - progress.minimum()) / (files_[index].size / (double)fsize) :
+							0.0;
 						if (subpos > progress.maximum()) subpos = progress.maximum();
 						progress.subposition(subpos);
 						
@@ -428,7 +445,9 @@ namespace cubeice {
 					
 					// プログレスバーの更新
 					if (this->size_ > 0) {
-						calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->files_[index].size);
+						if (this->size_ > 0 && this->files_[index].size > 0) {
+							calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->files_[index].size);
+						}
 						if (calcpos > progress.maximum()) calcpos = progress.maximum();
 						progress.position(calcpos);
 						progress.subposition(progress.maximum());
@@ -562,6 +581,8 @@ namespace cubeice {
 			
 			for (; first != last; ++first) {
 				progress.refresh();
+				if (progress.is_cancel()) return;
+				
 				if (PathIsDirectory(first->c_str())) compress_filelist_folder(*first, progress);
 				else {
 					fileinfo elem = this->createinfo(*first);
@@ -581,8 +602,10 @@ namespace cubeice {
 			HANDLE handle = FindFirstFile(path.c_str(), &wfd);
 			if (handle == INVALID_HANDLE_VALUE) return;
 			
-			progress.refresh();
 			do {
+				progress.refresh();
+				if (progress.is_cancel()) return;
+				
 				if (_tcscmp(wfd.cFileName, _T(".")) != 0 && _tcscmp(wfd.cFileName, _T("..")) != 0) {
 					string_type s = root + _T('\\') + wfd.cFileName;
 					if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) this->compress_filelist_folder(s, progress);

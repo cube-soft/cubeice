@@ -175,6 +175,15 @@ namespace cubeice {
 			bool is_cancel() const { return cancel_; }
 			
 			/* ------------------------------------------------------------- */
+			//  is_marquee
+			/* ------------------------------------------------------------- */
+			bool is_marquee() const {
+				HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
+				LONG_PTR style = ::GetWindowLongPtr(handle, GWL_STYLE);
+				return (style & PBS_MARQUEE) != 0;
+			}
+			
+			/* ------------------------------------------------------------- */
 			/*
 			 *  marquee
 			 *
