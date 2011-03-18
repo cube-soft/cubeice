@@ -182,15 +182,30 @@ namespace cubeice {
 			 */
 			/* ------------------------------------------------------------- */
 			void marquee(bool enable, int speed = 50) {
-				HWND handle = GetDlgItem(handle_, IDC_PROGRESS);
+				HWND main = GetDlgItem(handle_, IDC_PROGRESS);
+				HWND sub  = GetDlgItem(handle_, IDC_PROGRESS_SUB);
 				
-				LONG_PTR style = ::GetWindowLongPtr(handle, GWL_STYLE);
-				if (enable) style |= PBS_MARQUEE;
-				else style &= ~PBS_MARQUEE;
-				::SetWindowLongPtr(handle, GWL_STYLE, style);
+				LONG_PTR main_style = ::GetWindowLongPtr(main, GWL_STYLE);
+				LONG_PTR sub_style  = ::GetWindowLongPtr(sub, GWL_STYLE);
+				if (enable) {
+					main_style |= PBS_MARQUEE;
+					sub_style  |= PBS_MARQUEE;
+				}
+				else {
+					main_style &= ~PBS_MARQUEE;
+					sub_style  &= ~PBS_MARQUEE;
+				}
+				::SetWindowLongPtr(main, GWL_STYLE, main_style);
+				::SetWindowLongPtr(sub, GWL_STYLE, sub_style);
 				
-				if (enable) SendMessage(handle, PBM_SETMARQUEE, (WPARAM)TRUE, (LPARAM)speed);
-				else SendMessage(handle, PBM_SETMARQUEE, (WPARAM)FALSE, (LPARAM)0);
+				if (enable) {
+					SendMessage(main, PBM_SETMARQUEE, (WPARAM)TRUE, (LPARAM)speed);
+					SendMessage(sub, PBM_SETMARQUEE, (WPARAM)TRUE, (LPARAM)speed);
+				}
+				else {
+					SendMessage(main, PBM_SETMARQUEE, (WPARAM)FALSE, (LPARAM)0);
+					SendMessage(sub, PBM_SETMARQUEE, (WPARAM)FALSE, (LPARAM)0);
+				}
 			}
 			
 			/* ------------------------------------------------------------- */
