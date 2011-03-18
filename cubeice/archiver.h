@@ -136,6 +136,9 @@ namespace cubeice {
 			
 			cubeice::dialog::progressbar progress(cubeice::dialog::progressbar::simple);
 			progress.show();
+			progress.position(progress.minimum());
+			progress.subposition(progress.minimum());
+			progress.title(_T("0% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE"));
 			//progress.marquee(true);
 			
 			// プログレスバーの設定
@@ -155,7 +158,6 @@ namespace cubeice {
 			for (InputIterator pos = first; pos != last; ++pos) cmdline += _T(" \"") + *pos + _T("\"");
 			for(std::vector<string_type>::const_iterator pos = options.begin(); pos != options.end(); ++pos) cmdline += _T(' ') + *pos;
 			cube::popen proc;
-			//MessageBox(NULL, cmdline.c_str(), _T("debug"), MB_OK);
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
 			progress.text(dest);
 			
@@ -165,9 +167,6 @@ namespace cubeice {
 			string_type report;
 			double calcpos = 0.0; // 計算上のプログレスバーの位置
 			unsigned int index = 0;
-			progress.position(progress.minimum());
-			progress.subposition(progress.minimum());
-			progress.title(_T("0% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE"));
 			progress.start();
 			while ((status = proc.gets(line)) >= 0) {
 				progress.refresh();
@@ -211,15 +210,6 @@ namespace cubeice {
 					filename = _T("...") + filename.substr(startpos);
 				}
 				progress.text(filename);
-				
-				// debug
-				//report += filename;
-				//report += _T("\r\n");
-				
-				// プログレスバーの更新
-				//fileinfo elem = this->compress_getinfo(first, last, filename);
-				//calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)elem.size);
-				//if (this->size_ > 0) progress.position(calcpos);
 				
 				if (index < files_.size() - 1) ++index;
 				progress.numcount();
@@ -320,6 +310,7 @@ namespace cubeice {
 				
 				cubeice::dialog::progressbar progress;
 				progress.show();
+				progress.title(_T("0% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE"));
 				progress.marquee(true);
 				
 				// 一時フォルダの作成
@@ -362,7 +353,6 @@ namespace cubeice {
 				double calcpos = 0.0; // 計算上のプログレスバーの位置
 				progress.position(progress.minimum());
 				progress.subposition(progress.minimum());
-				progress.title(_T("0% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE"));
 				progress.start();
 				while ((status = proc.gets(line)) >= 0) {
 					if (progress.subposition() > progress.maximum() - 1.0) progress.subposition(progress.minimum());
