@@ -941,6 +941,7 @@ namespace cubeice {
 		 *   - runtime: 実行時に指定
 		 *   - desktop: デスクトップ
 		 *   - source: ソースファイルと同じ場所
+		 *   - mydocuments: マイドキュメント
 		 */
 		/* ----------------------------------------------------------------- */
 		string_type rootdir(const setting_type::archive_type& setting, const string_type& src, const string_type& force = _T("")) {
@@ -950,9 +951,14 @@ namespace cubeice {
 			char_type buffer[CUBE_MAX_PATH] = {};
 			SHGetPathFromIDList(item, buffer);
 			string_type desktop = buffer;
+			// マイドキュメントのパスを取得しておく
+			SHGetSpecialFolderLocation(NULL, CSIDL_MYDOCUMENTS, &item);
+			SHGetPathFromIDList(item, buffer);
+			string_type mydocuments = buffer;
 			
 			if (force == _T("runtime")) return string_type();
 			if (force == _T("desktop")) return desktop;
+			if (force == _T("mydocuments")) return mydocuments;
 			else if (force == _T("source") || setting.output_condition() == OUTPUT_SOURCE) {
 				string_type folder;
 				ZeroMemory(buffer, CUBE_MAX_PATH);

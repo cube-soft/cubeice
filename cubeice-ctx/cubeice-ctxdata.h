@@ -96,6 +96,7 @@ const SUB_MENU_ITEM		SubMenuDecompress[] = {
 	{ DECOMP_HERE_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "ここに解凍" ),			NULL,				MAKE_AWSTRING( "この場所に解凍" ),		TEXT( "/x:source" ) },
 	{ DECOMP_DESKTOP_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "デスクトップに解凍" ),	NULL,				MAKE_AWSTRING( "デスクトップに解凍" ),	TEXT( "/x:desktop" ) },
 	{ DECOMP_RUNTIME_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "場所を指定して解凍" ),	NULL,				MAKE_AWSTRING( "場所を指定して解凍" ),	TEXT( "/x:runtime" ) },
+	{ DECOMP_MYDOCUMENTS_FLAG,ICON_NOT_USED,	MAKE_AWSTRING( "マイドキュメントに解凍" ),	NULL,				MAKE_AWSTRING( "マイドキュメントに解凍" ),	TEXT( "/x:mydocuments" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
 

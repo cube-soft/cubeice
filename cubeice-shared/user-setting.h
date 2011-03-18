@@ -76,7 +76,8 @@
 #define DECOMP_HERE_FLAG            0x00000010
 #define DECOMP_DESKTOP_FLAG         0x00000020
 #define DECOMP_RUNTIME_FLAG         0x00000040
-#define DECOMP_ALL_FLAG             0x00000070
+#define DECOMP_MYDOCUMENTS_FLAG     0x00000080
+#define DECOMP_ALL_FLAG             0x000000f0
 
 /* ------------------------------------------------------------------------- */
 //  圧縮のコンテキストメニューに関連するフラグ
