@@ -78,7 +78,12 @@ namespace cubeice {
 			void show() {
 				string_type name = (style_ == simple) ? _T("IDD_PROGRESS_SIMPLE") : _T("IDD_PROGRESS");
 				handle_ = CreateDialogParam(GetModuleHandle(NULL), name.c_str(), NULL, wndproc, (LPARAM)this);
-				if (handle_ && taskbar_) taskbar_->SetProgressState(handle_, TBPF_NORMAL);
+				if (handle_) {
+					//LONG_PTR style = GetWindowLongPtr(handle_, GWL_STYLE);
+					//style |= WS_EX_APPWINDOW;
+					//SetWindowLongPtr(handle_, GWL_STYLE, style);
+					if (taskbar_) taskbar_->SetProgressState(handle_, TBPF_NORMAL);
+				}
 				timer_.restart();
 			}
 			
