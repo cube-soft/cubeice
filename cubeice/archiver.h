@@ -64,7 +64,7 @@ namespace cubeice {
 		//  constructor
 		/* ----------------------------------------------------------------- */
 		explicit archiver(const setting_type& setting) :
-			setting_(setting), files_(), size_(0) {}
+			setting_(setting), input_files_(), files_(), size_(0), progress_() {}
 		
 		/* ----------------------------------------------------------------- */
 		//  compress
@@ -134,15 +134,16 @@ namespace cubeice {
 			string_type tmp = tmpfile(_T("cubeice"));
 			if (tmp.empty()) return;
 			
-			cubeice::dialog::progressbar progress(cubeice::dialog::progressbar::simple);
-			progress.show();
-			progress.title(_T("0% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE"));
-			progress.marquee(true);
+			progress_.style(cubeice::dialog::progressbar::simple);
+			progress_.show();
+			progress_.title(_T("0% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE"));
+			progress_.marquee(true);
 			
 			// プログレスバーの設定
-			//this->compress_filelist(first, last, progress);
-			if (this->size_ == 0 && !progress.is_marquee()) progress.marquee(true);
-			else if (progress.is_marquee()) progress.marquee(false);
+			this->compress_prepare_filelist(first, last);
+			this->compress_filelist();
+			if (this->size_ == 0 && !progress_.is_marquee()) progress_.marquee(true);
+			else if (progress_.is_marquee()) progress_.marquee(false);
 			
 			// コマンドラインの作成
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
@@ -159,11 +160,11 @@ namespace cubeice {
 			
 			// NOTE: marquee スタイルから復帰する際，バーが 1% まで進まないと再描画されない．
 			// そのため，一瞬だけ 1% に進めて強制的に再描画を行っている．
-			progress.position(100);
-			progress.refresh();
-			progress.position(progress.minimum());
-			progress.refresh();
-			progress.text(dest);
+			progress_.position(100);
+			progress_.refresh();
+			progress_.position(progress_.minimum());
+			progress_.refresh();
+			progress_.text(dest);
 			
 			// メイン処理
 			int status = 0;
@@ -171,17 +172,17 @@ namespace cubeice {
 			string_type report;
 			double calcpos = 0.0; // 計算上のプログレスバーの位置
 			unsigned int index = 0;
-			progress.start();
+			progress_.start();
 			while ((status = proc.gets(line)) >= 0) {
-				progress.refresh();
-				if (progress.is_cancel()) {
+				progress_.refresh();
+				if (progress_.is_cancel()) {
 					proc.close();
 					break;
 				}
-				if (progress.is_suspend()) {
+				if (progress_.is_suspend()) {
 					proc.suspend();
-					while (progress.is_suspend() && !progress.is_cancel()) {
-						progress.refresh();
+					while (progress_.is_suspend() && !progress_.is_cancel()) {
+						progress_.refresh();
 						Sleep(5);
 					}
 					proc.resume();
@@ -197,7 +198,6 @@ namespace cubeice {
 				
 				string_type::size_type pos = line.find(error);
 				if (pos != string_type::npos) {
-					if (progress.position() < progress.maximum()  * 0.95) ++progress;
 					report += clx::strip_copy(line.substr(pos));
 					if (pos != 0) report += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
 					report += _T("\r\n");
@@ -210,9 +210,9 @@ namespace cubeice {
 					clx::strip_if(percent, clx::is_any_of(_T(":% ")));
 					line.erase(pos);
 					calcpos = clx::lexical_cast<double>(percent) * 100.0;
-					progress.position(calcpos);
+					progress_.position(calcpos);
 					string_type title = percent + _T("% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE");
-					progress.title(title);
+					progress_.title(title);
 				}
 				
 				pos = line.find(keyword);
@@ -222,10 +222,10 @@ namespace cubeice {
 					string_type::size_type startpos = filename.size() - CUBEICE_MAXCOLUMN;
 					filename = _T("...") + filename.substr(startpos);
 				}
-				progress.text(filename);
+				progress_.text(filename);
 				
 				if (index < files_.size() - 1) ++index;
-				progress.numcount();
+				progress_.numcount();
 			}
 			
 			if (status < 0) report += error + _T(" Broken pipe.\r\n");
@@ -239,7 +239,7 @@ namespace cubeice {
 				    (ext.find(_T(".tar")) != string_type::npos || ext == _T(".tgz") || ext == _T(".tbz"))) {
 					string_type prev = tmp;
 					tmp = tmpfile(_T("cubeice"));
-					this->compress_tar(prev, tmp, filetype, pass, progress);
+					this->compress_tar(prev, tmp, filetype, pass);
 					if (PathFileExists(prev.c_str())) DeleteFile(prev.c_str());
 				}
 				
@@ -321,20 +321,19 @@ namespace cubeice {
 				string_type root = this->decompress_path(setting_.decompression(), src, force);
 				if (root.empty()) break;
 				
-				cubeice::dialog::progressbar progress;
-				progress.show();
-				progress.title(_T("0% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE"));
-				progress.marquee(true);
+				progress_.show();
+				progress_.title(_T("0% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE"));
+				progress_.marquee(true);
 				
 				// 一時フォルダの作成
 				string_type tmp = tmpdir(_T("cubeice"));
 				if (tmp.empty()) break;
 				
 				// プログレスバーの進行度の設定
-				string_type folder = this->decompress_filelist(src, progress);
-				if (progress.is_cancel()) break;
-				if (this->size_ == 0) progress.marquee(true);
-				else progress.marquee(false);
+				string_type folder = this->decompress_filelist(src);
+				if (progress_.is_cancel()) break;
+				if (this->size_ == 0) progress_.marquee(true);
+				else progress_.marquee(false);
 				
 				// フォルダの作成
 				if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER)) {
@@ -347,11 +346,11 @@ namespace cubeice {
 				// TODO: 現在，拡張子が本来の種類と異なるファイルも対象にしているが，
 				// それらの偽装（？）拡張子のファイルが *.tar かどうかをどう判断するか．
 				if ((filetype == _T("gzip") || filetype == _T("bzip2")) && this->is_tar(src)) {
-					src = this->decompress_tar(src, tmp, progress, report);
-					this->decompress_filelist(src, progress);
+					src = this->decompress_tar(src, tmp, report);
+					this->decompress_filelist(src);
 					if (src.empty() || !PathFileExists(src.c_str())) break;
-					if (this->size_ == 0 && !progress.is_marquee()) progress.marquee(true);
-					else if (progress.is_marquee()) progress.marquee(false);
+					if (this->size_ == 0 && !progress_.is_marquee()) progress_.marquee(true);
+					else if (progress_.is_marquee()) progress_.marquee(false);
 				}
 				
 				// コマンドラインの生成
@@ -368,25 +367,25 @@ namespace cubeice {
 				
 				// NOTE: marquee スタイルから復帰する際，バーが 1% まで進まないと再描画されない．
 				// そのため，一瞬だけ 1% に進めて強制的に再描画を行っている．
-				progress.position(100);
-				progress.subposition(100);
-				progress.refresh();
-				progress.position(progress.minimum());
-				progress.subposition(progress.minimum());
-				progress.refresh();
+				progress_.position(100);
+				progress_.subposition(100);
+				progress_.refresh();
+				progress_.position(progress_.minimum());
+				progress_.subposition(progress_.minimum());
+				progress_.refresh();
 				
-				progress.start();
+				progress_.start();
 				while ((status = proc.gets(line)) >= 0) {
-					if (progress.subposition() > progress.maximum() - 1.0) progress.subposition(progress.minimum());
-					progress.refresh();
-					if (progress.is_cancel()) {
+					if (progress_.subposition() > progress_.maximum() - 1.0) progress_.subposition(progress_.minimum());
+					progress_.refresh();
+					if (progress_.is_cancel()) {
 						proc.close();
 						break;
 					}
-					if (progress.is_suspend()) {
+					if (progress_.is_suspend()) {
 						proc.suspend();
-						while (progress.is_suspend() && !progress.is_cancel()) {
-							progress.refresh();
+						while (progress_.is_suspend() && !progress_.is_cancel()) {
+							progress_.refresh();
 							Sleep(5);
 						}
 						proc.resume();
@@ -398,27 +397,27 @@ namespace cubeice {
 					message += (files_[index].name.size() > CUBEICE_MAXCOLUMN) ?
 						_T("...") + files_[index].name.substr(files_[index].name.size() - CUBEICE_MAXCOLUMN) :
 						files_[index].name;
-					progress.text(message);
+					progress_.text(message);
 					
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
 						// プログレスバーの更新
 						size_type fsize = filesize(tmp + _T("\\") + files_[index].name);
 						double tmppos = (this->size_ > 0 && fsize > 0) ?
-							calcpos + (progress.maximum() - progress.minimum()) / (this->size_ / (double)fsize) :
+							calcpos + (progress_.maximum() - progress_.minimum()) / (this->size_ / (double)fsize) :
 							calcpos;
-						if (tmppos > progress.maximum()) tmppos = progress.maximum();
-						progress.position(tmppos);
+						if (tmppos > progress_.maximum()) tmppos = progress_.maximum();
+						progress_.position(tmppos);
 						
 						double subpos = (files_[index].size > 0 && fsize > 0) ?
-							(progress.maximum() - progress.minimum()) / (files_[index].size / (double)fsize) :
+							(progress_.maximum() - progress_.minimum()) / (files_[index].size / (double)fsize) :
 							0.0;
-						if (subpos > progress.maximum()) subpos = progress.maximum();
-						progress.subposition(subpos);
+						if (subpos > progress_.maximum()) subpos = progress_.maximum();
+						progress_.subposition(subpos);
 						// タイトルの更新
 						size_type percent = (tmppos > 1.0) ? static_cast<size_type>(tmppos / 100.0) : 0;
 						string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE");
-						progress.title(title);
+						progress_.title(title);
 						
 						Sleep(5);
 						continue;
@@ -439,15 +438,14 @@ namespace cubeice {
 						status = 0;
 						to_all = 0;
 						calcpos = 0.0;
-						progress.position(progress.minimum());
-						progress.subposition(progress.minimum());
-						progress.title(_T("0% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE"));
+						progress_.position(progress_.minimum());
+						progress_.subposition(progress_.minimum());
+						progress_.title(_T("0% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE"));
 						continue;
 					}
 					
 					string_type::size_type pos = line.find(error);
 					if (pos != string_type::npos) {
-						if (progress.position() < progress.maximum()) ++progress;
 						report += clx::strip_copy(line.substr(pos));
 						if (pos != 0) report += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
 						report += _T("\r\n");
@@ -456,7 +454,6 @@ namespace cubeice {
 					
 					pos = line.find(keyword);
 					if (pos == string_type::npos || line.size() <= keyword.size()) {
-						if (progress.position() < progress.maximum() * 0.95) ++progress;
 						continue;
 					}
 					string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
@@ -464,16 +461,16 @@ namespace cubeice {
 					// プログレスバーの更新
 					if (this->size_ > 0) {
 						if (this->size_ > 0 && this->files_[index].size > 0) {
-							calcpos += (progress.maximum() - progress.minimum()) / (this->size_ / (double)this->files_[index].size);
+							calcpos += (progress_.maximum() - progress_.minimum()) / (this->size_ / (double)this->files_[index].size);
 						}
-						if (calcpos > progress.maximum()) calcpos = progress.maximum();
-						progress.position(calcpos);
-						progress.subposition(progress.maximum());
+						if (calcpos > progress_.maximum()) calcpos = progress_.maximum();
+						progress_.position(calcpos);
+						progress_.subposition(progress_.maximum());
 						
 						// タイトルの更新
 						size_type percent = (calcpos > 1.0) ? static_cast<size_type>(calcpos / 100.0) : 0;
 						string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE");
-						progress.title(title);
+						progress_.title(title);
 					}
 					
 					// 上書きの確認
@@ -497,7 +494,7 @@ namespace cubeice {
 					if (index < files_.size() - 1) ++index;
 
 					// 進行状況の更新
-					progress.numcount();
+					progress_.numcount();
 				}
 				
 				if (status < 0) report += error + _T(" Broken pipe.");
@@ -539,8 +536,10 @@ namespace cubeice {
 		};
 		
 		const setting_type& setting_;
+		std::vector<string_type> input_files_;
 		std::vector<fileinfo> files_;
 		size_type size_; // トータルサイズ
+		cubeice::dialog::progressbar progress_;
 		
 	private: // compress_xxx
 		/* ----------------------------------------------------------------- */
@@ -590,27 +589,36 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  compress_filelist
+		//  compress_prepare_filelist
 		/* ----------------------------------------------------------------- */
 		template <class InputIterator>
-		void compress_filelist(InputIterator first, InputIterator last, cubeice::dialog::progressbar& progress) {
+		void compress_prepare_filelist(InputIterator first, InputIterator last) {
+			for (; first != last; ++first) {
+				input_files_.push_back(*first);
+			}
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  compress_filelist
+		/* ----------------------------------------------------------------- */
+		void compress_filelist() {
 			this->size_ = 0;
 			this->files_.clear();
 			
-			for (; first != last; ++first) {
-				progress.refresh();
-				if (progress.is_cancel()) return;
-				while (progress.is_suspend() && !progress.is_cancel()) {
-					progress.refresh();
+			for (std::vector<string_type>::const_iterator first = input_files_.begin(); first != input_files_.end(); ++first) {
+				progress_.refresh();
+				if (progress_.is_cancel()) return;
+				while (progress_.is_suspend() && !progress_.is_cancel()) {
+					progress_.refresh();
 					Sleep(5);
 				}
 				
-				if (PathIsDirectory(first->c_str())) compress_filelist_folder(*first, progress);
+				if (PathIsDirectory(first->c_str())) compress_filelist_folder(*first);
 				else {
 					fileinfo elem = this->createinfo(*first);
 					this->files_.push_back(elem);
 					this->size_ += elem.size;
-					progress.denomcount();
+					progress_.denomcount();
 				}
 			}
 		}
@@ -618,28 +626,28 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  compress_filelist_folder
 		/* ----------------------------------------------------------------- */
-		void compress_filelist_folder(const string_type& root, cubeice::dialog::progressbar& progress) {
+		void compress_filelist_folder(const string_type& root) {
 			string_type path = root + _T("\\*.*");
 			WIN32_FIND_DATA wfd = {};
 			HANDLE handle = FindFirstFile(path.c_str(), &wfd);
 			if (handle == INVALID_HANDLE_VALUE) return;
 			
 			do {
-				progress.refresh();
-				if (progress.is_cancel()) return;
-				while (progress.is_suspend() && !progress.is_cancel()) {
-					progress.refresh();
+				progress_.refresh();
+				if (progress_.is_cancel()) return;
+				while (progress_.is_suspend() && !progress_.is_cancel()) {
+					progress_.refresh();
 					Sleep(5);
 				}
 				
 				if (_tcscmp(wfd.cFileName, _T(".")) != 0 && _tcscmp(wfd.cFileName, _T("..")) != 0) {
 					string_type s = root + _T('\\') + wfd.cFileName;
-					if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) this->compress_filelist_folder(s, progress);
+					if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) this->compress_filelist_folder(s);
 					else {
 						fileinfo elem = this->createinfo(s);
 						this->files_.push_back(elem);
 						this->size_ += elem.size;
-						progress.denomcount();
+						progress_.denomcount();
 					}
 				}
 			} while (FindNextFile(handle, &wfd));
@@ -649,7 +657,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  compress_tar
 		/* ----------------------------------------------------------------- */
-		void compress_tar(const string_type& src, const string_type& dest, const string_type& filetype, bool pass, cubeice::dialog::progressbar& progress) {
+		void compress_tar(const string_type& src, const string_type& dest, const string_type& filetype, bool pass) {
 			static const string_type keyword = _T("Compressing");
 			
 			string_type tar;
@@ -669,7 +677,7 @@ namespace cubeice {
 			int status = 0;
 			string_type line;
 			while ((status = proc.gets(line)) >= 0) {
-				progress.refresh();
+				progress_.refresh();
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
 					Sleep(10);
@@ -816,7 +824,7 @@ namespace cubeice {
 		 *  フォルダ名．
 		 */
 		/* ----------------------------------------------------------------- */
-		string_type decompress_filelist(const string_type& path, cubeice::dialog::progressbar& progress) {
+		string_type decompress_filelist(const string_type& path) {
 			string_type cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" l ");
 			cmdline += _T("\"") + path + _T("\"");
@@ -830,21 +838,21 @@ namespace cubeice {
 			int status = 0;
 			bool single = true;
 			while ((status = proc.gets(buffer)) >= 0) {
-				progress.refresh();
-				if (progress.is_cancel()) {
+				progress_.refresh();
+				if (progress_.is_cancel()) {
 					proc.close();
 					break;
 				}
-				if (progress.is_suspend()) {
+				if (progress_.is_suspend()) {
 					proc.suspend();
-					while (progress.is_suspend() && !progress.is_cancel()) {
-						progress.refresh();
+					while (progress_.is_suspend() && !progress_.is_cancel()) {
+						progress_.refresh();
 						Sleep(5);
 					}
 					proc.resume();
 					continue;
 				}
-
+				
 				if (status == 2) break; // pipe closed
 				else if (status == 1 && !buffer.empty()) src = buffer;
 				
@@ -865,7 +873,7 @@ namespace cubeice {
 					elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
 					//filelist_[v.at(5)] = elem;
 					files_.push_back(elem);
-					progress.denomcount();
+					progress_.denomcount();
 					this->size_ += elem.size;
 					
 					// 単一フォルダかどうかのチェック
@@ -889,8 +897,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  decompress_tar
 		/* ----------------------------------------------------------------- */
-		string_type decompress_tar(const string_type& src, const string_type& root,
-			cubeice::dialog::progressbar& progress, string_type& report) {
+		string_type decompress_tar(const string_type& src, const string_type& root, string_type& report) {
 			static const string_type keyword = _T("Extracting");
 			static const string_type error = _T("ERROR:");
 			
@@ -905,7 +912,7 @@ namespace cubeice {
 			string_type filename;
 			string_type line;
 			while ((status = proc.gets(line)) >= 0) {
-				progress.refresh();
+				progress_.refresh();
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
 					Sleep(10);
@@ -915,7 +922,6 @@ namespace cubeice {
 				
 				string_type::size_type pos = line.find(error);
 				if (pos != string_type::npos) {
-					if (progress.position() < progress.maximum()) ++progress;
 					report += clx::strip_copy(line.substr(pos));
 					if (pos != 0) report += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
 					report += _T("\r\n");

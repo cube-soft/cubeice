@@ -48,12 +48,17 @@ namespace cubeice {
 			explicit progressbar(int style) :
 				handle_(NULL), style_(style), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false), suspend_(false), totalsuspend_(0.0), start_(false), denominator_(0), numerator_(0) {}
 			
+			void style(int style) {
+				style_ = style;
+			}
+			
 			/* ------------------------------------------------------------- */
 			//  show
 			/* ------------------------------------------------------------- */
 			void show() {
 				string_type name = (style_ == simple) ? _T("IDD_PROGRESS_SIMPLE") : _T("IDD_PROGRESS");
 				handle_ = CreateDialogParam(GetModuleHandle(NULL), name.c_str(), NULL, wndproc, (LPARAM)this);
+				timer_.restart();
 			}
 			
 			/* ------------------------------------------------------------- */
