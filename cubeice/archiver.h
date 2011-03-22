@@ -178,6 +178,15 @@ namespace cubeice {
 					proc.close();
 					break;
 				}
+				if (progress.is_suspend()) {
+					proc.suspend();
+					while (progress.is_suspend() && !progress.is_cancel()) {
+						progress.refresh();
+						Sleep(5);
+					}
+					proc.resume();
+					continue;
+				}
 				
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
@@ -323,6 +332,7 @@ namespace cubeice {
 				
 				// プログレスバーの進行度の設定
 				string_type folder = this->decompress_filelist(src, progress);
+				if (progress.is_cancel()) break;
 				if (this->size_ == 0) progress.marquee(true);
 				else progress.marquee(false);
 				
@@ -373,6 +383,15 @@ namespace cubeice {
 						proc.close();
 						break;
 					}
+					if (progress.is_suspend()) {
+						proc.suspend();
+						while (progress.is_suspend() && !progress.is_cancel()) {
+							progress.refresh();
+							Sleep(5);
+						}
+						proc.resume();
+						continue;
+					}
 					
 					string_type message = (root.size() > CUBEICE_MAXCOLUMN) ? _T("...") + root.substr(root.size() - CUBEICE_MAXCOLUMN) : root;
 					message += _T("\r\n");
@@ -396,7 +415,6 @@ namespace cubeice {
 							0.0;
 						if (subpos > progress.maximum()) subpos = progress.maximum();
 						progress.subposition(subpos);
-						
 						// タイトルの更新
 						size_type percent = (tmppos > 1.0) ? static_cast<size_type>(tmppos / 100.0) : 0;
 						string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE");
@@ -582,6 +600,10 @@ namespace cubeice {
 			for (; first != last; ++first) {
 				progress.refresh();
 				if (progress.is_cancel()) return;
+				while (progress.is_suspend() && !progress.is_cancel()) {
+					progress.refresh();
+					Sleep(5);
+				}
 				
 				if (PathIsDirectory(first->c_str())) compress_filelist_folder(*first, progress);
 				else {
@@ -605,6 +627,10 @@ namespace cubeice {
 			do {
 				progress.refresh();
 				if (progress.is_cancel()) return;
+				while (progress.is_suspend() && !progress.is_cancel()) {
+					progress.refresh();
+					Sleep(5);
+				}
 				
 				if (_tcscmp(wfd.cFileName, _T(".")) != 0 && _tcscmp(wfd.cFileName, _T("..")) != 0) {
 					string_type s = root + _T('\\') + wfd.cFileName;
@@ -805,6 +831,20 @@ namespace cubeice {
 			bool single = true;
 			while ((status = proc.gets(buffer)) >= 0) {
 				progress.refresh();
+				if (progress.is_cancel()) {
+					proc.close();
+					break;
+				}
+				if (progress.is_suspend()) {
+					proc.suspend();
+					while (progress.is_suspend() && !progress.is_cancel()) {
+						progress.refresh();
+						Sleep(5);
+					}
+					proc.resume();
+					continue;
+				}
+
 				if (status == 2) break; // pipe closed
 				else if (status == 1 && !buffer.empty()) src = buffer;
 				
@@ -1265,7 +1305,7 @@ namespace cubeice {
 			DWORD dwSizeHigh = 0;
 			DWORD dwSizeLow = GetFileSize(handle, &dwSizeHigh);
 			CloseHandle(handle);
-			return (static_cast<size_type>(dwSizeHigh) << sizeof(DWORD) * CHAR_BIT) | dwSizeLow;
+			return ( dwSizeLow == -1 ) ? 0 : ( (static_cast<size_type>(dwSizeHigh) << sizeof(DWORD) * CHAR_BIT) | dwSizeLow );
 		}
 
 		/* ----------------------------------------------------------------- */

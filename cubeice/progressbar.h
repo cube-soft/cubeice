@@ -43,10 +43,10 @@ namespace cubeice {
 			//  constructor
 			/* ------------------------------------------------------------- */
 			progressbar() :
-				handle_(NULL), style_(normal), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false), suspend_(false), denominator_(0), numerator_(0) {}
+				handle_(NULL), style_(normal), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false), suspend_(false), totalsuspend_(0.0), start_(false), denominator_(0), numerator_(0) {}
 			
 			explicit progressbar(int style) :
-				handle_(NULL), style_(style), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false), suspend_(false), denominator_(0), numerator_(0) {}
+				handle_(NULL), style_(style), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false), suspend_(false), totalsuspend_(0.0), start_(false), denominator_(0), numerator_(0) {}
 			
 			/* ------------------------------------------------------------- */
 			//  show
@@ -177,7 +177,16 @@ namespace cubeice {
 			/* ------------------------------------------------------------- */
 			//  suspend
 			/* ------------------------------------------------------------- */
-			bool suspend() { return suspend_ = !suspend_; }
+			bool suspend(bool s) {
+				suspend_ = s;
+				if( start_ ) {
+					if( suspend_ )
+						totalsuspend_ += timer_.elapsed();
+					else
+						timer_.update();
+				}
+				return suspend_;
+			}
 			
 			/* ------------------------------------------------------------- */
 			//  is_suspend
@@ -255,18 +264,23 @@ namespace cubeice {
 
 				format_time( elapse_time, (int)timer_.total_elapsed() );
 				SetDlgItemText( handle_, IDC_ELAPSE_LABEL, elapse_time );
-				if( pos_ != min_ ) {
-					format_time( remain_time, (int)( timer_.elapsed() * ( max_ - pos_ ) / ( pos_ - min_ ) ) );
-					SetDlgItemText( handle_, IDC_REMAIN_LABEL, remain_time );
-				} else {
-					SetDlgItemText( handle_, IDC_REMAIN_LABEL, _T("--:--:--") );
+				if( !suspend_ ) {
+					if( pos_ != min_ ) {
+						format_time( remain_time, (int)( ( timer_.elapsed() + totalsuspend_ ) * ( max_ - pos_ ) / ( pos_ - min_ ) ) );
+						SetDlgItemText( handle_, IDC_REMAIN_LABEL, remain_time );
+					} else {
+						SetDlgItemText( handle_, IDC_REMAIN_LABEL, _T("--:--:--") );
+					}
 				}
 			}
 
 			/* ------------------------------------------------------------- */
 			//  start
 			/* ------------------------------------------------------------- */
-			void start() { timer_.update(); }
+			void start() {
+				start_ = true;
+				timer_.update();
+			}
 
 
 			/* ------------------------------------------------------------- */
@@ -308,6 +322,8 @@ namespace cubeice {
 			bool cancel_;
 			bool suspend_;
 			clx::timer timer_;
+			double totalsuspend_;
+			bool start_;
 			int denominator_;
 			int numerator_;
 			
@@ -358,7 +374,7 @@ namespace cubeice {
 				case WM_COMMAND:
 					switch (LOWORD(wp)) {
 					case IDOK:
-						SetDlgItemText(hWnd, IDOK, prog->suspend() ? _T("ÄŠJ") : _T("’†’f"));
+						SetDlgItemText(hWnd, IDOK, prog->suspend( !prog->is_suspend() ) ? _T("ÄŠJ") : _T("’†’f"));
 						break;
 					case IDCANCEL:
 						KillTimer(hWnd, TIMER_ID);
