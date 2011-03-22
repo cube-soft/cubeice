@@ -30,6 +30,8 @@
 #include <vector>
 #include <tchar.h>
 #include <shlwapi.h>
+#include <boost/thread.hpp>
+#include <boost/bind.hpp>
 #include <clx/hexdump.h>
 #include <clx/strip.h>
 #include <clx/split.h>
@@ -141,7 +143,8 @@ namespace cubeice {
 			
 			// プログレスバーの設定
 			this->compress_prepare_filelist(first, last);
-			this->compress_filelist();
+			//this->compress_filelist();
+			boost::thread	thr( boost::bind( &cubeice::archiver::compress_filelist, this ) );
 			if (this->size_ == 0 && !progress_.is_marquee()) progress_.marquee(true);
 			else if (progress_.is_marquee()) progress_.marquee(false);
 			
