@@ -140,7 +140,7 @@ namespace cubeice {
 			progress.marquee(true);
 			
 			// プログレスバーの設定
-			this->compress_filelist(first, last, progress);
+			//this->compress_filelist(first, last, progress);
 			if (this->size_ == 0 && !progress.is_marquee()) progress.marquee(true);
 			else if (progress.is_marquee()) progress.marquee(false);
 			
