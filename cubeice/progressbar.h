@@ -21,6 +21,7 @@
 #ifndef CUBEICE_PROGRESSBAR_H
 #define CUBEICE_PROGRESSBAR_H
 
+#include <shobjidl.h>
 #include <clx/time.h>
 
 namespace cubeice {
@@ -43,11 +44,30 @@ namespace cubeice {
 			//  constructor
 			/* ------------------------------------------------------------- */
 			progressbar() :
-				handle_(NULL), style_(normal), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false), suspend_(false), totalsuspend_(0.0), start_(false), denominator_(0), numerator_(0) {}
+				handle_(NULL), taskbar_(NULL), style_(normal), pos_(0.0), sub_(0.0), min_(0), max_(10000),
+				cancel_(false), suspend_(false), totalsuspend_(0.0), start_(false), denominator_(0), numerator_(0) {
+				this->init();
+			}
 			
+			/* ------------------------------------------------------------- */
+			//  constructor
+			/* ------------------------------------------------------------- */
 			explicit progressbar(int style) :
-				handle_(NULL), style_(style), pos_(0.0), sub_(0.0), min_(0), max_(10000), cancel_(false), suspend_(false), totalsuspend_(0.0), start_(false), denominator_(0), numerator_(0) {}
+				handle_(NULL), taskbar_(NULL), style_(style), pos_(0.0), sub_(0.0), min_(0), max_(10000),
+				cancel_(false), suspend_(false), totalsuspend_(0.0), start_(false), denominator_(0), numerator_(0) {
+				this->init();
+			}
 			
+			/* ------------------------------------------------------------- */
+			//  constructor
+			/* ------------------------------------------------------------- */
+			~progressbar() {
+				CoUninitialize();
+			}
+
+			/* ------------------------------------------------------------- */
+			//  constructor
+			/* ------------------------------------------------------------- */
 			void style(int style) {
 				style_ = style;
 			}
@@ -58,6 +78,7 @@ namespace cubeice {
 			void show() {
 				string_type name = (style_ == simple) ? _T("IDD_PROGRESS_SIMPLE") : _T("IDD_PROGRESS");
 				handle_ = CreateDialogParam(GetModuleHandle(NULL), name.c_str(), NULL, wndproc, (LPARAM)this);
+				if (handle_ && taskbar_) taskbar_->SetProgressState(handle_, TBPF_NORMAL);
 				timer_.restart();
 			}
 			
@@ -98,6 +119,7 @@ namespace cubeice {
 				else if (pos > max_) pos_ = max_;
 				else pos_ = pos;
 				SendMessage(GetDlgItem(handle_, IDC_PROGRESS), PBM_SETPOS, static_cast<int>(pos_), 0);
+				if (taskbar_) taskbar_->SetProgressValue(handle_, static_cast<ULONGLONG>(pos_), static_cast<ULONGLONG>(max_));
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -258,6 +280,7 @@ namespace cubeice {
 						cancel_ = true;
 					}
 				}
+				//InvalidateRect(handle_, NULL, true);
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -319,6 +342,7 @@ namespace cubeice {
 			
 		private:
 			HWND handle_;
+			ITaskbarList3* taskbar_;
 			int style_;
 			double pos_;
 			double sub_;
@@ -332,6 +356,15 @@ namespace cubeice {
 			int denominator_;
 			int numerator_;
 			
+			/* ------------------------------------------------------------- */
+			//  init
+			/* ------------------------------------------------------------- */
+			void init() {
+				CoInitialize(NULL);
+				HRESULT result = CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&taskbar_));
+				if (!SUCCEEDED(result)) taskbar_ = NULL;
+			}
+
 			/* ------------------------------------------------------------- */
 			//  closed_handles
 			/* ------------------------------------------------------------- */
