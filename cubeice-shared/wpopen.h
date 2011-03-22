@@ -36,6 +36,7 @@
 #define CUBE_WPOPEN_H_
 
 #include <windows.h>
+#include <tlhelp32.h>
 #include <tchar.h>
 #include <string>
 
@@ -157,6 +158,7 @@ namespace cube {
 				return false;
 
 			_hChildProcess = pi.hProcess;
+			_idChildProcess = pi.dwProcessId;
 
 			CloseHandle( pi.hThread );
 
@@ -171,6 +173,54 @@ namespace cube {
 
 		bool open( const std::basic_string<TCHAR> &command, const open_mode &mode ) {
 			return open( command.c_str(), mode );
+		}
+
+		void suspend() {
+			if( _hChildProcess == INVALID_HANDLE_VALUE )
+				return;
+
+			HANDLE		hThs = CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, 0 );
+			if( _hChildProcess == (HANDLE)-1 )
+				return;
+
+			THREADENTRY32		thentry;
+			if( Thread32First( hThs, &thentry ) ) {
+				do {
+					if( thentry.th32OwnerProcessID == _idChildProcess ) {
+						HANDLE		hThread = OpenThread( THREAD_SUSPEND_RESUME, FALSE, thentry.th32ThreadID );
+						if( hThread ) {
+							SuspendThread( hThread );
+							CloseHandle( hThread );
+						}
+					}
+				} while( Thread32Next( hThs, &thentry ) );
+			}
+
+			CloseHandle( hThs );
+		}
+
+		void resume() {
+			if( _hChildProcess == INVALID_HANDLE_VALUE )
+				return;
+
+			HANDLE		hThs = CreateToolhelp32Snapshot( TH32CS_SNAPTHREAD, 0 );
+			if( _hChildProcess == (HANDLE)-1 )
+				return;
+
+			THREADENTRY32		thentry;
+			if( Thread32First( hThs, &thentry ) ) {
+				do {
+					if( thentry.th32OwnerProcessID == _idChildProcess ) {
+						HANDLE		hThread = OpenThread( THREAD_SUSPEND_RESUME, FALSE, thentry.th32ThreadID );
+						if( hThread ) {
+							ResumeThread( hThread );
+							CloseHandle( hThread );
+						}
+					}
+				} while( Thread32Next( hThs, &thentry ) );
+			}
+
+			CloseHandle( hThs );
 		}
 
 		void close() {
@@ -250,6 +300,7 @@ namespace cube {
 		open_mode					_mode;
 		HANDLE						_hInputOutput;
 		HANDLE						_hChildProcess;
+		DWORD						_idChildProcess;
 		std::basic_string<TCHAR>	_line;
 	};
 }
