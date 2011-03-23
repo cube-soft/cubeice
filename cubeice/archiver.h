@@ -145,6 +145,8 @@ namespace cubeice {
 			this->compress_prepare_filelist(first, last);
 			//this->compress_filelist();
 			boost::thread	thr( boost::bind( &cubeice::archiver::compress_filelist, this ) );
+			HANDLE th = thr.native_handle();
+			SetPriorityClass(th, REALTIME_PRIORITY_CLASS);
 			if (this->size_ == 0 && !progress_.is_marquee()) progress_.marquee(true);
 			else if (progress_.is_marquee()) progress_.marquee(false);
 			
@@ -541,6 +543,7 @@ namespace cubeice {
 		const setting_type& setting_;
 		std::vector<string_type> input_files_;
 		std::vector<fileinfo> files_;
+		bool done_get_filelist_;
 		size_type size_; // トータルサイズ
 		cubeice::dialog::progressbar progress_;
 		
@@ -605,6 +608,7 @@ namespace cubeice {
 		//  compress_filelist
 		/* ----------------------------------------------------------------- */
 		void compress_filelist() {
+			this->done_get_filelist_ = false;
 			this->size_ = 0;
 			this->files_.clear();
 			
@@ -624,6 +628,8 @@ namespace cubeice {
 					progress_.denomcount();
 				}
 			}
+
+			this->done_get_filelist_ = true;
 		}
 		
 		/* ----------------------------------------------------------------- */
