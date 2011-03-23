@@ -146,7 +146,7 @@ namespace cubeice {
 			//this->compress_filelist();
 			boost::thread	thr( boost::bind( &cubeice::archiver::compress_filelist, this ) );
 			HANDLE th = thr.native_handle();
-			SetPriorityClass(th, REALTIME_PRIORITY_CLASS);
+			SetPriorityClass(th, ABOVE_NORMAL_PRIORITY_CLASS);
 			if (this->size_ == 0 && !progress_.is_marquee()) progress_.marquee(true);
 			else if (progress_.is_marquee()) progress_.marquee(false);
 			
