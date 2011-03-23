@@ -523,7 +523,7 @@ namespace cubeice {
 				
 				this->remove(tmp.c_str());
 				
-				if ((setting_.decompression().details() & DETAIL_REMOVE_SRC) && report.empty()) {
+				if ((setting_.decompression().details() & DETAIL_REMOVE_SRC) && report.empty() && !progress_.is_cancel()) {
 					DeleteFile(srcname.c_str());
 				}
 			}
