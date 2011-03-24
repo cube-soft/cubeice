@@ -184,6 +184,8 @@ namespace cube {
 				return;
 
 			THREADENTRY32		thentry;
+
+			thentry.dwSize = sizeof( thentry );
 			if( Thread32First( hThs, &thentry ) ) {
 				do {
 					if( thentry.th32OwnerProcessID == _idChildProcess ) {
@@ -208,6 +210,8 @@ namespace cube {
 				return;
 
 			THREADENTRY32		thentry;
+
+			thentry.dwSize = sizeof( thentry );
 			if( Thread32First( hThs, &thentry ) ) {
 				do {
 					if( thentry.th32OwnerProcessID == _idChildProcess ) {
