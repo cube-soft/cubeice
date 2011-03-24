@@ -232,6 +232,8 @@ namespace cubeice {
 				    (ext.find(_T(".tar")) != string_type::npos || ext == _T(".tgz") || ext == _T(".tbz"))) {
 					string_type prev = tmp;
 					tmp = tmpfile(_T("cubeice"));
+					tmp = tmp.substr(0, tmp.find_last_of(_T('\\'))+1);
+					tmp += PathFindFileName(dest.c_str());
 					this->compress_tar(prev, tmp, filetype, pass);
 					if (PathFileExists(prev.c_str())) DeleteFile(prev.c_str());
 				}
