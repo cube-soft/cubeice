@@ -174,8 +174,8 @@ namespace cubeice {
 			int status = 0;
 			string_type line;
 			string_type report;
-			double calcpos = 0.0; // 計算上のプログレスバーの位置
 			unsigned int index = 0;
+			int percent = 0;
 			progress_.start();
 			while ((status = proc.gets(line)) >= 0) {
 				if (!this->refresh(proc)) break;
@@ -196,13 +196,16 @@ namespace cubeice {
 				
 				pos = line.find(_T(":%")); // :%n% と言う形で進捗率が表示される
 				if (pos != string_type::npos) {
-					string_type percent = line.substr(pos);
-					clx::strip_if(percent, clx::is_any_of(_T(":% ")));
+					string_type s = line.substr(pos);
+					clx::strip_if(s, clx::is_any_of(_T(":% ")));
 					line.erase(pos);
-					calcpos = clx::lexical_cast<double>(percent) * 100.0;
-					progress_.position(calcpos);
-					string_type title = percent + _T("% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE");
-					progress_.title(title);
+					int prev = percent;
+					percent = clx::lexical_cast<int>(s) * 100;
+					progress_.position(percent);
+					if (percent > prev) {
+						string_type title = s + _T("% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE");
+						progress_.title(title);
+					}
 				}
 				
 				pos = line.find(keyword);
@@ -623,7 +626,7 @@ namespace cubeice {
 			HANDLE handle = FindFirstFile(path.c_str(), &wfd);
 			if (handle == INVALID_HANDLE_VALUE) return;
 			
-			size_type n = 0;
+			int filenum = 0;
 			do {
 				progress_.refresh();
 				if (progress_.is_cancel()) return;
@@ -646,14 +649,14 @@ namespace cubeice {
 						elem.directory = false;
 #endif
 						this->files_.push_back(elem);
-						++n;
+						++filenum;
 						this->size_ += elem.size;
 						//progress_.denomcount();
 					}
 				}
 			} while (FindNextFile(handle, &wfd));
 			FindClose(handle);
-			progress_.denomcount(n);
+			progress_.denomcount(filenum);
 		}
 		
 		/* ----------------------------------------------------------------- */
