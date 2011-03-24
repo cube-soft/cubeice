@@ -47,7 +47,7 @@
 #include "sendmail.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
-#define CUBEICE_MAXCOLUMN 60
+#define CUBEICE_MAXCOLUMN 50
 #define MAIL_SUBJECT ""
 #define MAIL_BODY ""
 
@@ -179,24 +179,10 @@ namespace cubeice {
 			unsigned int index = 0;
 			progress_.start();
 			while ((status = proc.gets(line)) >= 0) {
-				progress_.refresh();
-				if (progress_.is_cancel()) {
-					proc.close();
-					break;
-				}
-				if (progress_.is_suspend()) {
-					proc.suspend();
-					while (progress_.is_suspend() && !progress_.is_cancel()) {
-						progress_.refresh();
-						Sleep(5);
-					}
-					proc.resume();
-					continue;
-				}
-				
+				if (!this->refresh(proc)) break;
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
-					Sleep(5);
+					Sleep(10);
 					continue;
 				}
 				assert(status == 1);
@@ -382,20 +368,7 @@ namespace cubeice {
 				progress_.start();
 				while ((status = proc.gets(line)) >= 0) {
 					if (progress_.subposition() > progress_.maximum() - 1.0) progress_.subposition(progress_.minimum());
-					progress_.refresh();
-					if (progress_.is_cancel()) {
-						proc.close();
-						break;
-					}
-					if (progress_.is_suspend()) {
-						proc.suspend();
-						while (progress_.is_suspend() && !progress_.is_cancel()) {
-							progress_.refresh();
-							Sleep(5);
-						}
-						proc.resume();
-						continue;
-					}
+					if (!this->refresh(proc)) break;
 					
 					string_type message = (root.size() > CUBEICE_MAXCOLUMN) ? _T("...") + root.substr(root.size() - CUBEICE_MAXCOLUMN) : root;
 					message += _T("\r\n");
@@ -406,25 +379,30 @@ namespace cubeice {
 					
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
-						// プログレスバーの更新
+						if (!this->refresh(proc)) break;
 						size_type fsize = filesize(tmp + _T("\\") + files_[index].name);
+						if (!this->refresh(proc)) break;
+						
 						double tmppos = (this->size_ > 0 && fsize > 0) ?
 							calcpos + (progress_.maximum() - progress_.minimum()) / (this->size_ / (double)fsize) :
 							calcpos;
 						if (tmppos > progress_.maximum()) tmppos = progress_.maximum();
 						progress_.position(tmppos);
+						if (!this->refresh(proc)) break;
 						
 						double subpos = (files_[index].size > 0 && fsize > 0) ?
 							(progress_.maximum() - progress_.minimum()) / (files_[index].size / (double)fsize) :
 							0.0;
 						if (subpos > progress_.maximum()) subpos = progress_.maximum();
 						progress_.subposition(subpos);
-						// タイトルの更新
+						if (!this->refresh(proc)) break;
+						
 						size_type percent = (tmppos > 1.0) ? static_cast<size_type>(tmppos / 100.0) : 0;
 						string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE");
 						progress_.title(title);
+						if (!this->refresh(proc)) break;
 						
-						Sleep(5);
+						Sleep(10);
 						continue;
 					}
 					assert(status == 1);
@@ -1329,6 +1307,27 @@ namespace cubeice {
 		string_type filename(const string_type& path) {
 			string_type::size_type pos = path.find_last_of(_T('\\'));
 			return (pos == string_type::npos) ? path : path.substr(pos + 1);
+		}
+
+		/* ----------------------------------------------------------------- */
+		//  refresh
+		/* ----------------------------------------------------------------- */
+		bool refresh(cube::popen& proc) {
+			progress_.refresh();
+			if (progress_.is_cancel()) {
+				proc.close();
+				return false;
+			}
+			
+			if (progress_.is_suspend()) {
+				proc.suspend();
+				while (progress_.is_suspend() && !progress_.is_cancel()) {
+					progress_.refresh();
+					Sleep(10);
+				}
+				proc.resume();
+			}
+			return true;
 		}
 	};
 }
