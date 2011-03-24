@@ -53,25 +53,6 @@ namespace cubeice {
 	typedef std::map<std::size_t, std::basic_string<TCHAR> > sctype_map;
 	
 	/* ----------------------------------------------------------------- */
-	//  compress_map
-	/* ----------------------------------------------------------------- */
-	inline flag_map& compress_map() {
-		static bool initialized = false;
-		static flag_map dest;
-		if (!initialized) {
-#ifdef nouse
-			dest[IDC_ADD_ZIP_CHECKBOX] = ZIP_FLAG;
-			dest[IDC_ADD_SEVENZIP_CHECKBOX] = SEVENZIP_FLAG;
-			dest[IDC_ADD_BZ2_CHECKBOX] = BZ2_FLAG;
-			dest[IDC_ADD_GZ_CHECKBOX] = GZ_FLAG;
-			dest[IDC_ADD_EXE_CHECKBOX] = EXE_FLAG;
-#endif
-			initialized = true;
-		}
-		return dest;
-	}
-	
-	/* ----------------------------------------------------------------- */
 	//  decompress_map
 	/* ----------------------------------------------------------------- */
 	inline flag_map& decompress_map() {
@@ -168,6 +149,7 @@ namespace cubeice {
 			dest[IDC_DECOMP_HERE_CHECKBOX] = DECOMP_HERE_FLAG;
 			dest[IDC_DECOMP_DESKTOP_CHECKBOX] = DECOMP_DESKTOP_FLAG;
 			dest[IDC_DECOMP_RUNTIME_CHECKBOX] = DECOMP_RUNTIME_FLAG;
+			dest[IDC_DECOMP_MYDOCUMENTS_CHECKBOX] = DECOMP_MYDOCUMENTS_FLAG;
 		}
 		return dest;
 	}
