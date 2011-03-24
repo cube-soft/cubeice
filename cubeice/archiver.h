@@ -147,8 +147,7 @@ namespace cubeice {
 			boost::thread	thr( boost::bind( &cubeice::archiver::compress_filelist, this ) );
 			HANDLE th = thr.native_handle();
 			SetPriorityClass(th, ABOVE_NORMAL_PRIORITY_CLASS);
-			if (this->size_ == 0 && !progress_.is_marquee()) progress_.marquee(true);
-			else if (progress_.is_marquee()) progress_.marquee(false);
+			if (progress_.is_marquee()) progress_.marquee(false);
 			
 			// コマンドラインの作成
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
@@ -586,7 +585,6 @@ namespace cubeice {
 		//  compress_filelist
 		/* ----------------------------------------------------------------- */
 		void compress_filelist() {
-			this->done_get_filelist_ = false;
 			this->size_ = 0;
 			this->files_.clear();
 			
@@ -595,19 +593,25 @@ namespace cubeice {
 				if (progress_.is_cancel()) return;
 				while (progress_.is_suspend() && !progress_.is_cancel()) {
 					progress_.refresh();
-					Sleep(5);
+					Sleep(10);
 				}
 				
 				if (PathIsDirectory(first->c_str())) compress_filelist_folder(*first);
 				else {
+					// NOTE: 現状，総ファイル数しか必要としていないので高速化のためにファイル情報の取得を省く．
+#ifdef CUBEICE_ORIGINAL
 					fileinfo elem = this->createinfo(*first);
+#else
+					fileinfo elem;
+					elem.name = *first;
+					elem.size = 0;
+					elem.directory = false;
+#endif
 					this->files_.push_back(elem);
 					this->size_ += elem.size;
 					progress_.denomcount();
 				}
 			}
-
-			this->done_get_filelist_ = true;
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -619,26 +623,37 @@ namespace cubeice {
 			HANDLE handle = FindFirstFile(path.c_str(), &wfd);
 			if (handle == INVALID_HANDLE_VALUE) return;
 			
+			size_type n = 0;
 			do {
 				progress_.refresh();
 				if (progress_.is_cancel()) return;
 				while (progress_.is_suspend() && !progress_.is_cancel()) {
 					progress_.refresh();
-					Sleep(5);
+					Sleep(10);
 				}
 				
 				if (_tcscmp(wfd.cFileName, _T(".")) != 0 && _tcscmp(wfd.cFileName, _T("..")) != 0) {
 					string_type s = root + _T('\\') + wfd.cFileName;
 					if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) this->compress_filelist_folder(s);
 					else {
+						// NOTE: 現状，総ファイル数しか必要としていないので高速化のためにファイル情報の取得を省く．
+#ifdef CUBEICE_ORIGINAL
 						fileinfo elem = this->createinfo(s);
+#else
+						fileinfo elem;
+						elem.name = s;
+						elem.size = 0;
+						elem.directory = false;
+#endif
 						this->files_.push_back(elem);
+						++n;
 						this->size_ += elem.size;
-						progress_.denomcount();
+						//progress_.denomcount();
 					}
 				}
 			} while (FindNextFile(handle, &wfd));
 			FindClose(handle);
+			progress_.denomcount(n);
 		}
 		
 		/* ----------------------------------------------------------------- */
