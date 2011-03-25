@@ -1281,7 +1281,13 @@ namespace cubeice {
 			string_type::size_type pos = path.find_last_of(_T('.'));
 			if (pos == string_type::npos) return false;
 			string_type ext = path.substr(pos);
-			if (ext == _T(".gz") || ext == _T(".bz2") || ext == _T(".tgz") || ext == _T(".tbz")) return true;
+			if (ext == _T(".tgz") || ext == _T(".tbz")) return true;
+
+			if (pos==0) return false;
+			pos = path.find_last_of(_T('.'), pos-1);
+			if (pos == string_type::npos) return false;
+			ext = path.substr(pos);
+			if (ext == _T(".tar.gz") || ext == _T(".tar.bz2")) return true;
 			return false;
 		}
 		
