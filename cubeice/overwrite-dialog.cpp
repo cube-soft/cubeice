@@ -73,8 +73,8 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  overwrite
 		/* ----------------------------------------------------------------- */
-		int overwrite(const std::basic_string<TCHAR>& message) {
-			return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_OVERWRITE"), NULL, overwrite_wndproc, (LPARAM)message.c_str());
+		int overwrite(HWND owner, const std::basic_string<TCHAR>& message) {
+			return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_OVERWRITE"), owner, overwrite_wndproc, (LPARAM)message.c_str());
 		}
 	}
 }

@@ -127,9 +127,9 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  password
 		/* ----------------------------------------------------------------- */
-		int password(int which) {
-			if (which == 0x01) return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_PASSWORD"), NULL, password_wndproc, which);
-			else return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_PASSWORD2"), NULL, password_wndproc, which);
+		int password(HWND owner, int which) {
+			if (which == 0x01) return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_PASSWORD"), owner, password_wndproc, which);
+			else return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_PASSWORD2"), owner, password_wndproc, which);
 		}
 	}
 }
