@@ -32,7 +32,6 @@
 #include <shlwapi.h>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
-#include <clx/hexdump.h>
 #include <clx/strip.h>
 #include <clx/split.h>
 #include <clx/replace.h>
@@ -304,7 +303,8 @@ namespace cubeice {
 				string_type report; // エラーレポート
 				
 				string_type src = *first;
-				string_type srcname = src;
+				string_type original = src;
+				string_type title_message = this->filename(original) + _T(" を解凍しています - CubeICE");
 				string_type filetype;
 				if (!this->decompress_filetype(src, filetype)) {
 					string_type message = src + _T(" は未対応のファイル形式のため解凍できません。");
@@ -317,7 +317,7 @@ namespace cubeice {
 				if (root.empty()) break;
 				
 				progress_.show();
-				progress_.title(_T("0% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE"));
+				progress_.title(_T("0% - ") + title_message);
 				progress_.marquee(true);
 				
 				// 一時フォルダの作成
@@ -327,25 +327,28 @@ namespace cubeice {
 				// プログレスバーの進行度の設定
 				string_type folder = this->decompress_filelist(src);
 				if (progress_.is_cancel()) break;
-				if (this->size_ == 0) progress_.marquee(true);
-				else progress_.marquee(false);
-				
-				// フォルダの作成
-				if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER)) {
-					if ((setting_.decompression().details() & DETAIL_SINGLE_FOLDER) == 0 || folder.empty()) {
-						root = this->decompress_dirname(setting_.decompression(), root, src);
-					}
-				}
+				if (this->size_ == 0 && !progress_.is_marquee()) progress_.marquee(true);
+				else if (progress_.is_marquee()) progress_.marquee(false);
 				
 				// *.tar 系の処理
 				// TODO: 現在，拡張子が本来の種類と異なるファイルも対象にしているが，
 				// それらの偽装（？）拡張子のファイルが *.tar かどうかをどう判断するか．
 				if ((filetype == _T("gzip") || filetype == _T("bzip2")) && this->is_tar(src)) {
 					src = this->decompress_tar(src, tmp, report);
-					this->decompress_filelist(src);
+					progress_.position(progress_.minimum());
+					progress_.subposition(progress_.minimum());
+					progress_.title(_T("0% - ") + title_message);
+					folder = this->decompress_filelist(src);
 					if (src.empty() || !PathFileExists(src.c_str())) break;
 					if (this->size_ == 0 && !progress_.is_marquee()) progress_.marquee(true);
 					else if (progress_.is_marquee()) progress_.marquee(false);
+				}
+				
+				// フォルダの作成
+				if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER)) {
+					if ((setting_.decompression().details() & DETAIL_SINGLE_FOLDER) == 0 || folder.empty()) {
+						root = this->decompress_dirname(setting_.decompression(), root, src);
+					}
 				}
 				
 				// コマンドラインの生成
@@ -359,19 +362,24 @@ namespace cubeice {
 				int to_all = 0; // はい/いいえ/リネーム
 				string_type line;
 				double calcpos = 0.0; // 計算上のプログレスバーの位置
+				int percent = 0;
 				
 				// NOTE: marquee スタイルから復帰する際，バーが 1% まで進まないと再描画されない．
 				// そのため，一瞬だけ 1% に進めて強制的に再描画を行っている．
-				progress_.position(100);
-				progress_.subposition(100);
-				progress_.refresh();
-				progress_.position(progress_.minimum());
-				progress_.subposition(progress_.minimum());
-				progress_.refresh();
+				if (this->size_ > 0) {
+					progress_.position(100);
+					progress_.subposition(100);
+					progress_.refresh();
+					progress_.position(progress_.minimum());
+					progress_.subposition(progress_.minimum());
+					progress_.refresh();
+				}
 				
 				progress_.start();
 				while ((status = proc.gets(line)) >= 0) {
-					if (progress_.subposition() > progress_.maximum() - 1.0) progress_.subposition(progress_.minimum());
+					if (!progress_.is_marquee() && progress_.subposition() > progress_.maximum() - 1.0) {
+						progress_.subposition(progress_.minimum());
+					}
 					if (!this->refresh(proc)) break;
 					
 					string_type message = (root.size() > CUBEICE_MAXCOLUMN) ? _T("...") + root.substr(root.size() - CUBEICE_MAXCOLUMN) : root;
@@ -384,28 +392,34 @@ namespace cubeice {
 					if (status == 2) break; // pipe closed
 					else if (status == 0 || line.empty()) {
 						if (!this->refresh(proc)) break;
-						size_type fsize = filesize(tmp + _T("\\") + files_[index].name);
-						if (!this->refresh(proc)) break;
 						
-						double tmppos = (this->size_ > 0 && fsize > 0) ?
-							calcpos + (progress_.maximum() - progress_.minimum()) / (this->size_ / (double)fsize) :
-							calcpos;
-						if (tmppos > progress_.maximum()) tmppos = progress_.maximum();
-						progress_.position(tmppos);
-						if (!this->refresh(proc)) break;
-						
-						double subpos = (files_[index].size > 0 && fsize > 0) ?
-							(progress_.maximum() - progress_.minimum()) / (files_[index].size / (double)fsize) :
-							0.0;
-						if (subpos > progress_.maximum()) subpos = progress_.maximum();
-						progress_.subposition(subpos);
-						if (!this->refresh(proc)) break;
-						
-						size_type percent = (tmppos > 1.0) ? static_cast<size_type>(tmppos / 100.0) : 0;
-						string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE");
-						progress_.title(title);
-						if (!this->refresh(proc)) break;
-						
+						// プログレスバーの更新
+						if (this->size_ > 0) {
+							size_type fsize = filesize(tmp + _T("\\") + files_[index].name);
+							if (!this->refresh(proc)) break;
+							
+							double tmppos = (this->size_ > 0 && fsize > 0) ?
+								calcpos + (progress_.maximum() - progress_.minimum()) / (this->size_ / (double)fsize) :
+								calcpos;
+							if (tmppos > progress_.maximum()) tmppos = progress_.maximum();
+							progress_.position(tmppos);
+							if (!this->refresh(proc)) break;
+							
+							double subpos = (files_[index].size > 0 && fsize > 0) ?
+								(progress_.maximum() - progress_.minimum()) / (files_[index].size / (double)fsize) :
+								0.0;
+							if (subpos > progress_.maximum()) subpos = progress_.maximum();
+							progress_.subposition(subpos);
+							if (!this->refresh(proc)) break;
+							
+							int prev = percent;
+							percent = (tmppos > 1.0) ? static_cast<int>(tmppos / 100.0) : 0;
+							if (percent > prev) {
+								string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + title_message;
+								progress_.title(title);
+							}
+							if (!this->refresh(proc)) break;
+						}
 						Sleep(10);
 						continue;
 					}
@@ -425,9 +439,11 @@ namespace cubeice {
 						status = 0;
 						to_all = 0;
 						calcpos = 0.0;
-						progress_.position(progress_.minimum());
-						progress_.subposition(progress_.minimum());
-						progress_.title(_T("0% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE"));
+						if (this->size_ > 0) {
+							progress_.position(progress_.minimum());
+							progress_.subposition(progress_.minimum());
+							progress_.title(_T("0% - ") + title_message);
+						}
 						continue;
 					}
 					
@@ -455,9 +471,12 @@ namespace cubeice {
 						progress_.subposition(progress_.maximum());
 						
 						// タイトルの更新
-						size_type percent = (calcpos > 1.0) ? static_cast<size_type>(calcpos / 100.0) : 0;
-						string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + this->filename(srcname) + _T(" を解凍しています - CubeICE");
-						progress_.title(title);
+						int prev = percent;
+						percent = (calcpos > 1.0) ? static_cast<int>(calcpos / 100.0) : 0;
+						if (percent > prev) {
+							string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + title_message;
+							progress_.title(title);
+						}
 					}
 					
 					// 上書きの確認
@@ -479,7 +498,7 @@ namespace cubeice {
 					}
 					
 					if (index < files_.size() - 1) ++index;
-
+					
 					// 進行状況の更新
 					progress_.numcount();
 				}
@@ -506,7 +525,7 @@ namespace cubeice {
 				this->remove(tmp.c_str());
 				
 				if ((setting_.decompression().details() & DETAIL_REMOVE_SRC) && report.empty() && !progress_.is_cancel()) {
-					DeleteFile(srcname.c_str());
+					DeleteFile(original.c_str());
 				}
 			}
 		}
@@ -601,21 +620,21 @@ namespace cubeice {
 					Sleep(10);
 				}
 				
-				if (PathIsDirectory(first->c_str())) compress_filelist_folder(*first);
-				else {
-					// NOTE: 現状，総ファイル数しか必要としていないので高速化のためにファイル情報の取得を省く．
+				bool directory = (PathIsDirectory(first->c_str()) != FALSE);
+				
+				// NOTE: 現状，総ファイル数しか必要としていないので高速化のためにファイル情報の取得を省く．
 #ifdef CUBEICE_ORIGINAL
-					fileinfo elem = this->createinfo(*first);
+				fileinfo elem = this->createinfo(*first);
 #else
-					fileinfo elem;
-					elem.name = *first;
-					elem.size = 0;
-					elem.directory = false;
+				fileinfo elem;
+				elem.name = *first;
+				elem.size = 0;
+				elem.directory = directory;
 #endif
-					this->files_.push_back(elem);
-					this->size_ += elem.size;
-					progress_.denomcount();
-				}
+				this->files_.push_back(elem);
+				this->size_ += elem.size;
+				progress_.denomcount();
+				if (directory) compress_filelist_folder(*first);
 			}
 		}
 		
@@ -637,24 +656,24 @@ namespace cubeice {
 					Sleep(10);
 				}
 				
-				if (_tcscmp(wfd.cFileName, _T(".")) != 0 && _tcscmp(wfd.cFileName, _T("..")) != 0) {
-					string_type s = root + _T('\\') + wfd.cFileName;
-					if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) this->compress_filelist_folder(s);
-					else {
-						// NOTE: 現状，総ファイル数しか必要としていないので高速化のためにファイル情報の取得を省く．
+				string_type filename(wfd.cFileName);
+				if (filename != _T(".") && filename != _T("..")) {
+					string_type s = root + _T('\\') + filename;
+					bool directory = ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
+					
+					// NOTE: 現状，総ファイル数しか必要としていないので高速化のためにファイル情報の取得を省く．
 #ifdef CUBEICE_ORIGINAL
-						fileinfo elem = this->createinfo(s);
+					fileinfo elem = this->createinfo(s);
 #else
-						fileinfo elem;
-						elem.name = s;
-						elem.size = 0;
-						elem.directory = false;
+					fileinfo elem;
+					elem.name = s;
+					elem.size = 0;
+					elem.directory = directory;
 #endif
-						this->files_.push_back(elem);
-						++filenum;
-						this->size_ += elem.size;
-						//progress_.denomcount();
-					}
+					this->files_.push_back(elem);
+					++filenum;
+					this->size_ += elem.size;
+					if (directory) this->compress_filelist_folder(s);
 				}
 			} while (FindNextFile(handle, &wfd));
 			FindClose(handle);
@@ -676,15 +695,19 @@ namespace cubeice {
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" a -t") + filetype;
 			if (pass) cmdline += _T(" -p") + cubeice::password();
-			cmdline += _T(" -bd -scsWIN -y \"") + dest + _T("\"");
+			cmdline += _T(" -scsWIN -y \"") + dest + _T("\"");
 			cmdline += _T(" \"") + tar + _T("\"");
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
 			
+			progress_.title(_T("0% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE"));
+			progress_.position(progress_.minimum());
+			
 			int status = 0;
 			string_type line;
+			int percent = 0;
 			while ((status = proc.gets(line)) >= 0) {
-				progress_.refresh();
+				if (!this->refresh(proc)) break;
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
 					Sleep(10);
@@ -692,8 +715,28 @@ namespace cubeice {
 				}
 				assert(status == 1);
 				
-				string_type::size_type pos = line.find(keyword);
+				string_type::size_type pos = line.find(_T(":%")); // :%n% と言う形で進捗率が表示される
+				if (pos != string_type::npos) {
+					string_type s = line.substr(pos);
+					clx::strip_if(s, clx::is_any_of(_T(":% ")));
+					line.erase(pos);
+					int prev = percent;
+					percent = clx::lexical_cast<int>(s) * 100;
+					progress_.position(percent);
+					if (percent > prev) {
+						string_type title = s + _T("% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE");
+						progress_.title(title);
+					}
+				}
+				
+				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
+				string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
+				if (filename.size() > CUBEICE_MAXCOLUMN) {
+					string_type::size_type startpos = filename.size() - CUBEICE_MAXCOLUMN;
+					filename = _T("...") + filename.substr(startpos);
+				}
+				progress_.text(filename);
 			}
 			
 			DeleteFile(tar.c_str());
@@ -837,6 +880,7 @@ namespace cubeice {
 			cmdline += _T("\"") + path + _T("\"");
 			
 			this->size_ = 0;
+			this->files_.clear();
 			string_type dest;
 			
 			cube::popen proc;
@@ -878,7 +922,6 @@ namespace cubeice {
 					elem.size = v.at(3) != _T("-") ? clx::lexical_cast<std::size_t>(v.at(3)) : 0;
 					if (v.at(1) != _T("-")) elem.time.from_string(v.at(1), string_type(_T("%Y-%m-d %H:%M:%S")));
 					elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
-					//filelist_[v.at(5)] = elem;
 					files_.push_back(elem);
 					progress_.denomcount();
 					this->size_ += elem.size;
@@ -915,13 +958,54 @@ namespace cubeice {
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) return src;
 			
+			string_type message = progress_.text();
+			if (!this->files_.empty()) {
+				progress_.text(this->filename(this->files_[0].name) + _T(" を抽出しています..."));
+			}
+			
+			// NOTE: marquee スタイルから復帰する際，バーが 1% まで進まないと再描画されない．
+			// そのため，一瞬だけ 1% に進めて強制的に再描画を行っている．
+			string_type title_message = this->filename(src) + _T(" を解凍しています - CubeICE");
+			if (this->size_ > 0) {
+				progress_.position(100);
+				progress_.subposition(100);
+				progress_.refresh();
+				progress_.position(progress_.minimum());
+				progress_.subposition(progress_.minimum());
+				progress_.refresh();
+				progress_.title(_T("0% - ") + title_message);
+			}
+			else progress_.title(title_message);
+			
 			int status = 0;
+			int percent = 0;
 			string_type filename;
 			string_type line;
 			while ((status = proc.gets(line)) >= 0) {
-				progress_.refresh();
+				if (!this->refresh(proc)) break;
 				if (status == 2) break; // pipe closed
 				else if (status == 0 || line.empty()) {
+					if (!this->refresh(proc)) break;
+					
+					// プログレスバーの更新
+					if (this->size_ > 0 && !this->files_.empty()) {
+						size_type fsize = filesize(root + _T("\\") + this->files_[0].name);
+						if (!this->refresh(proc)) break;
+						
+						double tmppos = (this->size_ > 0 && fsize > 0) ? (progress_.maximum() - progress_.minimum()) / (this->size_ / (double)fsize) : 0;
+						if (tmppos > progress_.maximum()) tmppos = progress_.maximum();
+						progress_.position(tmppos);
+						progress_.subposition(tmppos);
+						if (!this->refresh(proc)) break;
+						
+						int prev = percent;
+						percent = (tmppos > 1.0) ? static_cast<int>(tmppos / 100.0) : 0;
+						if (percent > prev) {
+							string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + title_message;
+							progress_.title(title);
+						}
+						if (!this->refresh(proc)) break;
+					}
 					Sleep(10);
 					continue;
 				}
@@ -940,6 +1024,7 @@ namespace cubeice {
 				filename = clx::strip_copy(line.substr(pos + keyword.size()));
 			}
 			
+			progress_.text(message);
 			return root + _T('\\') + filename;
 		}
 		
