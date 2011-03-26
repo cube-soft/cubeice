@@ -102,7 +102,7 @@ namespace cubeice {
 				ext = this->compress_extension(runtime.type(), first, last);
 				dest = first->substr(0, first->find_last_of(_T('.'))) + ext;
 				runtime.path() = dest;
-				if (cubeice::dialog::runtime_setting(runtime) == IDCANCEL) return;
+				if (cubeice::dialog::runtime_setting(progress_.handle(), runtime) == IDCANCEL) return;
 				
 				// ランタイム時の設定を反映する
 				runtime.save();
@@ -128,7 +128,7 @@ namespace cubeice {
 				if (dest.empty()) return;
 				
 				// パスワードの設定．
-				if (pass && cubeice::dialog::password(COMPRESS_FLAG) == IDCANCEL) return;
+				if (pass && cubeice::dialog::password(progress_.handle(), COMPRESS_FLAG) == IDCANCEL) return;
 			}
 			
 			// 一時ファイルのパスを決定
@@ -222,7 +222,7 @@ namespace cubeice {
 			
 			if (status < 0) report += error + _T(" Broken pipe.\r\n");
 			if ((setting_.compression().details() & DETAIL_REPORT) && !report.empty()) {
-				cubeice::dialog::report(report);
+				cubeice::dialog::report(progress_.handle(), report);
 			}
 			
 			if (status == 2) {
@@ -432,7 +432,7 @@ namespace cubeice {
 						if (PathFileExists(remove_file.c_str()) == TRUE && this->filesize(remove_file) == 0) {
 							DeleteFile(remove_file.c_str());
 						}
-						if (cubeice::dialog::password(DECOMPRESS_FLAG) == IDCANCEL) break;
+						if (cubeice::dialog::password(progress_.handle(), DECOMPRESS_FLAG) == IDCANCEL) break;
 						cmdline = decompress_cmdline(src, tmp, true);
 						if (!proc.open(cmdline.c_str(), _T("r"))) break;
 						index = 0;
@@ -505,7 +505,7 @@ namespace cubeice {
 				
 				if (status < 0) report += error + _T(" Broken pipe.");
 				if ((setting_.decompression().details() & DETAIL_REPORT) && !report.empty()) {
-					cubeice::dialog::report(report);
+					cubeice::dialog::report(progress_.handle(), report);
 				}
 				
 				// フォルダを開く
@@ -1348,7 +1348,7 @@ namespace cubeice {
 					message += _T("サイズ: ") + this->punct(elem.size) + _T(" バイト\r\n");
 					message += _T("更新日時: ") + elem.time.to_string(_T("%Y-%m-%d %H:%M:%S"));
 					
-					return cubeice::dialog::overwrite(message);
+					return cubeice::dialog::overwrite(progress_.handle(), message);
 				}
 			}
 			return IDOK;

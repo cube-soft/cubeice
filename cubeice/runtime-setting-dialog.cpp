@@ -362,8 +362,8 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  runtime_setting
 		/* ----------------------------------------------------------------- */
-		int runtime_setting(cubeice::runtime_setting& setting) {
-			return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_RUNTIME_COMPRESS"), NULL, compress::runtime_setting_wndproc, (LPARAM)(&setting));
+		int runtime_setting(HWND owner, cubeice::runtime_setting& setting) {
+			return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_RUNTIME_COMPRESS"), owner, compress::runtime_setting_wndproc, (LPARAM)(&setting));
 		}
 	}
 }

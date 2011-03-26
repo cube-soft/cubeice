@@ -61,10 +61,10 @@ namespace cubeice {
 		extern std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* init, const TCHAR* title = _T("名前を付けて保存"));
 		extern std::basic_string<TCHAR> browsefolder(const TCHAR* init, const TCHAR* description = _T("フォルダの参照"));
 		
-		extern int password(int which);
-		extern int overwrite(const std::basic_string<TCHAR>& message);
-		extern int report(const std::basic_string<TCHAR>& message);
-		extern int runtime_setting(cubeice::runtime_setting& setting);
+		extern int password(HWND owner, int which);
+		extern int overwrite(HWND owner, const std::basic_string<TCHAR>& message);
+		extern int report(HWND owner, const std::basic_string<TCHAR>& message);
+		extern int runtime_setting(HWND owner, cubeice::runtime_setting& setting);
 	}
 	
 	/* --------------------------------------------------------------------- */

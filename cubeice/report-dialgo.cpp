@@ -66,8 +66,8 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  report
 		/* ----------------------------------------------------------------- */
-		int report(const std::basic_string<TCHAR>& message) {
-			return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_REPORT"), NULL, report_wndproc, (LPARAM)message.c_str());
+		int report(HWND owner, const std::basic_string<TCHAR>& message) {
+			return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_REPORT"), owner, report_wndproc, (LPARAM)message.c_str());
 		}
 	}
 }
