@@ -339,7 +339,7 @@ namespace cubeice {
 					progress_.title(_T("0% - ") + title_message);
 					folder = this->decompress_filelist(src);
 					if (src.empty() || !PathFileExists(src.c_str())) break;
-					if (this->size_ == 0 && !progress_.is_marquee()) progress_.marquee(true);
+					if (this->size_ == 0) progress_.marquee(true);
 					else if (progress_.is_marquee()) progress_.marquee(false);
 				}
 				
