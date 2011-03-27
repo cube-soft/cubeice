@@ -291,7 +291,6 @@ namespace cubeice {
 						cancel_ = true;
 					}
 				}
-				//InvalidateRect(handle_, NULL, true);
 			}
 			
 			/* ------------------------------------------------------------- */
