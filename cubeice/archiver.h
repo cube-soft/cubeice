@@ -326,7 +326,7 @@ namespace cubeice {
 				// プログレスバーの進行度の設定
 				string_type folder = this->decompress_filelist(src);
 				if (progress_.is_cancel()) break;
-				if (this->size_ == 0 && !progress_.is_marquee()) progress_.marquee(true);
+				if (this->size_ == 0) progress_.marquee(true);
 				else if (progress_.is_marquee()) progress_.marquee(false);
 				
 				// *.tar 系の処理
@@ -975,9 +975,8 @@ namespace cubeice {
 				progress_.position(progress_.minimum());
 				progress_.subposition(progress_.minimum());
 				progress_.refresh();
-				progress_.title(_T("0% - ") + title_message);
 			}
-			else progress_.title(title_message);
+			progress_.title(_T("0% - ") + title_message);
 			
 			int status = 0;
 			int percent = 0;

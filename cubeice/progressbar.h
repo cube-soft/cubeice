@@ -47,7 +47,7 @@ namespace cubeice {
 				handle_(NULL), taskbar_(NULL), style_(normal), pos_(0.0), prev_(0.0), sub_(0.0), min_(0), max_(10000),
 				cancel_(false), suspend_(false), totalsuspend_(0.0), partsuspend_(0.0), start_(false),
 				denominator_(0), denominator_timer_(), denominator_delta_(0.1),
-				numerator_(0), remain_(0) {
+				numerator_(0), remain_(0), remain_fake_(std::make_pair(0, 0)) {
 				this->init();
 			}
 			
@@ -58,7 +58,7 @@ namespace cubeice {
 				handle_(NULL), taskbar_(NULL), style_(style), pos_(0.0), prev_(0.0), sub_(0.0), min_(0), max_(10000),
 				cancel_(false), suspend_(false), totalsuspend_(0.0), partsuspend_(0.0), start_(false),
 				denominator_(0), denominator_timer_(), denominator_delta_(0.1),
-				numerator_(0), remain_(0) {
+				numerator_(0), remain_(0), remain_fake_(std::make_pair(0, 0)) {
 				this->init();
 			}
 			
@@ -89,7 +89,7 @@ namespace cubeice {
 					if (taskbar_) taskbar_->SetProgressState(handle_, TBPF_NORMAL);
 				}
 				timer_.restart();
-				denominator_timer_.update();
+				denominator_timer_.restart();
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -308,6 +308,8 @@ namespace cubeice {
 					if( start_ && pos_ != min_ ) {
 						if (pos_ - prev_ > 1) {
 							remain_ = static_cast<int>((timer_.elapsed() + partsuspend_) * (max_ - pos_) / (pos_ - min_));
+							remain_fake_.first = static_cast<int>(timer_.elapsed() + partsuspend_) - remain_fake_.first;
+							remain_fake_.second = 0;
 							
 							// 1 の位を切り上げ
 							remain_ += 10;
@@ -317,8 +319,11 @@ namespace cubeice {
 							prev_ = pos_;
 						}
 						else {
-							--remain_;
-							if (remain_ < 10) remain_ = 10;
+							// フェイクで減少させる時間は，直前の更新に要した経過時間を最大値とする．
+							if (remain_ > 10 && remain_fake_.second < remain_fake_.first) {
+								--remain_;
+								++remain_fake_.second;
+							}
 						}
 						format_time( remain_time, remain_ );
 						string_type message(_T("約 "));
@@ -398,6 +403,7 @@ namespace cubeice {
 			double denominator_delta_;
 			int numerator_;
 			int remain_;
+			std::pair<int, int> remain_fake_; // 残り時間の表示を滑らかにするために使用する情報
 			
 			/* ------------------------------------------------------------- */
 			//  init
@@ -407,7 +413,7 @@ namespace cubeice {
 				HRESULT result = CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&taskbar_));
 				if (!SUCCEEDED(result)) taskbar_ = NULL;
 			}
-
+			
 			/* ------------------------------------------------------------- */
 			//  closed_handles
 			/* ------------------------------------------------------------- */
