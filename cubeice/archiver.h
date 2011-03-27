@@ -142,7 +142,6 @@ namespace cubeice {
 			
 			// プログレスバーの設定
 			this->compress_prepare_filelist(first, last);
-			//this->compress_filelist();
 			boost::thread	thr( boost::bind( &cubeice::archiver::compress_filelist, this ) );
 			HANDLE th = thr.native_handle();
 			SetPriorityClass(th, ABOVE_NORMAL_PRIORITY_CLASS);
@@ -636,6 +635,7 @@ namespace cubeice {
 				progress_.denomcount();
 				if (directory) compress_filelist_folder(*first);
 			}
+			progress_.denomcount(0);
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -672,12 +672,13 @@ namespace cubeice {
 #endif
 					this->files_.push_back(elem);
 					++filenum;
+					progress_.denomcount();
 					this->size_ += elem.size;
 					if (directory) this->compress_filelist_folder(s);
 				}
 			} while (FindNextFile(handle, &wfd));
 			FindClose(handle);
-			progress_.denomcount(filenum);
+			//progress_.denomcount(filenum);
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -940,6 +941,7 @@ namespace cubeice {
 				buffer.clear();
 			}
 			if (!single) dest.erase();
+			progress_.denomcount(0);
 			
 			return dest;
 		}

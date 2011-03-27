@@ -44,8 +44,10 @@ namespace cubeice {
 			//  constructor
 			/* ------------------------------------------------------------- */
 			progressbar() :
-				handle_(NULL), taskbar_(NULL), style_(normal), pos_(0.0), sub_(0.0), min_(0), max_(10000),
-				cancel_(false), suspend_(false), totalsuspend_(0.0), partsuspend_(0.0), start_(false), denominator_(0), numerator_(0) {
+				handle_(NULL), taskbar_(NULL), style_(normal), pos_(0.0), prev_(0.0), sub_(0.0), min_(0), max_(10000),
+				cancel_(false), suspend_(false), totalsuspend_(0.0), partsuspend_(0.0), start_(false),
+				denominator_(0), denominator_timer_(), denominator_delta_(0.1),
+				numerator_(0), remain_(0) {
 				this->init();
 			}
 			
@@ -53,8 +55,10 @@ namespace cubeice {
 			//  constructor
 			/* ------------------------------------------------------------- */
 			explicit progressbar(int style) :
-				handle_(NULL), taskbar_(NULL), style_(style), pos_(0.0), sub_(0.0), min_(0), max_(10000),
-				cancel_(false), suspend_(false), totalsuspend_(0.0), partsuspend_(0.0), start_(false), denominator_(0), numerator_(0) {
+				handle_(NULL), taskbar_(NULL), style_(style), pos_(0.0), prev_(0.0), sub_(0.0), min_(0), max_(10000),
+				cancel_(false), suspend_(false), totalsuspend_(0.0), partsuspend_(0.0), start_(false),
+				denominator_(0), denominator_timer_(), denominator_delta_(0.1),
+				numerator_(0), remain_(0) {
 				this->init();
 			}
 			
@@ -64,7 +68,7 @@ namespace cubeice {
 			~progressbar() {
 				CoUninitialize();
 			}
-
+			
 			/* ------------------------------------------------------------- */
 			//  constructor
 			/* ------------------------------------------------------------- */
@@ -85,6 +89,7 @@ namespace cubeice {
 					if (taskbar_) taskbar_->SetProgressState(handle_, TBPF_NORMAL);
 				}
 				timer_.restart();
+				denominator_timer_.update();
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -164,7 +169,7 @@ namespace cubeice {
 			//  maximum
 			/* ------------------------------------------------------------- */
 			size_type maximum() const { return max_; }
-
+			
 			/* ------------------------------------------------------------- */
 			//  maximum
 			/* ------------------------------------------------------------- */
@@ -293,22 +298,38 @@ namespace cubeice {
 			//  timer_refresh
 			/* ------------------------------------------------------------- */
 			void timer_refresh() {
-				TCHAR		elapse_time[128];
-				TCHAR		remain_time[128];
-
+				TCHAR		elapse_time[128] = {};
+				TCHAR		remain_time[128] = {};
+				
 				if( !suspend_ ) {
 					format_time( elapse_time, (int)( timer_.elapsed() + totalsuspend_ ) );
 					SetDlgItemText( handle_, IDC_ELAPSE_LABEL, elapse_time );
-
+					
 					if( start_ && pos_ != min_ ) {
-						format_time( remain_time, (int)( ( timer_.elapsed() + partsuspend_ ) * ( max_ - pos_ ) / ( pos_ - min_ ) ) );
-						SetDlgItemText( handle_, IDC_REMAIN_LABEL, remain_time );
+						if (pos_ - prev_ > 1) {
+							remain_ = static_cast<int>((timer_.elapsed() + partsuspend_) * (max_ - pos_) / (pos_ - min_));
+							
+							// 1 の位を切り上げ
+							remain_ += 10;
+							remain_ /= 10;
+							remain_ *= 10;
+							
+							prev_ = pos_;
+						}
+						else {
+							--remain_;
+							if (remain_ < 10) remain_ = 10;
+						}
+						format_time( remain_time, remain_ );
+						string_type message(_T("約 "));
+						message += remain_time;
+						SetDlgItemText( handle_, IDC_REMAIN_LABEL, message.c_str() );
 					} else {
 						SetDlgItemText( handle_, IDC_REMAIN_LABEL, _T("--:--:--") );
 					}
 				}
 			}
-
+			
 			/* ------------------------------------------------------------- */
 			//  start
 			/* ------------------------------------------------------------- */
@@ -316,32 +337,42 @@ namespace cubeice {
 				start_ = true;
 				partsuspend_ = 0;
 			}
-
-
+			
 			/* ------------------------------------------------------------- */
-			//  denomcount
+			/*
+			 *  denomcount
+			 *
+			 *  ファイル総数をカウントアップさせる．denomcount は，
+			 *  実際の表示部分はタイマーを用いて一定時間ごとに更新している．
+			 *  そのため，場合によっては更新されない場合がある．
+			 *  その場合は，引数に 0 を指定する事によって強制的に現在の値
+			 *  を表示させる．
+			 */
 			/* ------------------------------------------------------------- */
 			void denomcount(int diff = 1) {
-				std::basic_string<TCHAR>	str;
-
 				denominator_ += diff;
-
-				str = clx::lexical_cast<std::basic_string<TCHAR> >(denominator_);
-				SetDlgItemText( handle_, IDC_FN_DENOM_LABEL, str.c_str() );
+				
+				if (diff == 0 || denominator_timer_.elapsed() > denominator_delta_) {
+					std::basic_string<TCHAR> str = clx::lexical_cast<std::basic_string<TCHAR> >(denominator_);
+					SetDlgItemText( handle_, IDC_FN_DENOM_LABEL, str.c_str() );
+					denominator_timer_.update();
+					if (diff == 0) denominator_delta_ = 0.1;
+					else if (denominator_delta_ < 1.0) denominator_delta_ += 0.1;
+				}
 			}
-
+			
 			/* ------------------------------------------------------------- */
 			//  numcount
 			/* ------------------------------------------------------------- */
 			void numcount(int diff = 1) {
 				std::basic_string<TCHAR>	str;
-
+				
 				numerator_ += diff;
-
+				
 				str = clx::lexical_cast<std::basic_string<TCHAR> >(numerator_);
 				SetDlgItemText( handle_, IDC_FN_NUM_LABEL, str.c_str() );
 			}
-
+			
 			/* ------------------------------------------------------------- */
 			//  handle
 			/* ------------------------------------------------------------- */
@@ -352,6 +383,7 @@ namespace cubeice {
 			ITaskbarList3* taskbar_;
 			int style_;
 			double pos_;
+			double prev_;
 			double sub_;
 			size_type min_;
 			size_type max_;
@@ -362,7 +394,10 @@ namespace cubeice {
 			double partsuspend_;
 			bool start_;
 			int denominator_;
+			clx::timer denominator_timer_;
+			double denominator_delta_;
 			int numerator_;
+			int remain_;
 			
 			/* ------------------------------------------------------------- */
 			//  init
@@ -387,7 +422,7 @@ namespace cubeice {
 			static INT_PTR CALLBACK wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 				static progressbar	*prog;
 				const UINT_PTR		TIMER_ID = WM_APP;
-
+				
 				switch (msg) {
 				case WM_INITDIALOG:
 				{
