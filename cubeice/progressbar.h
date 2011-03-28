@@ -324,10 +324,13 @@ namespace cubeice {
 								++remain_fake_.second;
 							}
 						}
-						format_time( remain_time, remain_ );
-						string_type message(_T("–ñ "));
-						message += remain_time;
-						SetDlgItemText( handle_, IDC_REMAIN_LABEL, message.c_str() );
+						
+						if (remain_ % 10 == 0) {
+							format_time( remain_time, remain_ );
+							string_type message(_T("–ñ "));
+							message += remain_time;
+							SetDlgItemText( handle_, IDC_REMAIN_LABEL, message.c_str() );
+						}
 					} else {
 						SetDlgItemText( handle_, IDC_REMAIN_LABEL, _T("--:--:--") );
 					}
