@@ -214,22 +214,6 @@ namespace cubeice {
 	}
 	
 	/* --------------------------------------------------------------------- */
-	//  is_dotnet_installed
-	/* --------------------------------------------------------------------- */
-	inline bool is_dotnet_installed() {
-		std::basic_string<TCHAR> subkey = _T("Software\\Microsoft\\NET Framework Setup\\NDP\\v2.0.50727");
-		HKEY hkResult;
-		LONG lResult = RegOpenKeyEx(HKEY_LOCAL_MACHINE, subkey.c_str(), 0, KEY_READ, &hkResult);
-		if (lResult) return false;
-		
-		int value = 0;
-		DWORD dwType = 0;
-		DWORD dwSize = sizeof(value);
-		RegQueryValueEx(hkResult, _T("Install"), NULL, &dwType, (LPBYTE)&value, &dwSize);
-		return (value == 1);
-	}
-	
-	/* --------------------------------------------------------------------- */
 	/*
 	 *  RegDeleteKeyNT
 	 *
@@ -552,7 +536,7 @@ namespace cubeice {
 			
 			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 0, KEY_ALL_ACCESS, &hkResult);
 			if (!lResult) {
-				if (update_ && is_dotnet_installed()) {
+				if (update_) {
 					TCHAR buffer[1024] = {};
 					GetCurrentDirectory(1024, buffer);
 					std::basic_string<TCHAR> value = _T("\"");
