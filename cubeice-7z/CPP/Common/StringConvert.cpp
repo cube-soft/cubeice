@@ -78,15 +78,25 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
     babel::init_babel();
     babel::analyze_result analyze_result = babel::analyze_base_encoding((const char*)srcString);
     switch(analyze_result.get_strict_result()) {
-	case babel::base_encoding::utf8 : {
-      AString		convString = srcString;
-      for( unsigned int i = 0 ; i < sizeof( utf_8_mac_mapping ) / sizeof( utf_8_mac_mapping[0] ) ; ++i )
-        convString.Replace( utf_8_mac_mapping[i][0], utf_8_mac_mapping[i][1] );
-      resultString = babel::utf8_to_unicode((const char*)convString).c_str(); break;
+    case babel::base_encoding::utf8 : {
+        AString convString = srcString;
+        for( unsigned int i = 0 ; i < sizeof( utf_8_mac_mapping ) / sizeof( utf_8_mac_mapping[0] ) ; ++i ) {
+            convString.Replace( utf_8_mac_mapping[i][0], utf_8_mac_mapping[i][1] );
+        }
+        resultString = babel::utf8_to_unicode((const char*)convString).c_str(); break;
     }
+    case babel::base_encoding::sjis :
+        if (codePage == CP_UTF8) { // Windows 以外で圧縮されたファイル．恐らく babel の推測ミス．
+            AString convString = srcString;
+            for( unsigned int i = 0 ; i < sizeof( utf_8_mac_mapping ) / sizeof( utf_8_mac_mapping[0] ) ; ++i ) {
+                convString.Replace( utf_8_mac_mapping[i][0], utf_8_mac_mapping[i][1] );
+            }
+            resultString = babel::utf8_to_unicode((const char*)convString).c_str(); break;
+        }
+        else resultString = babel::sjis_to_unicode((const char*)srcString).c_str();
+        break;
     case babel::base_encoding::euc :  resultString = babel::euc_to_unicode((const char*)srcString).c_str(); break;
     case babel::base_encoding::jis :  resultString = babel::jis_to_unicode((const char*)srcString).c_str(); break;
-    case babel::base_encoding::sjis : resultString = babel::sjis_to_unicode((const char*)srcString).c_str(); break;
     default: 
       int numChars = MultiByteToWideChar(codePage, 0, srcString,
         srcString.Length(), resultString.GetBuffer(srcString.Length()),
