@@ -156,7 +156,8 @@ namespace cube {
 					return NO_ERROR;
 				
 				// Add separator
-				InsertMenu( hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
+				if( !isDragAndDrop )
+					InsertMenu( hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
 				
 				for( unsigned int i = 0 ; MenuItem[i].stringA ; ++i ) {
 					if( MenuItem[i].dispSetting && !this->is_visible( MenuItem[i].dispSetting ) )
@@ -291,7 +292,12 @@ namespace cube {
 				
 				GlobalUnlock( hDrop );
 				ReleaseStgMedium( &stgm );
-				
+
+				if( pIDFolder )
+					isDragAndDrop = true;
+				else
+					isDragAndDrop = false;
+
 				return S_OK;
 			}
 			
@@ -721,6 +727,7 @@ namespace cube {
 			size_type							fileNum;
 			size_type							folderNum;
 			tstring								cubeiceEnginePath;
+			bool								isDragAndDrop;
 		};
 
 	}
