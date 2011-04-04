@@ -470,21 +470,13 @@ namespace cubeice {
 				SendMessage(pic, STM_SETIMAGE, IMAGE_ICON, LPARAM(logo));
 				
 				// バージョン
-				HKEY subkey;
-				LONG result = RegOpenKeyEx(HKEY_LOCAL_MACHINE, CUBEICE_REG_ROOT, 0, KEY_READ, &subkey);
-				if (!result) {
-					TCHAR buffer[1024] = {};
-					DWORD type = 0;
-					DWORD size = 1024;
-					if (RegQueryValueEx(subkey, CUBEICE_REG_VERSION, NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS) {
-						std::basic_string<TCHAR> message = _T("Version: ");
-						message += buffer;
-						if (sizeof(INT_PTR) == 4) message += _T(" (x86)");
-						else message += _T(" (x64)");
-						SetWindowText(GetDlgItem(hWnd, IDC_VERSION_LABEL), message.c_str());
-					}
-				}
+				std::basic_string<TCHAR> message = _T("Version: ");
+				message += Setting.version();
+				if (sizeof(INT_PTR) == 4) message += _T(" (x86)");
+				else message += _T(" (x64)");
+				SetWindowText(GetDlgItem(hWnd, IDC_VERSION_LABEL), message.c_str());
 				
+				// アップデートの確認
 				if (Setting.update()) CheckDlgButton(hWnd, IDC_UPDATE_CHECKBOX, BM_SETCHECK);
 				
 				break;
