@@ -428,7 +428,7 @@ namespace cubeice {
 		//  constructor
 		/* ----------------------------------------------------------------- */
 		user_setting() :
-			root_(CUBEICE_REG_ROOT),
+			root_(CUBEICE_REG_ROOT), install_(_T("")), version_(_T("")),
 			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
 			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true) {
@@ -441,7 +441,7 @@ namespace cubeice {
 		}
 		
 		explicit user_setting(const string_type& root) :
-			root_(root),
+			root_(root), install_(_T("")), version_(_T("")),
 			comp_(root + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(root + _T('\\') + CUBEICE_REG_DECOMPRESS),
 			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true) {
@@ -461,7 +461,25 @@ namespace cubeice {
 			decomp_.load();
 			
 			HKEY hkResult;
-			LONG lResult = RegOpenKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, KEY_ALL_ACCESS, &hkResult);
+			LONG lResult = RegOpenKeyEx(HKEY_LOCAL_MACHINE, root_.c_str(), 0, KEY_READ, &hkResult);
+			if (!lResult) {
+				DWORD dwType;
+				DWORD dwSize = 0;
+				
+				char_type install[2 * 1024] = {};
+				dwSize = sizeof(install);
+				if (RegQueryValueEx(hkResult, CUBEICE_REG_INSTALL, NULL, &dwType, (LPBYTE)install, &dwSize) == ERROR_SUCCESS) {
+					install_ = install;
+				}
+				
+				char_type version[32] = {};
+				dwSize = sizeof(version);
+				if (RegQueryValueEx(hkResult, CUBEICE_REG_VERSION, NULL, &dwType, (LPBYTE)version, &dwSize) == ERROR_SUCCESS) {
+					version_ = version;
+				}
+			}
+			
+			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, KEY_ALL_ACCESS, &hkResult);
 			if (!lResult) {
 				DWORD dwType;
 				DWORD dwSize;
@@ -489,15 +507,14 @@ namespace cubeice {
 				}
 			}
 			
+			update_ = false;
 			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 0, KEY_ALL_ACCESS, &hkResult);
 			if (!lResult) {
 				char_type buffer[1024] = {};
 				DWORD dwType;
 				DWORD dwSize = sizeof(buffer);
 				if (RegQueryValueEx(hkResult, _T("cubeice-checker"), NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) update_ = true;
-				else update_ = false;
 			}
-			else update_ = false;
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -539,10 +556,8 @@ namespace cubeice {
 			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 0, KEY_ALL_ACCESS, &hkResult);
 			if (!lResult) {
 				if (update_) {
-					TCHAR buffer[1024] = {};
-					GetCurrentDirectory(1024, buffer);
 					std::basic_string<TCHAR> value = _T("\"");
-					value += buffer;
+					value += install_;
 					value += _T("\\cubeice-checker.exe\"");
 					RegSetValueEx(hkResult, _T("cubeice-checker"), 0, REG_SZ, (CONST BYTE*)value.c_str(), (value.length() + 1) * sizeof(char_type));
 				}
@@ -551,6 +566,16 @@ namespace cubeice {
 			
 			this->associate(decomp_.flags(), decomp_.details());
 		}
+		
+		/* ----------------------------------------------------------------- */
+		//  install_path
+		/* ----------------------------------------------------------------- */
+		const string_type& install_path() const { return install_; }
+		
+		/* ----------------------------------------------------------------- */
+		//  version
+		/* ----------------------------------------------------------------- */
+		const string_type& version() const { return version_; }
 		
 		/* ----------------------------------------------------------------- */
 		/*
@@ -612,6 +637,8 @@ namespace cubeice {
 		
 	private:
 		string_type root_;
+		string_type install_;
+		string_type version_;
 		archive_type comp_;
 		archive_type decomp_;
 		size_type ctx_flags_;
