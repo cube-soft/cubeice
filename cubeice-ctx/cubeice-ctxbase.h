@@ -76,9 +76,9 @@ namespace cube {
 				ctxSetting(), refCount( 1UL ), hInstance( hDllInstance ), dllRefCount( dllrc ),
 				fileNum( 0 ), folderNum( 0 ) {
 				InterlockedIncrement( reinterpret_cast<LONG*>(&dllRefCount) );
-
+				
 				TCHAR	path[4096];
-
+				
 				GetModuleFileName( hDllInstance, path, sizeof( path ) );
 				PathRemoveFileSpec( path );
 				cubeiceEnginePath = path;
