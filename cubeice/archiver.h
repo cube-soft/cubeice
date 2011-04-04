@@ -564,9 +564,10 @@ namespace cubeice {
 			if (filetype == _T("gzip") || filetype == _T("bzip2")) {
 				int n = 0;
 				for (InputIterator pos = first; pos != last; ++pos) ++n;
-				if (n > 1 || first->find_last_of(_T('.')) == string_type::npos) {
+				if (n > 1 || PathIsDirectory(first->c_str())) {
 					ext = _T(".tar") + ext;
 				}
+				else if (filetype == _T("bzip2")) ext = first->substr(first->find_last_of('.')) + ext;
 			}
 			
 			return ext;
