@@ -495,7 +495,9 @@ namespace cubeice {
 				DWORD dwType;
 				DWORD dwSize = sizeof(buffer);
 				if (RegQueryValueEx(hkResult, _T("cubeice-checker"), NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) update_ = true;
+				else update_ = false;
 			}
+			else update_ = false;
 		}
 		
 		/* ----------------------------------------------------------------- */

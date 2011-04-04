@@ -427,7 +427,8 @@ namespace cubeice {
 					// パスワード処理
 					if (line.find(password) != string_type::npos || line.find(password_error) != string_type::npos) {
 						proc.close();
-						string_type remove_file = root + _T("\\") + files_[index - 1].name;
+						
+						string_type remove_file = root + _T("\\") + files_[std::max(static_cast<int>(index - 1), 0)].name;
 						if (PathFileExists(remove_file.c_str()) == TRUE && this->filesize(remove_file) == 0) {
 							DeleteFile(remove_file.c_str());
 						}
