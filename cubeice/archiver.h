@@ -97,6 +97,7 @@ namespace cubeice {
 			string_type ext;
 			string_type dest;
 			std::vector<string_type> options;
+			bool update;
 			if (filetype == _T("detail")) {
 				cubeice::runtime_setting runtime;
 				ext = this->compress_extension(runtime.type(), first, last);
@@ -108,6 +109,7 @@ namespace cubeice {
 				runtime.save();
 				dest = runtime.path();
 				filetype = runtime.type();
+				update = runtime.update();
 				ext = this->compress_extension(filetype, first, last);
 				if (filetype == _T("tgz")) filetype = _T("gzip");
 				else if (filetype == _T("tbz")) filetype = _T("bzip2");
@@ -132,7 +134,7 @@ namespace cubeice {
 			}
 			
 			// 一時ファイルのパスを決定
-			string_type tmp = tmpfile(_T("cubeice"));
+			string_type tmp = update ? dest : tmpfile(_T("cubeice"));
 			if (tmp.empty()) return;
 			
 			progress_.style(cubeice::dialog::progressbar::simple);
@@ -149,7 +151,10 @@ namespace cubeice {
 			
 			// コマンドラインの作成
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
-			cmdline += _T(" a");
+			if( update )
+				cmdline += _T(" u");
+			else
+				cmdline += _T(" a");
 			if (filetype == _T("exe")) cmdline += _T(" -sfx7z.sfx");
 			else if (ext == _T(".tgz") || ext == _T(".tbz") || ext.find(_T(".tar")) != string_type::npos) cmdline += _T(" -ttar");
 			else cmdline += _T(" -t") + filetype;
@@ -249,7 +254,8 @@ namespace cubeice {
 					}
 				}
 				
-				MoveFileEx(tmp.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED));
+				if( !update )
+					MoveFileEx(tmp.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED));
 				
 				// フィルタリング
 				if ((setting_.compression().details() & DETAIL_FILTER) && !setting_.filters().empty()) {
@@ -265,7 +271,7 @@ namespace cubeice {
 				}
 			}
 			
-			if (PathFileExists(tmp.c_str())) DeleteFile(tmp.c_str());
+			if (!update && PathFileExists(tmp.c_str())) DeleteFile(tmp.c_str());
 		}
 		
 		/* ----------------------------------------------------------------- */

@@ -58,7 +58,7 @@ namespace cubeice {
 		}
 
 		extern std::basic_string<TCHAR> openfile(const TCHAR* filter, const TCHAR* init, const TCHAR* title = _T("ファイルを開く"));
-		extern std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* init, const TCHAR* title = _T("名前を付けて保存"));
+		extern std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* init, const DWORD flag = OFN_OVERWRITEPROMPT, const TCHAR* title = _T("名前を付けて保存"));
 		extern std::basic_string<TCHAR> browsefolder(const TCHAR* init, const TCHAR* description = _T("フォルダの参照"));
 		
 		extern int password(HWND owner, int which);
@@ -76,8 +76,10 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  compress_types
 		/* ----------------------------------------------------------------- */
-		inline param_list& compress_types() {
+		inline param_list& compress_types(const bool &update) {
 			static param_list v_;
+			static param_list v2_;
+
 			static bool initialized_ = false;
 			if (!initialized_) {
 				v_.clear();
@@ -88,8 +90,12 @@ namespace cubeice {
 				v_.push_back(_T("bzip2"));
 				v_.push_back(_T("tgz"));
 				v_.push_back(_T("tbz"));
+
+				v2_.clear();
+				v2_.push_back(_T("zip"));
+				v2_.push_back(_T("7z"));
 			}
-			return v_;
+			return update ? v2_ : v_;
 		}
 		
 		/* ----------------------------------------------------------------- */

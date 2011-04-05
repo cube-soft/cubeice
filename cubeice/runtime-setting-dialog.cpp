@@ -48,6 +48,14 @@ namespace cubeice {
 				HICON app = LoadIcon(GetModuleHandle(NULL), _T("IDI_APP"));
 				SendMessage(hWnd, WM_SETICON, 0, LPARAM(app));
 				
+				// 上書き設定
+				SendDlgItemMessage( hWnd, IDC_OUTPUT_COMBOBOX, CB_ADDSTRING, 0, (LPARAM)_T("上書き") );
+				SendDlgItemMessage( hWnd, IDC_OUTPUT_COMBOBOX, CB_ADDSTRING, 0, (LPARAM)_T("追加") );
+				if( setting.update() )
+					SendDlgItemMessage( hWnd, IDC_OUTPUT_COMBOBOX, CB_SETCURSEL, 1, 0 );
+				else
+					SendDlgItemMessage( hWnd, IDC_OUTPUT_COMBOBOX, CB_SETCURSEL, 0, 0 );
+
 				// 画面中央に表示
 				RECT rect = {};
 				GetWindowRect(hWnd, (LPRECT)&rect);
@@ -59,7 +67,7 @@ namespace cubeice {
 				SetWindowText(GetDlgItem(hWnd, IDC_OUTPUT_TEXTBOX), setting.path().c_str());
 				
 				// 圧縮形式
-				const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types();
+				const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
 				HWND combo = GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX);
 				std::size_t index = 0; // 初期値は「zip」
 				for (std::size_t i = 0; i < types.size(); ++i) {
@@ -147,13 +155,16 @@ namespace cubeice {
 			 */
 			/* ----------------------------------------------------------------- */
 			static INT_PTR runtime_setting_termdialog(HWND hWnd, cubeice::runtime_setting& setting) {
+				// 上書き設定
+				setting.update() = SendDlgItemMessage(hWnd, IDC_OUTPUT_COMBOBOX, CB_GETCURSEL, 0, 0) != 0;
+
 				// 出力先
 				TCHAR path[2048] = {};
 				GetDlgItemText(hWnd, IDC_OUTPUT_TEXTBOX, path, 2048);
 				setting.path() = path;
 				
 				// 圧縮形式
-				const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types();
+				const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
 				std::size_t index = SendMessage(GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
 				setting.type() = types.at(index);
 				
@@ -236,8 +247,6 @@ namespace cubeice {
 			 */
 			/* ----------------------------------------------------------------- */
 			static INT_PTR runtime_setting_command(HWND hWnd, WPARAM wp, LPARAM lp, cubeice::runtime_setting& setting) {
-				static bool confirm = false;
-				
 				switch (LOWORD(wp)) {
 				case IDCANCEL:
 					EndDialog(hWnd, IDCANCEL);
@@ -253,7 +262,7 @@ namespace cubeice {
 					
 					runtime_setting_termdialog(hWnd, setting);
 					
-					if (!confirm && PathFileExists(setting.path().c_str())) {
+					if (!setting.update() && PathFileExists(setting.path().c_str())) {
 						std::basic_string<TCHAR> message = setting.path() + _T(" は既に存在します。上書きしますか？");
 						if (MessageBox(hWnd, message.c_str(), _T("上書きの確認"), MB_YESNO | MB_ICONWARNING) == IDNO) break;
 					}
@@ -264,17 +273,35 @@ namespace cubeice {
 				case IDC_OUTPUT_BUTTON: // 出力先を選択
 				{
 					const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-					std::basic_string<TCHAR> path = cubeice::dialog::savefile(filter, setting.path().c_str());
+					std::basic_string<TCHAR> path = cubeice::dialog::savefile(filter, setting.path().c_str(), 0);
 					if (!path.empty()) {
 						setting.path() = path;
-						confirm = true;
 					}
 					SetWindowText(GetDlgItem(hWnd, IDC_OUTPUT_TEXTBOX), setting.path().c_str());
 					break;
 				}
+				case IDC_OUTPUT_COMBOBOX:
+				{
+					if(HIWORD(wp) != CBN_SELCHANGE)
+						break;
+					setting.update() = SendDlgItemMessage(hWnd, IDC_OUTPUT_COMBOBOX, CB_GETCURSEL, 0, 0) != 0;
+
+					// 圧縮形式
+					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
+					HWND combo = GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX);
+					std::size_t index = 0; // 初期値は「zip」
+					SendMessage( combo, CB_RESETCONTENT, 0, 0 );
+					for (std::size_t i = 0; i < types.size(); ++i) {
+						SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)types.at(i).c_str());
+						if (setting.type() == types.at(i)) index = i;
+					}
+					SendMessage(combo, CB_SETCURSEL, index, 0);
+					setting.type() = types.at(index);
+					// fall through
+				}
 				case IDC_COMPTYPE_COMBOBOX:
 				{
-					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types();
+					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
 					std::size_t index = SendMessage(GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
 					if (types.at(index) == _T("zip") || types.at(index) == _T("7z")) {
 						HWND combo = GetDlgItem(hWnd, IDC_COMPMETHOD_COMBOBOX);
@@ -315,7 +342,7 @@ namespace cubeice {
 					EnableWindow(GetDlgItem(hWnd, IDC_SHOWPASS_CHECKBOX), enabled);
 					
 					// 暗号化メソッドは zip 以外は無効
-					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types();
+					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
 					std::size_t index = SendMessage(GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
 					if (types.at(index) != _T("zip")) enabled = FALSE;
 					EnableWindow(GetDlgItem(hWnd, IDC_ENMETHOD_COMBOBOX), enabled);

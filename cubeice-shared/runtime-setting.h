@@ -30,6 +30,7 @@
 //  レジストリ
 /* ------------------------------------------------------------------------- */
 #define CUBEICE_REG_RUNTIME             _T("Software\\CubeSoft\\CubeICE\\Runtime")
+#define CUBEICE_REG_OVERWRITE           _T("Overwrite")
 #define CUBEICE_REG_COMPTYPE            _T("CompressType")
 #define CUBEICE_REG_COMPLEVEL           _T("CompressLevel")
 #define CUBEICE_REG_COMPMETHOD          _T("CompressMethod")
@@ -49,7 +50,7 @@ namespace cubeice {
 		//  constructor
 		/* ----------------------------------------------------------------- */
 		runtime_setting() :
-			path_(), type_(_T("zip")), level_(5), method_(), thread_size_(1),
+			update_(), path_(), type_(_T("zip")), level_(5), method_(), thread_size_(1),
 			enable_password_(false), show_password_(false), password_(), encoding_() {
 			this->load();
 		}
@@ -61,10 +62,17 @@ namespace cubeice {
 			HKEY subkey;
 			if (RegOpenKeyEx(HKEY_CURRENT_USER, CUBEICE_REG_RUNTIME, 0, KEY_ALL_ACCESS, &subkey)) return;
 			
+			// 上書き設定
+			DWORD value = 0;
+			DWORD type = 0;
+			DWORD size = sizeof(value);
+			RegQueryValueEx(subkey, CUBEICE_REG_OVERWRITE, NULL, &type, (LPBYTE)&value, &size);
+			update_ = (value != 0);
+			
 			// 圧縮形式
 			char_type buffer[1024] = {};
-			DWORD type = 0;
-			DWORD size = sizeof(buffer);
+			type = 0;
+			size = sizeof(buffer);
 			if (RegQueryValueEx(subkey, CUBEICE_REG_COMPTYPE, NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS) type_ = buffer;
 			
 			// 圧縮レベル
@@ -84,7 +92,7 @@ namespace cubeice {
 			RegQueryValueEx(subkey, CUBEICE_REG_THREAD_SIZE, NULL, &type, (LPBYTE)&thread_size_, &size);
 			
 			// パスワードを設定する
-			DWORD value = 0;
+			value = 0;
 			type = 0;
 			size = sizeof(value);
 			RegQueryValueEx(subkey, CUBEICE_REG_ENABLE_PASSWORD, NULL, &type, (LPBYTE)&value, &size);
@@ -112,6 +120,10 @@ namespace cubeice {
 			DWORD disposition;
 			if (RegCreateKeyEx(HKEY_CURRENT_USER, CUBEICE_REG_RUNTIME, 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition)) return;
 			
+			// 上書き設定
+			DWORD value = update_ ? 1 : 0;
+			RegSetValueEx(subkey, CUBEICE_REG_OVERWRITE, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
+			
 			// 圧縮形式
 			if (!type_.empty()) {
 				DWORD byte = (type_.length() + 1) * sizeof(char_type);
@@ -120,7 +132,7 @@ namespace cubeice {
 			else RegDeleteValue(subkey, CUBEICE_REG_COMPTYPE);
 			
 			// 圧縮レベル
-			DWORD value = static_cast<DWORD>(level_);
+			value = static_cast<DWORD>(level_);
 			RegSetValueEx(subkey, CUBEICE_REG_COMPLEVEL, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
 			
 			// 圧縮メソッド
@@ -149,6 +161,12 @@ namespace cubeice {
 			}
 			else RegDeleteValue(subkey, CUBEICE_REG_ENMETHOD);
 		}
+		
+		/* ----------------------------------------------------------------- */
+		//  update
+		/* ----------------------------------------------------------------- */
+		bool& update() { return update_; }
+		const bool update() const { return update_; }
 		
 		/* ----------------------------------------------------------------- */
 		//  path
@@ -205,6 +223,7 @@ namespace cubeice {
 		const string_type& encoding() const { return encoding_; }
 		
 	private:
+		bool update_;
 		string_type path_;
 		string_type type_;
 		size_type level_;
