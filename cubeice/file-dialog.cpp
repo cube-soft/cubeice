@@ -58,7 +58,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  savefile
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* init, const TCHAR* title) {
+		std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* init, const DWORD flag, const TCHAR* title) {
 			typedef TCHAR char_type;
 			typedef std::basic_string<TCHAR> string_type;
 			
@@ -73,7 +73,7 @@ namespace cubeice {
 			ofn.lpstrFileTitle = filename;
 			ofn.nMaxFile = CUBE_MAX_PATH;
 			ofn.nMaxFileTitle = CUBE_MAX_PATH;
-			ofn.Flags = OFN_OVERWRITEPROMPT;
+			ofn.Flags = flag;
 			ofn.lpstrTitle = title;
 			
 			if (GetSaveFileName(&ofn)) return std::basic_string<char_type>(path);
