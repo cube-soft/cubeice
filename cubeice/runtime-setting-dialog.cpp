@@ -289,11 +289,11 @@ namespace cubeice {
 					// 圧縮形式
 					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
 					HWND combo = GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX);
-					std::size_t index = 0; // 初期値は「zip」
+					std::size_t index = SendMessage(combo, CB_GETCURSEL, 0, 0);
+					if (index >= types.size()) index = 0;
 					SendMessage( combo, CB_RESETCONTENT, 0, 0 );
 					for (std::size_t i = 0; i < types.size(); ++i) {
 						SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)types.at(i).c_str());
-						if (setting.type() == types.at(i)) index = i;
 					}
 					SendMessage(combo, CB_SETCURSEL, index, 0);
 					setting.type() = types.at(index);
