@@ -524,7 +524,7 @@ namespace cubeice {
 					
 					bool skip_flag = (setting_.decompression().details() & DETAIL_SKIP_DESKTOP) != 0;
 					if ((!skip_flag || !this->is_desktop(root)) && PathFileExists(root.c_str())) {
-						ShellExecute(NULL, _T("open"), _T("explorer.exe"), root.c_str(), NULL, SW_SHOWNORMAL);
+						ShellExecute(NULL, _T("open"), _T("explorer.exe"), ( _T("\"") + root + _T("\"") ).c_str(), NULL, SW_SHOWNORMAL);
 					}
 				}
 				
