@@ -798,7 +798,7 @@ namespace cubeice {
 		string_type decompress_cmdline(const string_type& src, const string_type& tmp, bool is_password) {
 			string_type cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" x -bd -scsWIN -y");
-			if (is_password) cmdline += _T(" -p") + cubeice::password();
+			if (is_password) cmdline += _T(" -p\"") + cubeice::password() + _T("\"");
 			cmdline += _T(" -o\"") + tmp + _T("\"");
 			cmdline += _T(" \"") + src + _T("\"");
 			return cmdline;
