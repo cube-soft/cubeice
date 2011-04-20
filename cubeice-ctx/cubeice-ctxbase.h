@@ -188,7 +188,8 @@ namespace cube {
 				}
 				
 				// Add separator
-				InsertMenu( hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
+				if( idCmd - idCmdFirst )
+					InsertMenu( hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
 				
 				MENUINFO	mi;
 				ZeroMemory( &mi, sizeof( mi ) );
