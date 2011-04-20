@@ -438,7 +438,18 @@ namespace cubeice {
 						if (PathFileExists(remove_file.c_str()) == TRUE && this->filesize(remove_file) == 0) {
 							DeleteFile(remove_file.c_str());
 						}
-						if (cubeice::dialog::password(progress_.handle(), DECOMPRESS_FLAG) == IDCANCEL) break;
+						if (cubeice::dialog::password(progress_.handle(), DECOMPRESS_FLAG) == IDCANCEL) {
+							// ƒLƒƒƒ“ƒZƒ‹‚ğ‰Ÿ‚³‚ê‚½‚Æ‚«‚Ìb’èˆ—
+							string_type		deldir = root;
+							if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER) &&
+								(setting_.decompression().details() & DETAIL_SINGLE_FOLDER) &&
+								!folder.empty()) {
+									deldir += _T("\\") + folder;
+							}
+							if (PathFileExists(deldir.c_str()))
+								RemoveDirectory(deldir.c_str());
+							return;
+						}
 						cmdline = decompress_cmdline(src, tmp, true);
 						if (!proc.open(cmdline.c_str(), _T("r"))) break;
 						index = 0;
