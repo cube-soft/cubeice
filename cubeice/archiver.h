@@ -598,9 +598,12 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		string_type compress_path(const setting_type::archive_type& setting, const string_type& src, const string_type& ext) {
 			const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-			string_type path = src.substr(0, src.find_last_of(_T('.')));
-			string_type::size_type pos = path.find_last_of(_T('.'));
-			if (pos != string_type::npos && path.substr(pos) == _T(".tar")) path = path.substr(0, pos);
+			string_type path = src;
+			if (!PathIsDirectory(src.c_str())) {
+				path = src.substr(0, src.find_last_of(_T('.')));
+				string_type::size_type pos = path.find_last_of(_T('.'));
+				if (pos != string_type::npos && path.substr(pos) == _T(".tar")) path = path.substr(0, pos);
+			}
 			path += ext;
 			
 			string_type dest =  this->rootdir(setting, src);
