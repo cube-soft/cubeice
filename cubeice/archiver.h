@@ -499,6 +499,9 @@ namespace cubeice {
 						// report += _T("Filtering: ") + filename + _T("\r\n");
 					}
 					else if (!this->move(tmp + _T('\\') + filename, root + _T('\\') + filename, result == IDRENAME)) {
+						// TODO:
+						// - move を実行する前に MAX_PATH のチェック
+						// - false だった場合に GetLastError() に対応するメッセージを出力（改行を抜く）
 						report += error + _T(" Can not move file.");
 						report += _T(" (") + keyword + _T(' ') + filename + _T(")\r\n");
 					}
@@ -1174,6 +1177,8 @@ namespace cubeice {
 			if (PathIsDirectory(src.c_str())) {
 				status = createdir(dest);
 			} else {
+				// dest からディレクトリ部分を抽出 Path.GetDirectoryName(dest);
+				// TODO: この部分がおかしい場合があるので調査．
 				string_type branch(dest.substr(0, dest.find_last_of(_T('\\'))));
 				status = createdir(branch);
 				// TODO: リネーム処理を追加
