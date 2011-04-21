@@ -57,9 +57,9 @@ namespace cubeice {
 			static dialog_init dialog_init_;
 		}
 
-		extern std::basic_string<TCHAR> openfile(const TCHAR* filter, const TCHAR* init, const TCHAR* title = _T("ファイルを開く"));
-		extern std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* init, const DWORD flag = OFN_OVERWRITEPROMPT, const TCHAR* title = _T("名前を付けて保存"));
-		extern std::basic_string<TCHAR> browsefolder(const TCHAR* init, const TCHAR* description = _T("フォルダの参照"));
+		extern std::basic_string<TCHAR> openfile(HWND hWnd, const TCHAR* filter, const TCHAR* init, const TCHAR* title = _T("ファイルを開く"));
+		extern std::basic_string<TCHAR> savefile(HWND hWnd, const TCHAR* filter, const TCHAR* init, const DWORD flag = OFN_OVERWRITEPROMPT, const TCHAR* title = _T("名前を付けて保存"));
+		extern std::basic_string<TCHAR> browsefolder(HWND hWnd, const TCHAR* init, const TCHAR* description = _T("フォルダの参照"));
 		
 		extern int password(HWND owner, int which);
 		extern int overwrite(HWND owner, const std::basic_string<TCHAR>& message);

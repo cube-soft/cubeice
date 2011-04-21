@@ -273,7 +273,7 @@ namespace cubeice {
 				case IDC_OUTPUT_BUTTON: // o—Íæ‚ğ‘I‘ğ
 				{
 					const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-					std::basic_string<TCHAR> path = cubeice::dialog::savefile(filter, setting.path().c_str(), 0);
+					std::basic_string<TCHAR> path = cubeice::dialog::savefile(hWnd, filter, setting.path().c_str(), 0);
 					if (!path.empty()) {
 						setting.path() = path;
 					}
