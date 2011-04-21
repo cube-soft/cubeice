@@ -435,7 +435,7 @@ namespace cubeice {
 						proc.close();
 						
 						string_type remove_file = root + _T("\\") + files_[std::max(static_cast<int>(index - 1), 0)].name;
-						if (PathFileExists(remove_file.c_str()) == TRUE && this->filesize(remove_file) == 0) {
+						if (PathFileExists(remove_file.c_str()) != FALSE && this->filesize(remove_file) == 0) {
 							DeleteFile(remove_file.c_str());
 						}
 						if (cubeice::dialog::password(progress_.handle(), DECOMPRESS_FLAG) == IDCANCEL) {
@@ -1151,7 +1151,7 @@ namespace cubeice {
 			if (pos != string_type::npos) {
 				if (!createdir(path.substr(0, pos))) return false;
 			}
-			return CreateDirectory(path.c_str(), NULL) == TRUE;
+			return CreateDirectory(path.c_str(), NULL) != FALSE;
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -1161,7 +1161,7 @@ namespace cubeice {
 			fileinfo dest;
 			
 			dest.name = path;
-			dest.directory = (PathIsDirectory(path.c_str()) == TRUE);
+			dest.directory = (PathIsDirectory(path.c_str()) != FALSE);
 			HANDLE h = CreateFile(path.c_str(), 0, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (h != INVALID_HANDLE_VALUE) {
 				FILETIME t = {};
@@ -1205,9 +1205,9 @@ namespace cubeice {
 						swprintf_s(renamed, sizeof(renamed), _T("%s%s%s(%d)%s"), drivename, dirname, basename, i, extname);
 						if (!PathFileExists(renamed)) break;
 					}
-					status &= (MoveFileEx(src.c_str(), renamed, (MOVEFILE_COPY_ALLOWED)) == TRUE);
+					status &= (MoveFileEx(src.c_str(), renamed, (MOVEFILE_COPY_ALLOWED)) != FALSE);
 				} else {
-					status &= (MoveFileEx(src.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) == TRUE);
+					status &= (MoveFileEx(src.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) != FALSE);
 				}
 			}
 			return status;

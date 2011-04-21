@@ -740,7 +740,7 @@ namespace cubeice {
 			lstrcat(buf, _T("\\"));
 			lstrcat(buf, link.c_str());
 			
-			return PathFileExists(buf) == TRUE;
+			return PathFileExists(buf) != FALSE;
 		}
 		
 		/* ----------------------------------------------------------------- */
