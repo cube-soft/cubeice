@@ -607,14 +607,14 @@ namespace cubeice {
 			path += ext;
 			
 			string_type dest =  this->rootdir(setting, src);
-			if (dest.empty()) dest = cubeice::dialog::savefile(filter, path.c_str());
+			if (dest.empty()) dest = cubeice::dialog::savefile(NULL, filter, path.c_str());
 			else {
 				string_type::size_type first = path.find_last_of(_T('\\'));
 				if (first == string_type::npos) first = 0;
 				else ++first;
 				string_type filename = path.substr(first);
 				dest += _T('\\') + filename;
-				if (PathFileExists(dest.c_str())) dest = cubeice::dialog::savefile(filter, path.c_str());
+				if (PathFileExists(dest.c_str())) dest = cubeice::dialog::savefile(NULL, filter, path.c_str());
 			}
 			return dest;
 		}
@@ -829,7 +829,7 @@ namespace cubeice {
 			string_type root = this->rootdir(setting, src, force);
 			if (root.empty()) {
 				string_type init = src.substr(0, src.find_last_of(_T('\\')));
-				root = cubeice::dialog::browsefolder(init.c_str(), _T("解凍するフォルダを指定して下さい。"));
+				root = cubeice::dialog::browsefolder(NULL, init.c_str(), _T("解凍するフォルダを指定して下さい。"));
 			}
 			return root;
 		}

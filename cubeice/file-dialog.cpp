@@ -35,7 +35,7 @@ namespace cubeice {
 		 *  '\0' を使用しているため string は使用できない．
 		 */
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> openfile(const TCHAR* filter, const TCHAR* init, const TCHAR* title) {
+		std::basic_string<TCHAR> openfile(HWND hWnd, const TCHAR* filter, const TCHAR* init, const TCHAR* title) {
 			typedef TCHAR char_type;
 			char_type path[CUBE_MAX_PATH] = {};
 			char_type filename[CUBE_MAX_PATH] = {};
@@ -43,6 +43,7 @@ namespace cubeice {
 			
 			OPENFILENAME ofn = {};
 			ofn.lStructSize = sizeof(ofn);
+			ofn.hwndOwner = hWnd;
 			ofn.lpstrFilter = filter;
 			ofn.lpstrFile = path;
 			ofn.lpstrFileTitle = filename;
@@ -58,7 +59,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  savefile
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> savefile(const TCHAR* filter, const TCHAR* init, const DWORD flag, const TCHAR* title) {
+		std::basic_string<TCHAR> savefile(HWND hWnd, const TCHAR* filter, const TCHAR* init, const DWORD flag, const TCHAR* title) {
 			typedef TCHAR char_type;
 			typedef std::basic_string<TCHAR> string_type;
 			
@@ -68,6 +69,7 @@ namespace cubeice {
 			
 			OPENFILENAME ofn = {};
 			ofn.lStructSize = sizeof(ofn);
+			ofn.hwndOwner = hWnd;
 			ofn.lpstrFilter = filter;
 			ofn.lpstrFile = path;
 			ofn.lpstrFileTitle = filename;
@@ -99,10 +101,11 @@ namespace cubeice {
 		 *  http://msdn.microsoft.com/en-us/library/bb773205(VS.85).aspx
 		 */
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> browsefolder(const TCHAR* init, const TCHAR* description) {
+		std::basic_string<TCHAR> browsefolder(HWND hWnd, const TCHAR* init, const TCHAR* description) {
 			typedef TCHAR char_type;
 			
 			BROWSEINFO info = {};
+			info.hwndOwner = hWnd;
 			info.pszDisplayName = const_cast<TCHAR*>(init);
 			info.lpszTitle = description;
 			info.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
