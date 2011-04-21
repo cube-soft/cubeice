@@ -93,6 +93,10 @@ namespace cubeice {
 							}
 						}
 					}
+					if (pass.find('\"') != std::basic_string<TCHAR>::npos) {
+						MessageBox(hWnd, _T("パスワードにダブルクオートを含めることはできません。"), _T("エラー"), MB_OK | MB_ICONERROR);
+						break;
+					}
 					cubeice::password() = pass;
 					EndDialog(hWnd, IDOK);
 					break;
