@@ -199,7 +199,7 @@ namespace cubeice {
 				}
 				
 				// İ’è‚Ì•Û‘¶‚Ì‚½‚ß‚ÉCg—p‚µ‚Ä‚¢‚È‚¢ê‡‚Å‚àó‘Ô‚ğæ“¾‚·‚é
-				setting.show_password() = (IsDlgButtonChecked(hWnd, IDC_SHOWPASS_CHECKBOX) == TRUE);
+				setting.show_password() = (IsDlgButtonChecked(hWnd, IDC_SHOWPASS_CHECKBOX) != FALSE);
 				const cubeice::dialog_data::param_list& encodings = cubeice::dialog_data::encode_methods();
 				index = SendMessage(GetDlgItem(hWnd, IDC_ENMETHOD_COMBOBOX), CB_GETCURSEL, 0, 0);
 				setting.encoding() = encodings.at(index);
