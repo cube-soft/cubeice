@@ -322,6 +322,11 @@ namespace cubeice {
 						SendMessage(combo, CB_SETCURSEL, cursel, 0);
 					}
 					else EnableWindow(GetDlgItem(hWnd, IDC_COMPMETHOD_COMBOBOX), FALSE);
+
+					if (types.at(index) == _T("tar"))
+						EnableWindow(GetDlgItem(hWnd, IDC_COMPLEVEL_COMBOBOX), FALSE);
+					else
+						EnableWindow(GetDlgItem(hWnd, IDC_COMPLEVEL_COMBOBOX), TRUE);
 					
 					// èoóÕÉpÉXÇÃê›íË
 					std::basic_string<TCHAR> path = setting.path().substr(0, setting.path().find_last_of(_T('.')));
