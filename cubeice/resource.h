@@ -35,6 +35,10 @@
 #ifndef CUBEICE_RESOURCE_H
 #define CUBEICE_RESOURCE_H
 
+#ifndef IDC_STATIC
+#define IDC_STATIC (-1)
+#endif
+
 #define IDC_PROGRESS            1000
 #define IDC_PROGRESS_SUB        1010
 #define IDC_INFO_LABEL          1001
