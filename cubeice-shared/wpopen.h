@@ -53,7 +53,7 @@ namespace cube {
 	class popen {
 	public:
 		popen() :
-			_mode( NONE ), _hChildProcess( INVALID_HANDLE_VALUE ), _hInputOutput( INVALID_HANDLE_VALUE ), _line( TEXT( "" ) ) {}
+			_mode( NONE ), _hChildProcess( INVALID_HANDLE_VALUE ), _hInputOutput( INVALID_HANDLE_VALUE ), _line( TEXT( "" ) ), _status( 0 ) {}
 
 		~popen() {
 			this->close();
@@ -248,7 +248,7 @@ namespace cube {
 		 *		2	pipe closed
 		 *
 		 * ------------------------------------------- */
-		int gets( std::basic_string<TCHAR> &str ) {
+		int peek( std::basic_string<TCHAR> &str ) {
 			TCHAR	buffer[2048];
 			DWORD	nBytesRead;
 			DWORD	nTotalBytesAvail;
@@ -257,34 +257,39 @@ namespace cube {
 			if( !( _mode & READ ) || _hInputOutput == INVALID_HANDLE_VALUE || _hChildProcess == INVALID_HANDLE_VALUE )
 				return -1;
 
+			if( _status ) {
+				str = _line;
+				return _status;
+			}
+
 			while( PeekNamedPipe( _hInputOutput, buffer, sizeof( buffer ) - sizeof( buffer[0] ) * 2, &nBytesRead, &nTotalBytesAvail, NULL ) ) {
 				TCHAR	*pCRLF;
 				DWORD	loadSize;
-				bool	flag = false;
 
+				_status = 0;
 				if( !nBytesRead ) return 0;
 
 				buffer[nBytesRead/sizeof(buffer[0])] = TEXT( '\0' );
 
 				if( pCRLF = _tcschr( buffer, TEXT( '\n' ) ) ) {
 					loadSize = ( pCRLF - buffer + 1 ) * sizeof( buffer[0] );
-					flag = true;
+					_status = 1;
 				} else {
 					loadSize = ( nBytesRead / sizeof( buffer[0] ) ) * sizeof( buffer[0] );
-					flag = false;
+					_status = 0;
 				}
 
 				if( !ReadFile( _hInputOutput, buffer, loadSize, &nBytesRead, NULL ) || nBytesRead != loadSize )
 					return -2;
 
-				if( flag ) {
+				if( _status ) {
 					buffer[nBytesRead/sizeof(buffer[0])] = TEXT( '\0' );
 					_line += buffer;
 					if( _line.size() > 1 && _line[_line.size()-2] == TEXT( '\r' ) )
-						str = _line.substr( 0, _line.size() - 2 );
+						_line = _line.substr( 0, _line.size() - 2 );
 					else
-						str = _line.substr( 0, _line.size() - 1 );
-					_line.clear();
+						_line = _line.substr( 0, _line.size() - 1 );
+					str = _line;
 					return 1;
 				}
 				buffer[nBytesRead/sizeof(buffer[0])] = TEXT( '\0' );
@@ -293,11 +298,22 @@ namespace cube {
 
 			if( GetLastError() == ERROR_BROKEN_PIPE ) {
 				str = _line;
-				_line.clear();
+				_status = 2;
 				return 2;
 			}
 
 			return -3;
+		}
+
+		int gets( std::basic_string<TCHAR> &str ) {
+			int		res;
+
+			res = peek( str );
+			if( res == 1 ) {
+				_line.clear();
+				_status = 0;
+			}
+			return res;
 		}
 
 	private:
@@ -306,6 +322,7 @@ namespace cube {
 		HANDLE						_hChildProcess;
 		DWORD						_idChildProcess;
 		std::basic_string<TCHAR>	_line;
+		int							_status;
 	};
 }
 
