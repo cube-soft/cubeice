@@ -79,6 +79,7 @@ namespace cubeice {
 			dest[IDC_WIM_CHECKBOX] = WIM_FLAG;
 			dest[IDC_XAR_CHECKBOX] = XAR_FLAG;
 			dest[IDC_XZ_CHECKBOX] = XZ_FLAG;
+			dest[IDC_JAR_CHECKBOX] = JAR_FLAG;
 			initialized = true;
 		}
 		return dest;

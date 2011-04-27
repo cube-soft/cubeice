@@ -61,6 +61,7 @@
 #define XAR_FLAG            0x00040000
 #define XZ_FLAG             0x00080000
 #define EXE_FLAG            0x00100000 // 自己解凍形式
+#define JAR_FLAG            0x00200000
 
 /* ------------------------------------------------------------------------- */
 //  コンテキストメニューに関連するフラグ
@@ -189,6 +190,7 @@ namespace cubeice {
 				exts[_T(".wim")] = std::make_pair(_T("cubeice_wim"), WIM_FLAG);
 				exts[_T(".xar")] = std::make_pair(_T("cubeice_xar"), XAR_FLAG);
 				exts[_T(".xz")]  = std::make_pair( _T("cubeice_xz"),  XZ_FLAG);
+				exts[_T(".jar")]  = std::make_pair( _T("cubeice_jar"),  JAR_FLAG);
 				initialized = true;
 			}
 			return exts;

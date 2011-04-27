@@ -277,6 +277,18 @@ namespace cubeice {
 					change_flag(Setting.decompression().flags(), hWnd, pos->first, pos->second);
 					return TRUE;
 				}
+				if (HIWORD(wp) == BN_CLICKED) {
+					WPARAM	check;
+					if (parameter == IDC_ALLCHECK_BUTTON)
+						check = BST_CHECKED;
+					else if (parameter == IDC_ALLUNCHECK_BUTTON)
+						check = BST_UNCHECKED;
+					else
+						return FALSE;
+					for( flag_map::const_iterator it = decomp.begin() ; it != decomp.end() ; ++it )
+						SendDlgItemMessage( hWnd, it->first, BM_SETCHECK, check, 0 );
+					return TRUE;
+				}
 				
 				// 「コンテキストメニュー」グループ
 				const flag_map& context = context_map();
