@@ -63,6 +63,10 @@
 #define IDC_WIM_CHECKBOX            2118 // WIM_FLAG
 #define IDC_XAR_CHECKBOX            2119 // XAR_FLAG
 #define IDC_XZ_CHECKBOX             2120 // XZ_FLAG
+#define IDC_JAR_CHECKBOX            2121 // JAR_FLAG
+
+#define IDC_ALLCHECK_BUTTON         2198 // すべて選択
+#define IDC_ALLUNCHECK_BUTTON       2199 // すべて解除
 
 #define IDC_CONTEXT_GROUP           2200 // 追加するコンテキストメニュー
 #define IDC_CT_COMPRESS_CHECKBOX    2201 // COMPRESS_FLAG
