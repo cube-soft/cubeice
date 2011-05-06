@@ -67,13 +67,13 @@ FONT 9, "MS UI Gothic"
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDD_FILTER DIALOG 0, 0, 230, 300
+IDD_FILTER DIALOG 0, 0, 230, 330
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
 CAPTION "フィルタリング"
 FONT 9, "MS UI Gothic"
 {
     LTEXT           "除外するファイル名を記述します。", 4002, 8, 8, 91, 10, SS_LEFT
-    EDITTEXT        4001, 8, 48, 214, 222, WS_VSCROLL | NOT WS_TABSTOP | ES_AUTOVSCROLL | ES_MULTILINE | ES_WANTRETURN
+    EDITTEXT        4001, 8, 48, 214, 250, WS_VSCROLL | NOT WS_TABSTOP | ES_AUTOVSCROLL | ES_MULTILINE | ES_WANTRETURN
     LTEXT           "通常のファイル名と * （ワイルドカード） が使用できます。", 4004, 8, 32, 151, 10, SS_LEFT
     LTEXT           "1 行に 1 つずつ指定して下さい。", 4003, 8, 20, 88, 10, SS_LEFT
 }
@@ -86,7 +86,7 @@ STYLE DS_3DLOOK | DS_CENTER | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP 
 CAPTION "一般"
 FONT 9, "MS UI Gothic"
 {
-    GROUPBOX        "ファイルの関連付け", 2100, 8, 8, 214, 120
+    GROUPBOX        "ファイルの関連付け", 2100, 8, 8, 214, 116
     AUTOCHECKBOX    "*.zip", 2101, 16, 24, 29, 10
     AUTOCHECKBOX    "*.lzh", 2102, 16, 40, 29, 10
     AUTOCHECKBOX    "*.rar", 2103, 16, 56, 29, 10
@@ -107,34 +107,34 @@ FONT 9, "MS UI Gothic"
     AUTOCHECKBOX    "*.wim", 2118, 166, 56, 32, 10
     AUTOCHECKBOX    "*.xar", 2119, 166, 72, 30, 10
     AUTOCHECKBOX    "*.xz", 2120, 166, 88, 27, 10
-    GROUPBOX        "追加するコンテキストメニュー", 2200, 8, 140, 214, 132
-    AUTOCHECKBOX    "圧縮", 2201, 16, 156, 30, 10
-    AUTOCHECKBOX    "解凍", 2202, 76, 156, 30, 10
-    AUTOCHECKBOX    "圧縮してメール送信", 2203, 152, 156, 67, 10
-    AUTOCHECKBOX    "zip", 2204, 28, 172, 24, 10
-    AUTOCHECKBOX    "zip (パスワード)", 2205, 28, 188, 58, 10
-    AUTOCHECKBOX    "7z", 2206, 28, 204, 22, 10
-    AUTOCHECKBOX    "bzip2", 2207, 28, 220, 31, 10
-    AUTOCHECKBOX    "gzip", 2208, 28, 236, 27, 10
-    AUTOCHECKBOX    "詳細設定", 2209, 28, 252, 43, 10
-    AUTOCHECKBOX    "ここに解凍", 2210, 88, 172, 44, 10
-    AUTOCHECKBOX    "デスクトップに解凍", 2211, 88, 188, 64, 10
-    AUTOCHECKBOX    "場所を指定して解凍", 2212, 88, 220, 70, 10
-    AUTOCHECKBOX    "zip", 2213, 164, 172, 24, 10
-    AUTOCHECKBOX    "zip (パスワード)", 2214, 164, 188, 54, 10
-    AUTOCHECKBOX    "7z", 2215, 164, 204, 22, 10
-    AUTOCHECKBOX    "bzip2", 2216, 164, 220, 31, 10
-    AUTOCHECKBOX    "gzip", 2217, 164, 236, 27, 10
-    AUTOCHECKBOX    "詳細設定", 2218, 164, 252, 43, 10
-    GROUPBOX        "デスクトップに作成するショートカット", 2300, 8, 284, 214, 36
-    AUTOCHECKBOX    "圧縮", 2301, 16, 299, 30, 10
-    AUTOCHECKBOX    "解凍", 2302, 116, 299, 30, 10
-    AUTOCHECKBOX    "設定", 2303, 166, 299, 30, 10
-    COMBOBOX        2304, 45, 297, 60, 39, WS_VSCROLL | CBS_DROPDOWNLIST | CBS_HASSTRINGS
-    AUTOCHECKBOX    "マイドキュメントに解凍", 2219, 88, 204, 75, 10
+    GROUPBOX        "追加するコンテキストメニュー", 2200, 8, 136, 214, 132
+    AUTOCHECKBOX    "圧縮", 2201, 16, 152, 30, 10
+    AUTOCHECKBOX    "解凍", 2202, 76, 152, 30, 10
+    AUTOCHECKBOX    "圧縮してメール送信", 2203, 152, 152, 67, 10
+    AUTOCHECKBOX    "zip", 2204, 28, 168, 24, 10
+    AUTOCHECKBOX    "zip (パスワード)", 2205, 28, 184, 58, 10
+    AUTOCHECKBOX    "7z", 2206, 28, 200, 22, 10
+    AUTOCHECKBOX    "bzip2", 2207, 28, 216, 31, 10
+    AUTOCHECKBOX    "gzip", 2208, 28, 232, 27, 10
+    AUTOCHECKBOX    "詳細設定", 2209, 28, 248, 43, 10
+    AUTOCHECKBOX    "ここに解凍", 2210, 88, 168, 44, 10
+    AUTOCHECKBOX    "デスクトップに解凍", 2211, 88, 184, 64, 10
+    AUTOCHECKBOX    "場所を指定して解凍", 2212, 88, 216, 70, 10
+    AUTOCHECKBOX    "zip", 2213, 164, 168, 24, 10
+    AUTOCHECKBOX    "zip (パスワード)", 2214, 164, 184, 54, 10
+    AUTOCHECKBOX    "7z", 2215, 164, 200, 22, 10
+    AUTOCHECKBOX    "bzip2", 2216, 164, 216, 31, 10
+    AUTOCHECKBOX    "gzip", 2217, 164, 232, 27, 10
+    AUTOCHECKBOX    "詳細設定", 2218, 164, 248, 43, 10
+    GROUPBOX        "デスクトップに作成するショートカット", 2300, 8, 280, 214, 36
+    AUTOCHECKBOX    "圧縮", 2301, 16, 295, 30, 10
+    AUTOCHECKBOX    "解凍", 2302, 116, 295, 30, 10
+    AUTOCHECKBOX    "設定", 2303, 166, 295, 30, 10
+    COMBOBOX        2304, 45, 293, 60, 39, WS_VSCROLL | CBS_DROPDOWNLIST | CBS_HASSTRINGS
+    AUTOCHECKBOX    "マイドキュメントに解凍", 2219, 88, 200, 75, 10
     AUTOCHECKBOX    "*.jar", 2121, 16, 104, 28, 10
-    PUSHBUTTON      "すべて選択", 2198, 113, 104, 45, 14
-    PUSHBUTTON      "すべて解除", 2199, 167, 104, 45, 14
+    PUSHBUTTON      "すべて選択", 2198, 123, 105, 45, 14
+    PUSHBUTTON      "すべて解除", 2199, 172, 105, 45, 14
 }
 
 
