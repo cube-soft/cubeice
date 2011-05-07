@@ -237,6 +237,8 @@ namespace cube {
 				CloseHandle( _hInputOutput );
 				_hInputOutput = INVALID_HANDLE_VALUE;
 			}
+			_line.clear();
+			_status = 0;
 		}
 		
 		/* -------------------------------------------
