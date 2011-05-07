@@ -458,6 +458,7 @@ namespace cubeice {
 						status = 0;
 						to_all = 0;
 						calcpos = 0.0;
+						line.erase();
 						if (this->size_ > 0) {
 							progress_.position(progress_.minimum());
 							progress_.subposition(progress_.minimum());
@@ -524,6 +525,7 @@ namespace cubeice {
 							status = 0;
 							to_all = 0;
 							calcpos = 0.0;
+							line.erase();
 							if (this->size_ > 0) {
 								progress_.position(progress_.minimum());
 								progress_.subposition(progress_.minimum());
