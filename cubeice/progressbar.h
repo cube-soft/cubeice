@@ -460,6 +460,11 @@ namespace cubeice {
 					prog = (progressbar*)lp;
 					return TRUE;
 				}
+				case WM_ACTIVATE:
+					if (LOWORD(wp)) {
+						InvalidateRect(hWnd, NULL, TRUE);
+					}
+					break;
 				case WM_COMMAND:
 					switch (LOWORD(wp)) {
 					case IDOK:
