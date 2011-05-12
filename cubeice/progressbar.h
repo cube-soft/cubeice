@@ -463,6 +463,7 @@ namespace cubeice {
 				case WM_ACTIVATE:
 					if (LOWORD(wp)) {
 						InvalidateRect(hWnd, NULL, TRUE);
+						UpdateWindow(hWnd);
 					}
 					break;
 				case WM_COMMAND:
