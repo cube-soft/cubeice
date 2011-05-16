@@ -430,53 +430,7 @@ namespace cubeice {
 					}
 					assert(status == 1);
 					
-					
-					// パスワード処理
-					// TODO: 後続するパスワード処理と共通化
-					if (line.find(password) != string_type::npos || line.find(password_error) != string_type::npos) {
-						proc.close();
-						
-						string_type remove_file = root + _T("\\") + files_[std::max(static_cast<int>(index - 1), 0)].name;
-						if (PathFileExists(remove_file.c_str()) != FALSE && this->filesize(remove_file) == 0) {
-							DeleteFile(remove_file.c_str());
-						}
-						if (cubeice::dialog::password(progress_.handle(), DECOMPRESS_FLAG) == IDCANCEL) {
-							// キャンセルを押されたときの暫定処理
-							string_type		deldir = root;
-							if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER) &&
-								(setting_.decompression().details() & DETAIL_SINGLE_FOLDER) &&
-								!folder.empty()) {
-									deldir += _T("\\") + folder;
-							}
-							if (PathFileExists(deldir.c_str()))
-								RemoveDirectory(deldir.c_str());
-							return;
-						}
-						cmdline = decompress_cmdline(src, tmp, true);
-						if (!proc.open(cmdline.c_str(), _T("r"))) break;
-						index = 0;
-						status = 0;
-						to_all = 0;
-						calcpos = 0.0;
-						line.erase();
-						if (this->size_ > 0) {
-							progress_.position(progress_.minimum());
-							progress_.subposition(progress_.minimum());
-							progress_.title(_T("0% - ") + title_message);
-						}
-						continue;
-					}
-					
-					
-					string_type::size_type pos = line.find(error);
-					if (pos != string_type::npos) {
-						report += clx::strip_copy(line.substr(pos));
-						if (pos != 0) report += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
-						report += _T("\r\n");
-						continue;
-					}
-					
-					pos = line.find(keyword);
+					string_type::size_type pos = line.find(keyword);
 					if (pos == string_type::npos || line.size() <= keyword.size()) {
 						continue;
 					}
@@ -500,7 +454,7 @@ namespace cubeice {
 							break;
 						assert(st == 1);
 
-						if (nextline.find(password) != string_type::npos || nextline.find(password_error) != string_type::npos) {
+						if (nextline.find(password) != string_type::npos || line.find(password_error) != string_type::npos) {
 							proc.close();
 							
 							string_type remove_file = root + _T("\\") + files_[std::max(static_cast<int>(index - 1), 0)].name;
@@ -533,6 +487,14 @@ namespace cubeice {
 							}
 							continue;
 						}
+					}
+					
+					pos = line.find(error);
+					if (pos != string_type::npos) {
+						report += clx::strip_copy(line.substr(pos));
+						if (pos != 0) report += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
+						report += _T("\r\n");
+						continue;
 					}
 					
 					// プログレスバーの更新
