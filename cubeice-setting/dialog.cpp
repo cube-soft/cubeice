@@ -277,16 +277,13 @@ namespace cubeice {
 					change_flag(Setting.decompression().flags(), hWnd, pos->first, pos->second);
 					return TRUE;
 				}
-				if (HIWORD(wp) == BN_CLICKED) {
-					WPARAM	check;
-					if (parameter == IDC_ALLCHECK_BUTTON)
-						check = BST_CHECKED;
-					else if (parameter == IDC_ALLUNCHECK_BUTTON)
-						check = BST_UNCHECKED;
-					else
-						return FALSE;
-					for( flag_map::const_iterator it = decomp.begin() ; it != decomp.end() ; ++it )
+				
+				// 「全て選択/全て解除」のボタン
+				if (parameter == IDC_ALLCHECK_BUTTON || parameter == IDC_ALLUNCHECK_BUTTON) {
+					WPARAM check = (parameter == IDC_ALLCHECK_BUTTON) ? BST_CHECKED : BST_UNCHECKED;
+					for( flag_map::const_iterator it = decomp.begin() ; it != decomp.end() ; ++it ) {
 						SendDlgItemMessage( hWnd, it->first, BM_SETCHECK, check, 0 );
+					}
 					return TRUE;
 				}
 				
