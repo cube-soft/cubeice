@@ -283,6 +283,7 @@ namespace cubeice {
 					WPARAM check = (parameter == IDC_ALLCHECK_BUTTON) ? BST_CHECKED : BST_UNCHECKED;
 					for( flag_map::const_iterator it = decomp.begin() ; it != decomp.end() ; ++it ) {
 						SendDlgItemMessage( hWnd, it->first, BM_SETCHECK, check, 0 );
+						change_flag(Setting.decompression().flags(), hWnd, it->first, it->second);
 					}
 					return TRUE;
 				}
