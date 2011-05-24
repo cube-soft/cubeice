@@ -38,6 +38,7 @@
 #endif // NO_WIN32_LEAN_AND_MEAN
 
 #include <cstdlib>
+#include <algorithm>
 #include <tchar.h>
 #include <windows.h>
 #include <commctrl.h>
@@ -454,12 +455,53 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
+		/*
+		 *  filter_validate
+		 *
+		 *  入力された文字列がファイル名に使用できる文字列かどうか
+		 *  チェックする．
+		 */
+		/* ----------------------------------------------------------------- */
+		static BOOL filter_validate(HWND parent, HWND handle) {
+			int n = SendMessage(handle, WM_GETTEXTLENGTH, 0, 0);
+			std::vector<TCHAR> buffer(n + 1, 0);
+			GetWindowText(handle, reinterpret_cast<TCHAR*>(&buffer.at(0)), buffer.size());
+			if (buffer.at(buffer.size() - 1) == _T('\0')) buffer.pop_back();
+			
+			static const std::basic_string<TCHAR> invalids(_T("/:?\"<>|"));
+			std::basic_string<TCHAR> str(buffer.begin(), buffer.end());
+			for (std::basic_string<TCHAR>::const_iterator it = invalids.begin(); it != invalids.end(); ++it) {
+				std::basic_string<TCHAR>::size_type pos = str.find(*it);
+				if (pos != std::basic_string<TCHAR>::npos) {
+					EDITBALLOONTIP balloon = {};
+					balloon.cbStruct = sizeof(EDITBALLOONTIP);
+					balloon.pszTitle = _T("ファイル名には次の文字は使えません。");
+					balloon.pszText  = _T("/ : ? \" < > |");
+					SendMessage(handle, EM_SHOWBALLOONTIP, 0, (LPARAM)&balloon);
+					
+					// 入力を受け付けない文字を除去したテキストを再設定する．
+					str.erase(pos, 1);
+					DWORD first = 0, last = 0;
+					SendMessage(handle, EM_GETSEL, (WPARAM)&first, (WPARAM)&last);
+					SetWindowText(handle, str.c_str());
+					SendMessage(handle, EM_SETSEL, (first - 1 > 0) ? (first - 1) : 0, (last - 1) > 0 ? (last - 1) : 0);
+				}
+			}
+			return FALSE;
+		}
+
+		/* ----------------------------------------------------------------- */
 		//  filter_dialogproc
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK filter_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
 			case WM_INITDIALOG:
 				filter_initdialog(hWnd);
+				break;
+			case WM_COMMAND:
+				if (LOWORD(wp) == IDC_FILTER_TEXTBOX && HIWORD(wp) == EN_UPDATE) {
+					return filter_validate(hWnd, GetDlgItem(hWnd, IDC_FILTER_TEXTBOX));
+				}
 				break;
 			default:
 				break;
