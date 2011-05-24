@@ -287,8 +287,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		bool is_associated(const string_type& key, const string_type& value) {
 			HKEY subkey;
-			DWORD disposition = 0;
-			LONG status = RegCreateKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
+			LONG status = RegOpenKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, KEY_READ, &subkey);
 			if (!status) { 
 				char_type buffer[32] = {};
 				DWORD type = 0;
@@ -655,14 +654,33 @@ namespace cubeice {
 		 *
 		 *  NOTE: レジストリに登録する cubeice_* はインストーラを用いて
 		 *  あらかじめ登録しておくこと．
+		 *  SPLIT_ADMIN_OPERATIONS が定義されている場合は，管理者権限の
+		 *  必要な処理だけ別の exe で実行する．
 		 */
 		/* ----------------------------------------------------------------- */
 		void associate(size_type flags, size_type details) {
+#define SPLIT_ADMIN_OPERATIONS
+#ifdef  SPLIT_ADMIN_OPERATIONS
+			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+			
+			TCHAR buffer[32] = {};
+			::_itot_s(flags, buffer, sizeof(buffer), 10);
+			
+			SHELLEXECUTEINFO sei = {};
+			sei.cbSize = sizeof(SHELLEXECUTEINFO);
+			//sei.lpVerb = _T("runas");
+			sei.lpParameters = buffer;
+			sei.lpFile = _T("cubeice-associate.exe");
+			ShellExecuteEx(&sei);
+			
+			CoUninitialize();
+#else
 			const detail::ext_map& exts = detail::extensions();
 			for (detail::ext_map::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
 				this->associate(pos->first, pos->second.first, ((flags & pos->second.second) != 0), ((details & DETAIL_TOOLTIP) != 0));
 			}
 			SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
+#endif // SPLIT_ADMIN_OPERATIONS
 		}
 		
 		/* ----------------------------------------------------------------- */
