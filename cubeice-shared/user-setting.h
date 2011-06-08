@@ -35,6 +35,10 @@
 #include <shlwapi.h>
 #include <clx/base64.h>
 #include <clx/split.h>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/foreach.hpp>
+#include <boost/optional.hpp>
 #include "guid.h"
 
 /* ------------------------------------------------------------------------- */
@@ -150,6 +154,17 @@
 #define CUBEICE_REG_INSTALL             _T("InstallDirectory")
 #define CUBEICE_REG_VERSION             _T("Version")
 #define CUBEICE_REG_PREVARCHIVER        _T("PrevArchiver")
+
+/* ------------------------------------------------------------------------- */
+//  設定ファイルに関する情報
+/* ------------------------------------------------------------------------- */
+#define CUBEICE_XML_DIR                 "cubeice"
+#define CUBEICE_XML_FILE_NAME           "setting.xml"
+#define CUBEICE_XML_FILE_PATH           CUBEICE_XML_DIR "\\" CUBEICE_XML_FILE_NAME
+#define CUBEICE_CONTEXT_ROOT            "cubeice.general.ctxmenu"
+#define CUBEICE_CONTEXT_CUSTOMIZE       "customize"
+#define CUBEICE_CONTEXT_CHECK_VALUE     "check"
+#define CUBEICE_CONTEXT_ITEM_ID         "<xmlattr>.id"
 
 /* ------------------------------------------------------------------------- */
 //  ショートカットに関する情報
@@ -424,6 +439,16 @@ namespace cubeice {
 		typedef archive_type::char_type char_type;
 		typedef archive_type::string_type string_type;
 		typedef std::vector<string_type> container_type;
+
+		struct SUBMENU {
+			int						id;
+			std::string				str;
+			std::vector<SUBMENU>	children;
+
+			SUBMENU(int id_, std::string str_) : id(id_), str(str_)
+			{
+			}
+		};
 		
 		/* ----------------------------------------------------------------- */
 		//  constructor
@@ -485,9 +510,33 @@ namespace cubeice {
 				DWORD dwType;
 				DWORD dwSize;
 				
-				dwSize = sizeof(ctx_flags_);
-				RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
-				
+				char							xmlpath[2*MAX_PATH];
+
+				ctx_flags_ = 0;
+				SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
+				PathAppendA(xmlpath, CUBEICE_XML_FILE_PATH);
+
+				ctx_customize_ = false;
+				try {
+					using namespace boost::property_tree;
+					ptree		root;
+					ptree		ctx_root;
+
+					xml_parser::read_xml(xmlpath, root);
+					ctx_root = root.get_child(CUBEICE_CONTEXT_ROOT);
+
+					if(ctx_root.get<std::string>(CUBEICE_CONTEXT_CUSTOMIZE) == "yes") {
+						ctx_customize_ = true;
+
+						context_read(ctx_root, ctx_submenu_);
+					} else {
+						ctx_flags_ = ctx_root.get(CUBEICE_CONTEXT_CHECK_VALUE, (size_type)0);
+					}
+				} catch( const boost::property_tree::ptree_error & ) {
+					dwSize = sizeof(ctx_flags_);
+					RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
+				}
+
 				sc_flags_ = 0;
 				//dwSize = sizeof(sc_flags_);
 				//RegQueryValueEx(hkResult, CUBEICE_REG_SHORTCUT, NULL, &dwType, (LPBYTE)&sc_flags_, &dwSize);
@@ -529,11 +578,25 @@ namespace cubeice {
 			DWORD dwDisposition;
 			LONG lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
 			if (!lResult) {
-				DWORD value = static_cast<DWORD>(ctx_flags_);
-				RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
-				
+				boost::property_tree::ptree		root;
+				boost::property_tree::ptree		&ctx_root = root.put(CUBEICE_CONTEXT_ROOT, "");
+				char							xmlpath[2*MAX_PATH];
+
+				if(ctx_customize_) {
+					ctx_root.put(CUBEICE_CONTEXT_CUSTOMIZE, "yes");
+					context_write(ctx_root, ctx_submenu_);
+				} else {
+					ctx_root.put(CUBEICE_CONTEXT_CUSTOMIZE, "no");
+					ctx_root.put(CUBEICE_CONTEXT_CHECK_VALUE, clx::lexical_cast<std::string>(ctx_flags_));
+				}
+				SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
+				PathAppendA(xmlpath, CUBEICE_XML_DIR);
+				CreateDirectoryA(xmlpath, NULL);
+				PathAppendA(xmlpath, CUBEICE_XML_FILE_NAME);
+				boost::property_tree::xml_parser::write_xml(xmlpath, root);
+
 				// ショートカットの処理．
-				value = static_cast<DWORD>(sc_index_);
+				DWORD value = static_cast<DWORD>(sc_index_);
 				RegSetValueEx(hkResult, CUBEICE_REG_SCCOMPRESS, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
 				
 				TCHAR buffer[2048] ={};
@@ -610,6 +673,26 @@ namespace cubeice {
 		
 		/* ----------------------------------------------------------------- */
 		/*
+		 *  context_customize
+		 *
+		 *  コンテキストメニューがカスタマイズされたかどうか．
+		 */
+		/* ----------------------------------------------------------------- */
+		bool& context_customize() { return ctx_customize_; }
+		const bool& context_customize() const { return ctx_customize_; }
+
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  context_flags
+		 *
+		 *  コンテキストメニューに表示させるもの．
+		 */
+		/* ----------------------------------------------------------------- */
+		std::vector<SUBMENU>& context_submenu() { return ctx_submenu_; }
+		const std::vector<SUBMENU>& context_submenu() const { return ctx_submenu_; }
+
+		/* ----------------------------------------------------------------- */
+		/*
 		 *  shortcut_flags
 		 *
 		 *  ショートカットを表示させるかどうか．
@@ -647,6 +730,8 @@ namespace cubeice {
 		size_type sc_index_;
 		container_type filters_;
 		bool update_;
+		bool ctx_customize_;
+		std::vector<SUBMENU> ctx_submenu_;
 		
 		/* ----------------------------------------------------------------- */
 		/*
@@ -833,6 +918,54 @@ cleanup:
 			lstrcat(buf, link.c_str());
 			
 			DeleteFile(buf);
+		}
+
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  context_read
+		 *
+		 *  コンテキストメニューの構造を読み込む．
+		 */
+		/* ----------------------------------------------------------------- */
+		void context_read(const boost::property_tree::ptree &pt, std::vector<SUBMENU> &parent)
+		{
+			using namespace boost;
+			using namespace boost::property_tree;
+
+			BOOST_FOREACH(const ptree::value_type &v, pt) {
+				if(v.first == "item") {
+					optional<int>			attr_id		= v.second.get_optional<int>("<xmlattr>.id");
+					optional<std::string>	attr_name	= v.second.get_optional<std::string>("<xmlattr>.name");
+					if(attr_id) {
+						parent.push_back(SUBMENU( *attr_id, attr_name ? *attr_name : "" ));
+						if(v.second.size())
+							context_read(v.second, parent.back().children);
+					}
+				}
+			}
+			return;
+		}
+
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  context_write
+		 *
+		 *  コンテキストメニューの構造を書き込む．
+		 */
+		/* ----------------------------------------------------------------- */
+		void context_write(boost::property_tree::ptree &pt, const std::vector<SUBMENU> &submenu)
+		{
+			using namespace boost;
+			using namespace boost::property_tree;
+
+			BOOST_FOREACH(const SUBMENU &s, submenu) {
+				ptree	&item = pt.add("item", "");
+				ptree	&attr = item.put("<xmlattr>", "");
+				attr.put("id", clx::lexical_cast<std::string>(s.id));
+				if(s.str!="")
+					attr.put("name", s.str);
+				context_write(item, s.children);
+			}
 		}
 	};
 }

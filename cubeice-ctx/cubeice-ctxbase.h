@@ -152,41 +152,51 @@ namespace cube {
 				if( uFlags & CMF_DEFAULTONLY )
 					return NO_ERROR;
 				
-				if( !ctxSetting.context_flags() )
+				if( ( !ctxSetting.context_customize() && !ctxSetting.context_flags() ) || ( ctxSetting.context_customize() && ctxSetting.context_submenu().size() == 0 ) )
 					return NO_ERROR;
 				
 				// Add separator
 				if( !isDragAndDrop )
 					InsertMenu( hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
 				
-				for( unsigned int i = 0 ; MenuItem[i].stringA ; ++i ) {
-					if( MenuItem[i].dispSetting && !this->is_visible( MenuItem[i].dispSetting ) )
-						continue;
-					
-					MENUITEMINFO		miinfo;
-					
-					ZeroMemory( &miinfo, sizeof( miinfo ) );
-					miinfo.cbSize			= sizeof( miinfo );
-					miinfo.fMask			= MIIM_FTYPE | MIIM_STRING | MIIM_ID;
-					miinfo.fType			= MFT_STRING;
-					miinfo.wID				= idCmd++;
+				if( !ctxSetting.context_customize() ) {
+
+					for( unsigned int i = 0 ; MenuItem[i].stringA ; ++i ) {
+						if( MenuItem[i].dispSetting && !this->is_visible( MenuItem[i].dispSetting ) )
+							continue;
+						
+						MENUITEMINFO		miinfo;
+						
+						ZeroMemory( &miinfo, sizeof( miinfo ) );
+						miinfo.cbSize			= sizeof( miinfo );
+						miinfo.fMask			= MIIM_FTYPE | MIIM_STRING | MIIM_ID;
+						miinfo.fType			= MFT_STRING;
+						miinfo.wID				= idCmd++;
 #ifndef	UNICODE
-					miinfo.dwTypeData		= const_cast<LPSTR>( MenuItem[i].stringA );
+						miinfo.dwTypeData		= const_cast<LPSTR>( MenuItem[i].stringA );
 #else	// UNICODE
-					miinfo.dwTypeData		= const_cast<LPWSTR>( MenuItem[i].stringW );
+						miinfo.dwTypeData		= const_cast<LPWSTR>( MenuItem[i].stringW );
 #endif	// UNICODE
-					
-					if( MenuItem[i].submenu ) {
-						miinfo.fMask		|= MIIM_SUBMENU;
-						miinfo.hSubMenu		= CreateSubMenu( MenuItem[i].submenu, idCmd );
+						
+						if( MenuItem[i].submenu ) {
+							miinfo.fMask		|= MIIM_SUBMENU;
+							miinfo.hSubMenu		= CreateSubMenu( MenuItem[i].submenu, idCmd );
+						}
+						
+						if( MenuItem[i].iconID != ICON_NOT_USED )
+							SetMenuIcon( MenuItem[i].iconID, miinfo );
+						
+						InsertMenuItem( hMenu, indexMenu++, TRUE, &miinfo );
 					}
-					
-					if( MenuItem[i].iconID != ICON_NOT_USED )
-						SetMenuIcon( MenuItem[i].iconID, miinfo );
-					
-					InsertMenuItem( hMenu, indexMenu++, TRUE, &miinfo );
+				} else {
+					std::vector<const SUB_MENU_ITEM*>		v;
+					const std::vector<cubeice::user_setting::SUBMENU>		&submenu = ctxSetting.context_submenu();
+
+					SerSubMenu( v, MenuItem );
+
+					ConstractSubMenu( hMenu, v, submenu, idCmd, idCmdFirst, indexMenu );
 				}
-				
+					
 				// Add separator
 				if( idCmd - idCmdFirst )
 					InsertMenu( hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
@@ -212,7 +222,10 @@ namespace cube {
 				
 				DWORD	index = 0;
 				
-				RecursiveInvokeCommand( MenuItem, lpcmi, index );
+				if( !ctxSetting.context_customize() )
+					RecursiveInvokeCommand( MenuItem, lpcmi, index );
+				else
+					MenuSelectedCallback( table[LOWORD(lpcmi->lpVerb)]->arg, this );
 				
 				return S_OK;
 			}
@@ -719,6 +732,58 @@ namespace cube {
 				return dest;
 			}
 
+			void SerSubMenu( std::vector<const SUB_MENU_ITEM*> &v, const SUB_MENU_ITEM *smi ) {
+				for( int i = 0 ; smi[i].stringA ; ++i ) {
+					v.push_back( &smi[i] );
+					if( smi[i].submenu )
+						SerSubMenu( v, smi[i].submenu );
+				}
+			}
+
+			const SUB_MENU_ITEM *GetSubMenuItem( const std::vector<const SUB_MENU_ITEM*> &v, const cubeice::user_setting::size_type &id ) {
+				BOOST_FOREACH(const SUB_MENU_ITEM *smi, v) {
+					if( smi->dispSetting == id )
+						return smi;
+				}
+				return NULL;
+			}
+
+			HMENU ConstractSubMenu( HMENU hMenu, const std::vector<const SUB_MENU_ITEM*> &v, const std::vector<cubeice::user_setting::SUBMENU> &submenu, UINT &idCmd, const UINT &idCmdFirst, UINT &indexMenu ) {
+				BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, submenu) {
+					MENUITEMINFO			miinfo;
+					const SUB_MENU_ITEM		*smi = GetSubMenuItem( v, s.id );
+
+					if( !smi )
+						continue;
+
+					table[idCmd-idCmdFirst] = smi;
+
+					ZeroMemory( &miinfo, sizeof( miinfo ) );
+					miinfo.cbSize			= sizeof( miinfo );
+					miinfo.fMask			= MIIM_FTYPE | MIIM_STRING | MIIM_ID;
+					miinfo.fType			= MFT_STRING;
+					miinfo.wID				= idCmd++;
+#ifndef	UNICODE
+					miinfo.dwTypeData		= const_cast<LPSTR>( smi->stringA );
+#else	// UNICODE
+					miinfo.dwTypeData		= const_cast<LPWSTR>( smi->stringW );
+#endif	// UNICODE
+					
+					if( s.children.size() ) {
+						UINT		tmp = 0;
+
+						miinfo.fMask		|= MIIM_SUBMENU;
+						miinfo.hSubMenu		= ConstractSubMenu( CreateMenu(), v, s.children, idCmd, idCmdFirst, tmp );
+					}
+					
+					if( smi->iconID != ICON_NOT_USED )
+						SetMenuIcon( smi->iconID, miinfo );
+					
+					InsertMenuItem( hMenu, indexMenu++, TRUE, &miinfo );
+				}
+				return hMenu;
+			}
+
 			std::vector<tstring>				fileList;
 			cubeice::user_setting				ctxSetting;
 			ULONG								refCount;
@@ -729,6 +794,7 @@ namespace cube {
 			size_type							folderNum;
 			tstring								cubeiceEnginePath;
 			bool								isDragAndDrop;
+			std::map<UINT, const SUB_MENU_ITEM*>		table;
 		};
 
 	}
