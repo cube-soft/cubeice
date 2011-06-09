@@ -435,26 +435,34 @@ namespace cubeice {
 						continue;
 					}
 					string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
+					pos = filename.find(_T('<'));
+					if(pos != string_type::npos)
+						filename = filename.substr(pos + 1);
+					pos = filename.rfind(_T('>'));
+					if(pos != string_type::npos)
+						filename = filename.substr(0, pos);
 					
 					// パスワード処理
-					if (this->createinfo(tmp+_T("\\")+filename).size == 0) {
+					if (this->createinfo(tmp+_T("\\")+filename).size == 0 || line.find(password_error) != string_type::npos) {
 						string_type		nextline;
-						int				st;
-						bool			f = false;
-						while( ( st = proc.peek(nextline) ) == 0 ) {
-							if (!this->refresh(proc)) {
-								f = true;
-								break;
+						if (this->createinfo(tmp+_T("\\")+filename).size == 0) {
+							int				st;
+							bool			f = false;
+							while( ( st = proc.peek(nextline) ) == 0 ) {
+								if (!this->refresh(proc)) {
+									f = true;
+									break;
+								}
+								Sleep(10);
 							}
-							Sleep(10);
+							if( f )
+								break;
+							if( st < 0 || st == 2 )
+								break;
+							assert(st == 1);
 						}
-						if( f )
-							break;
-						if( st < 0 || st == 2 )
-							break;
-						assert(st == 1);
 
-						if (nextline.find(password) != string_type::npos || line.find(password_error) != string_type::npos) {
+						if (line.find(password_error) != string_type::npos || nextline.find(password) != string_type::npos) {
 							proc.close();
 							
 							string_type remove_file = root + _T("\\") + files_[std::max(static_cast<int>(index - 1), 0)].name;
@@ -1067,6 +1075,12 @@ namespace cubeice {
 				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
 				filename = clx::strip_copy(line.substr(pos + keyword.size()));
+				pos = filename.find(_T('<'));
+				if(pos != string_type::npos)
+					filename = filename.substr(pos + 1);
+				pos = filename.rfind(_T('>'));
+				if(pos != string_type::npos)
+					filename = filename.substr(0, pos);
 			}
 			
 			progress_.text(message);

@@ -92,7 +92,8 @@ STDMETHODIMP CExtractCallbackConsole::PrepareOperation(const wchar_t *name, bool
     case NArchive::NExtract::NAskMode::kTest:    (*OutStream) << kTestString; break;
     case NArchive::NExtract::NAskMode::kSkip:    (*OutStream) << kSkipString; break;
   };
-  (*OutStream) << name << ' ';
+//(*OutStream) << name << ' ';
+  (*OutStream) << '<' << name << "> ";
   if (position != 0)
     (*OutStream) << "<" << *position << ">";
   return S_OK;
