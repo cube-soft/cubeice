@@ -27,7 +27,7 @@
 
 #include <tchar.h>
 #include <cstdlib>
-#include <vector>
+#include <set>
 #include <string>
 #include <windows.h>
 #include <winreg.h>
@@ -438,7 +438,7 @@ namespace cubeice {
 		typedef archive_type::size_type size_type;
 		typedef archive_type::char_type char_type;
 		typedef archive_type::string_type string_type;
-		typedef std::vector<string_type> container_type;
+		typedef std::set<string_type> container_type;
 
 		struct SUBMENU {
 			int						id;
