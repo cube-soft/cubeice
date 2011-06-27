@@ -39,6 +39,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/foreach.hpp>
 #include <boost/optional.hpp>
+#include <babel/babel.h>
 #include "guid.h"
 
 /* ------------------------------------------------------------------------- */
@@ -442,10 +443,10 @@ namespace cubeice {
 
 		struct SUBMENU {
 			int						id;
-			std::string				str;
+			string_type				str;
 			std::vector<SUBMENU>	children;
 
-			SUBMENU(int id_, std::string str_) : id(id_), str(str_)
+			SUBMENU(int id_, string_type str_) : id(id_), str(str_)
 			{
 			}
 		};
@@ -937,7 +938,11 @@ cleanup:
 					optional<int>			attr_id		= v.second.get_optional<int>("<xmlattr>.id");
 					optional<std::string>	attr_name	= v.second.get_optional<std::string>("<xmlattr>.name");
 					if(attr_id) {
-						parent.push_back(SUBMENU( *attr_id, attr_name ? *attr_name : "" ));
+#ifdef	UNICODE
+						parent.push_back(SUBMENU( *attr_id, attr_name ? babel::utf8_to_unicode(*attr_name) : L"" ));
+#else
+						parent.push_back(SUBMENU( *attr_id, attr_name ? babel::utf8_to_sjis(*attr_name) : "" ));
+#endif
 						if(v.second.size())
 							context_read(v.second, parent.back().children);
 					}
@@ -962,8 +967,13 @@ cleanup:
 				ptree	&item = pt.add("item", "");
 				ptree	&attr = item.put("<xmlattr>", "");
 				attr.put("id", clx::lexical_cast<std::string>(s.id));
-				if(s.str!="")
-					attr.put("name", s.str);
+				if(s.str!=_T("")) {
+#ifdef	UNICODE
+					attr.put("name", babel::unicode_to_utf8(s.str));
+#else
+					attr.put("name", babel::sjis_to_utf8(s.str));
+#endif
+				}
 				context_write(item, s.children);
 			}
 		}

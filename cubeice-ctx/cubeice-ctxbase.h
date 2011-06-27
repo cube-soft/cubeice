@@ -194,7 +194,7 @@ namespace cube {
 
 					SerSubMenu( v, MenuItem );
 
-					ConstractSubMenu( hMenu, v, submenu, idCmd, idCmdFirst, indexMenu );
+					ConstructSubMenu( hMenu, v, submenu, idCmd, idCmdFirst, indexMenu );
 				}
 					
 				// Add separator
@@ -748,12 +748,12 @@ namespace cube {
 				return NULL;
 			}
 
-			HMENU ConstractSubMenu( HMENU hMenu, const std::vector<const SUB_MENU_ITEM*> &v, const std::vector<cubeice::user_setting::SUBMENU> &submenu, UINT &idCmd, const UINT &idCmdFirst, UINT &indexMenu ) {
+			HMENU ConstructSubMenu( HMENU hMenu, const std::vector<const SUB_MENU_ITEM*> &v, const std::vector<cubeice::user_setting::SUBMENU> &submenu, UINT &idCmd, const UINT &idCmdFirst, UINT &indexMenu ) {
 				BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, submenu) {
 					MENUITEMINFO			miinfo;
 					const SUB_MENU_ITEM		*smi = GetSubMenuItem( v, s.id );
 
-					if( !smi )
+					if( !smi && ( s.id != 0 || !s.children.size() ) )
 						continue;
 
 					table[idCmd-idCmdFirst] = smi;
@@ -764,19 +764,19 @@ namespace cube {
 					miinfo.fType			= MFT_STRING;
 					miinfo.wID				= idCmd++;
 #ifndef	UNICODE
-					miinfo.dwTypeData		= const_cast<LPSTR>( smi->stringA );
+					miinfo.dwTypeData		= s.id != 0 ? const_cast<LPSTR>( smi->stringA ) : const_cast<LPSTR>( s.str.c_str() );
 #else	// UNICODE
-					miinfo.dwTypeData		= const_cast<LPWSTR>( smi->stringW );
+					miinfo.dwTypeData		= s.id != 0 ? const_cast<LPWSTR>( smi->stringW ) : const_cast<LPWSTR>( s.str.c_str() );
 #endif	// UNICODE
 					
 					if( s.children.size() ) {
 						UINT		tmp = 0;
 
 						miinfo.fMask		|= MIIM_SUBMENU;
-						miinfo.hSubMenu		= ConstractSubMenu( CreateMenu(), v, s.children, idCmd, idCmdFirst, tmp );
+						miinfo.hSubMenu		= ConstructSubMenu( CreateMenu(), v, s.children, idCmd, idCmdFirst, tmp );
 					}
 					
-					if( smi->iconID != ICON_NOT_USED )
+					if( s.id != 0 && smi->iconID != ICON_NOT_USED )
 						SetMenuIcon( smi->iconID, miinfo );
 					
 					InsertMenuItem( hMenu, indexMenu++, TRUE, &miinfo );
