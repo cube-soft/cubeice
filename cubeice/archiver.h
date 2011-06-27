@@ -68,6 +68,14 @@ namespace cubeice {
 			setting_(setting), input_files_(), files_(), size_(0), progress_() {}
 		
 		/* ----------------------------------------------------------------- */
+		//  destructor
+		/* ----------------------------------------------------------------- */
+		~archiver() {
+			if(!decomp_tmp_dir_.empty())
+				this->remove(decomp_tmp_dir_.c_str());
+		}
+		
+		/* ----------------------------------------------------------------- */
 		//  compress
 		/* ----------------------------------------------------------------- */
 		template <class InputIterator>
@@ -327,6 +335,7 @@ namespace cubeice {
 				
 				// 一時フォルダの作成
 				string_type tmp = tmpdir(_T("cubeice"));
+				decomp_tmp_dir_ = tmp;
 				if (tmp.empty()) break;
 				
 				// プログレスバーの進行度の設定
@@ -570,6 +579,7 @@ namespace cubeice {
 				}
 				
 				this->remove(tmp.c_str());
+				decomp_tmp_dir_.clear();
 				
 				if ((setting_.decompression().details() & DETAIL_REMOVE_SRC) && report.empty() && !progress_.is_cancel()) {
 					DeleteFile(original.c_str());
@@ -594,6 +604,7 @@ namespace cubeice {
 		bool done_get_filelist_;
 		size_type size_; // トータルサイズ
 		cubeice::dialog::progressbar progress_;
+		string_type decomp_tmp_dir_;
 		
 	private: // compress_xxx
 		/* ----------------------------------------------------------------- */
