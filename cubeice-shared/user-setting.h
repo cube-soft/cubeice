@@ -464,6 +464,7 @@ namespace cubeice {
 			comp_.max_filelist() = 5;
 			decomp_.output_condition() = 0x01;
 			decomp_.details() = 0x5ed;
+			babel::init_babel();
 			this->load();
 		}
 		
@@ -477,6 +478,7 @@ namespace cubeice {
 			comp_.max_filelist() = 5;
 			decomp_.output_condition() = 0x01;
 			decomp_.details() = 0x5ed;
+			babel::init_babel();
 			this->load();
 		}
 		
