@@ -672,6 +672,18 @@ namespace cubeice {
 				RegSetValueEx(hkResult, CUBEICE_REG_FILTER, 0, REG_SZ, (CONST BYTE*)dest.c_str(), (dest.length() + 1) * sizeof(char_type));
 
 				log_file << CUBEICE_REG_FILTER << _T(": ") << dest << _T("\r\n");
+
+				{
+					// ちゃんと書き込めたかチェック
+					char_type buffer[8 * 1024] = {};
+					DWORD dwSize = sizeof(buffer);
+					DWORD dwType;
+					LSTATUS result;
+					if ((result = RegQueryValueEx(hkResult, CUBEICE_REG_FILTER, NULL, &dwType, (LPBYTE)buffer, &dwSize)) == ERROR_SUCCESS)
+						log_file << CUBEICE_REG_FILTER << _T(" checker: ") << ((dest == buffer) ? _T("ok") : (_T("failed [") + string_type(buffer) + _T("]"))) << _T("\r\n");
+					else
+						log_file << CUBEICE_REG_FILTER << _T(" checker: ") << _T("Reg Query error [") << clx::lexical_cast<string_type>(result) << _T("]") << _T("\r\n");
+				}
 			} else {
 				log_file << _T("Reg open error") << _T("\r\n");
 			}
