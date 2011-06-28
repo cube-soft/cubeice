@@ -276,6 +276,7 @@ namespace cubeice {
 				flag_map::const_iterator pos = decomp.find(parameter);
 				if (pos != decomp.end()) {
 					change_flag(Setting.decompression().flags(), hWnd, pos->first, pos->second);
+					Setting.associate_changed();
 					return TRUE;
 				}
 				
@@ -286,6 +287,7 @@ namespace cubeice {
 						SendDlgItemMessage( hWnd, it->first, BM_SETCHECK, check, 0 );
 						change_flag(Setting.decompression().flags(), hWnd, it->first, it->second);
 					}
+					Setting.associate_changed();
 					return TRUE;
 				}
 				
