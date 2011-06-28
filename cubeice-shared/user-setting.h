@@ -471,7 +471,7 @@ namespace cubeice {
 			root_(CUBEICE_REG_ROOT), install_(_T("")), version_(_T("")),
 			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true) {
+			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), associate_invoke_(false) {
 			comp_.output_condition() = 0x02;
 			comp_.details() = 0x281;
 			comp_.max_filelist() = 5;
@@ -485,7 +485,7 @@ namespace cubeice {
 			root_(root), install_(_T("")), version_(_T("")),
 			comp_(root + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(root + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true) {
+			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), associate_invoke_(false) {
 			comp_.output_condition() = 0x02;
 			comp_.details() = 0x281;
 			comp_.max_filelist() = 5;
@@ -705,7 +705,8 @@ namespace cubeice {
 			log_file << _T("----------------------------------------------------------------------------------------------------") << _T("\r\n");
 			log_file << _T("\r\n");
 
-			this->associate(decomp_.flags(), decomp_.details());
+			if(associate_invoke_)
+				this->associate(decomp_.flags(), decomp_.details());
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -737,6 +738,15 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		archive_type& decompression() { return decomp_; }
 		const archive_type& decompression() const { return decomp_; }
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  associate_changed
+		 *
+		 *  関連付けに対する変更．
+		 */
+		/* ----------------------------------------------------------------- */
+		void associate_changed() { associate_invoke_ = true; }
 		
 		/* ----------------------------------------------------------------- */
 		/*
@@ -809,6 +819,7 @@ namespace cubeice {
 		bool update_;
 		bool ctx_customize_;
 		std::vector<SUBMENU> ctx_submenu_;
+		bool associate_invoke_;
 		
 		/* ----------------------------------------------------------------- */
 		/*
