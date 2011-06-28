@@ -206,6 +206,7 @@ namespace cubeice {
 			dest[IDC_MAIL_REMOVE_CHECKBOX] = DETAIL_MAIL_REMOVE;
 			dest[IDC_TOOLTIP_CHECKBOX] = DETAIL_TOOLTIP;
 			dest[IDC_REMOVE_SRC_CHECKBOX] = DETAIL_REMOVE_SRC;
+			dest[IDC_MAC_CHECKBOX] = DETAIL_MAC;
 			initialized = true;
 		}
 		return dest;
