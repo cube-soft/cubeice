@@ -156,6 +156,8 @@
 #define CUBEICE_REG_VERSION             _T("Version")
 #define CUBEICE_REG_PREVARCHIVER        _T("PrevArchiver")
 
+#define CUBEICE_LOG_NAME                _T("cubeicelog.log")
+
 /* ------------------------------------------------------------------------- */
 //  設定ファイルに関する情報
 /* ------------------------------------------------------------------------- */
@@ -353,10 +355,11 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  save
 		/* ----------------------------------------------------------------- */
-		void save() {
+		void save(HANDLE hFile) {
 			HKEY hkResult; // キーのハンドル
 			DWORD dwDisposition; // 処理結果を受け取る
 			LONG lResult; // 関数の戻り値を格納する
+			string_type		str;
 			lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
 			if (!lResult) {
 				//RegSetValueEx(hkResult, CUBEICE_REG_FLAGS, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
@@ -370,7 +373,17 @@ namespace cubeice {
 				value = static_cast<DWORD>(output_condition_);
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_CONDITION, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, 0, REG_SZ, (CONST BYTE*)output_path_.c_str(), (output_path_.length() + 1) * sizeof(char_type));
+
+				str  = CUBEICE_REG_DETAILS			_T(": ") + clx::lexical_cast<string_type>(details_)				+ _T("\r\n");
+				str += CUBEICE_REG_MAX_FILELIST		_T(": ") + clx::lexical_cast<string_type>(max_filelist_)		+ _T("\r\n");
+				str += CUBEICE_REG_OUTPUT_CONDITION	_T(": ") + clx::lexical_cast<string_type>(output_condition_)	+ _T("\r\n");
+				str += CUBEICE_REG_OUTPUT_PATH		_T(": ") + output_path_											+ _T("\r\n");
+			} else {
+				str  = _T("Reg open error\r\n");
 			}
+
+			DWORD	nWritten = 0;
+			WriteFile(hFile, str.c_str(), str.size() * sizeof(char_type), &nWritten, NULL);
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -454,7 +467,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  constructor
 		/* ----------------------------------------------------------------- */
-		user_setting() :
+		user_setting(const bool &delay = false) :
 			root_(CUBEICE_REG_ROOT), install_(_T("")), version_(_T("")),
 			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
@@ -464,8 +477,8 @@ namespace cubeice {
 			comp_.max_filelist() = 5;
 			decomp_.output_condition() = 0x01;
 			decomp_.details() = 0x5ed;
-			babel::init_babel();
-			this->load();
+			if(!delay)
+				this->load();
 		}
 		
 		explicit user_setting(const string_type& root) :
@@ -478,7 +491,6 @@ namespace cubeice {
 			comp_.max_filelist() = 5;
 			decomp_.output_condition() = 0x01;
 			decomp_.details() = 0x5ed;
-			babel::init_babel();
 			this->load();
 		}
 		
@@ -486,6 +498,8 @@ namespace cubeice {
 		//  load
 		/* ----------------------------------------------------------------- */
 		void load() {
+			babel::init_babel();
+
 			comp_.load();
 			decomp_.load();
 			
@@ -574,8 +588,46 @@ namespace cubeice {
 		//  save
 		/* ----------------------------------------------------------------- */
 		void save() {
-			comp_.save();
-			decomp_.save();
+			babel::init_babel();
+
+			TCHAR		log_path[4*1024];
+
+			GetModuleFileName(NULL, log_path, sizeof(log_path)/sizeof(log_path[0]));
+			PathRemoveFileSpec(log_path);
+			PathAppend(log_path, CUBEICE_LOG_NAME);
+
+			class LogFile {
+			public:
+				LogFile(const TCHAR *path) : hFile(CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
+				{
+					if(hFile != INVALID_HANDLE_VALUE)
+						SetFilePointer(hFile, 0, NULL, FILE_END);
+				}
+				~LogFile() {
+					if(hFile != INVALID_HANDLE_VALUE)
+						CloseHandle(hFile);
+				}
+				operator HANDLE() {
+					return hFile;
+				}
+				LogFile &operator<<(const size_type &i) {
+					return (*this << clx::lexical_cast<string_type>(i));
+				}
+				LogFile &operator<<(const string_type &str) {
+					DWORD	nWritten = 0;
+					WriteFile(hFile, str.c_str(), str.size() * sizeof(char_type), &nWritten, NULL);
+					return *this;
+				}
+			private:
+				HANDLE hFile;
+			} log_file(log_path);
+
+			log_file << _T("compress") << _T("\r\n");
+			comp_.save(log_file);
+			log_file << _T("--------------------") << _T("\r\n");
+			log_file << _T("decompress") << _T("\r\n");
+			decomp_.save(log_file);
+			log_file << _T("--------------------") << _T("\r\n");
 			
 			HKEY hkResult;
 			DWORD dwDisposition;
@@ -618,6 +670,10 @@ namespace cubeice {
 				string_type dest;
 				clx::join(filters_, dest, _T("<>"));
 				RegSetValueEx(hkResult, CUBEICE_REG_FILTER, 0, REG_SZ, (CONST BYTE*)dest.c_str(), (dest.length() + 1) * sizeof(char_type));
+
+				log_file << CUBEICE_REG_FILTER << _T(": ") << dest << _T("\r\n");
+			} else {
+				log_file << _T("Reg open error") << _T("\r\n");
 			}
 			
 			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 0, KEY_ALL_ACCESS, &hkResult);
@@ -630,7 +686,13 @@ namespace cubeice {
 				}
 				else RegDeleteValue(hkResult, _T("cubeice-checker"));
 			}
-			
+
+			log_file << _T("decomp_flag: ") << decomp_.flags() << _T("\r\n");
+			log_file << _T("decomp_detail: ") << decomp_.details() << _T("\r\n");
+			log_file << _T("\r\n");
+			log_file << _T("----------------------------------------------------------------------------------------------------") << _T("\r\n");
+			log_file << _T("\r\n");
+
 			this->associate(decomp_.flags(), decomp_.details());
 		}
 		
