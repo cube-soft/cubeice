@@ -6,9 +6,11 @@
 #include "dialog.h"
 #include "style.h"
 
-cubeice::user_setting Setting;
+cubeice::user_setting Setting(true);
 
 int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int showCmd) {
+	Setting.load();
+
 	std::basic_string<TCHAR> args(pCmdLine);
 	if (args == _T("install")) {
 		/*
