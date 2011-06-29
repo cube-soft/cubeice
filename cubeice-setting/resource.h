@@ -32,8 +32,8 @@
  *  Last-modified: Wed 17 Nov 2010 17:39:00 JST
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_RESOURCE_H
-#define CUBEICE_RESOURCE_H
+#ifndef CUBEICE_SETTING_RESOURCE_H
+#define CUBEICE_SETTING_RESOURCE_H
 
 #ifndef IDC_STATIC
 #define IDC_STATIC (-1)
@@ -95,6 +95,9 @@
 #define IDC_MAIL_GZIP_CHECKBOX      2217 // COMP_GZIP_FLAG
 #define IDC_MAIL_DETAIL_CHECKBOX    2218 // COMP_DETAIL_FLAG
 
+#define IDC_CUSTOMIZE_MENU_BUTTON   2220 // カスタマイズ
+#define IDC_RESET_MENU_BUTTON       2221 // リセット
+
 #define IDC_SHORTCUT_GROUP          2300 // デスクトップに作成するショートカット
 #define IDC_SC_COMPRESS_CHECKBOX    2301 // COMPRESS_FLAG
 #define IDC_SC_DECOMPRESS_CHECKBOX  2302 // DECOMPRESS_FLAG
@@ -154,4 +157,17 @@
 #define IDC_URI_LABEL               5004
 #define IDC_UPDATE_CHECKBOX         5005
 
-#endif // CUBEICE_RESOURCE_H
+/* ------------------------------------------------------------------------- */
+//  コンテキストメニューのカスタマイズ用ダイアログ
+/* ------------------------------------------------------------------------- */
+#define IDC_CURRENT_LABEL           6001
+#define IDC_ADD_LABEL               6002
+#define IDC_CURRENT_TREEVIEW        6003
+#define IDC_ADD_TREEVIEW            6004
+#define IDC_ADD_BUTTON              6005
+#define IDC_DELETE_BUTTON           6006
+#define IDC_UP_BUTTON               6007
+#define IDC_DOWN_BUTTON             6008
+#define IDC_RESET_BUTTON            6009
+
+#endif // CUBEICE_SETTING_RESOURCE_H
