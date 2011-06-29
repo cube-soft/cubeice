@@ -183,6 +183,31 @@ namespace cubeice {
 		}
 
 		/* ----------------------------------------------------------------- */
+		//  CheckValidation
+		/* ----------------------------------------------------------------- */
+		bool CheckValidation(const std::vector<cubeice::user_setting::SUBMENU> &v)
+		{
+			if(!v.size())
+				return false;
+			BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, v) {
+				bool	f = false;
+				if(s.id == SUBMENU_DIR_ID) {
+					f = true;
+				} else {
+					for(int i = 0 ; MenuItem[i].stringA ; ++i) {
+						if(MenuItem[i].dispSetting == s.id) {
+							f = true;
+							break;
+						}
+					}
+				}
+				if(f && !CheckValidation(s.children))
+					return false;
+			}
+			return true;
+		}
+
+		/* ----------------------------------------------------------------- */
 		//  customize_wndproc
 		/* ----------------------------------------------------------------- */
 		static INT_PTR CALLBACK customize_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
@@ -214,10 +239,10 @@ namespace cubeice {
 			}
 			case WM_NOTIFY:
 				if(reinterpret_cast<LPNMHDR>(lp)->code == TVN_BEGINLABELEDIT && reinterpret_cast<LPNMHDR>(lp)->hwndFrom == hTreeMenu) {
-					//if(reinterpret_cast<LPNMTVDISPINFO>(lp)->item.lParam != SUBMENU_DIR_ID)
+					if(reinterpret_cast<LPNMTVDISPINFO>(lp)->item.lParam == SUBMENU_ROOT_ID)
 						SetWindowLongPtr(hWnd, DWLP_MSGRESULT, TRUE);
-					//else
-					//	SetWindowLongPtr(hWnd, DWLP_MSGRESULT, FALSE);
+					else
+						SetWindowLongPtr(hWnd, DWLP_MSGRESULT, FALSE);
 					return TRUE;
 				} else if(reinterpret_cast<LPNMHDR>(lp)->code == TVN_ENDLABELEDIT && reinterpret_cast<LPNMHDR>(lp)->hwndFrom == hTreeMenu) {
 					TreeView_SetItem(hTreeMenu, &reinterpret_cast<TV_DISPINFO*>(lp)->item);
@@ -229,7 +254,15 @@ namespace cubeice {
 				
 				switch (LOWORD(wp)) {
 				case IDOK:
-					GetSubmenuStruct(setting->context_submenu(), hTreeMenu, TreeView_GetChild(hTreeMenu, TVI_ROOT));
+				{
+					std::vector<cubeice::user_setting::SUBMENU>		v;
+					GetSubmenuStruct(v, hTreeMenu, TreeView_GetChild(hTreeMenu, TVI_ROOT));
+					if(!CheckValidation(v)) {
+						MessageBox(hWnd, _T(""), _T(""), MB_OK | MB_ICONINFORMATION);
+						break;
+					}
+					setting->context_submenu() = v;
+				}
 				case IDCANCEL:
 					EndDialog(hWnd, LOWORD(wp));
 					break;
