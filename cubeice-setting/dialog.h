@@ -128,6 +128,22 @@ namespace cubeice {
 	}
 	
 	/* ----------------------------------------------------------------- */
+	//  context_root_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& context_root_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_CT_COMPRESS_CHECKBOX] = COMPRESS_FLAG;
+			dest[IDC_CT_DECOMPRESS_CHECKBOX] = DECOMPRESS_FLAG;
+			dest[IDC_CT_MAIL_CHECKBOX] = MAIL_FLAG;
+			
+			initialized = true;
+		}
+		return dest;
+	}
+
+	/* ----------------------------------------------------------------- */
 	//  context_compress_map
 	/* ----------------------------------------------------------------- */
 	inline flag_map& context_compress_map() {

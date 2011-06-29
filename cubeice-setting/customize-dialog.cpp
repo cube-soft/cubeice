@@ -175,12 +175,12 @@ namespace cubeice {
 				return FALSE;
 			}
 			case WM_COMMAND:
-				if (HIWORD(wp) != BN_CLICKED) break;
+				//if (HIWORD(wp) != BN_CLICKED) break;
 				
 				switch (LOWORD(wp)) {
 				case IDOK:
 				case IDCANCEL:
-					EndDialog(hWnd, 0);
+					EndDialog(hWnd, LOWORD(wp));
 					break;
 				case IDC_ADD_BUTTON: // 追加
 				{
@@ -217,6 +217,8 @@ namespace cubeice {
 				case IDC_UP_BUTTON: // 上へ
 				case IDC_DOWN_BUTTON: // 下へ
 				case IDC_RESET_BUTTON: // リセット
+					// TODO: 「リセット」ボタンが押された場合は，
+					// 「現在のコンテキストメニュー」のツリーのに初期処理時と同じ構成に戻す．
 				default:
 					break;
 				}

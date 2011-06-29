@@ -99,6 +99,24 @@ namespace cubeice {
 		}
 		
 		/* ---------------------------------------------------------------- */
+		//  change_cxtmenu
+		/* ---------------------------------------------------------------- */
+		static void change_ctxmenu(HWND hWnd, bool customized) {
+			const flag_map& context = context_root_map();
+			for (flag_map::const_iterator pos = context.begin(); pos != context.end(); ++pos) {
+				EnableWindow(GetDlgItem(hWnd, pos->first), customized ? FALSE : TRUE);
+				
+				// サブ項目を取得
+				const flag_map& ctxsub = (pos->second == COMPRESS_FLAG) ? context_compress_map() :
+					((pos->second == DECOMPRESS_FLAG) ? context_decompress_map() : context_mail_map());
+				BOOL enabled = (customized || IsDlgButtonChecked(hWnd, pos->first) == BST_UNCHECKED) ? FALSE : TRUE;
+				for (flag_map::const_iterator subpos = ctxsub.begin(); subpos != ctxsub.end(); ++subpos) {
+						EnableWindow(GetDlgItem(hWnd, subpos->first), enabled);
+				}
+			}
+		}
+		
+		/* ---------------------------------------------------------------- */
 		/*
 		 *  archive_initdialog
 		 *
@@ -141,7 +159,7 @@ namespace cubeice {
 				EnableWindow(GetDlgItem(hWnd, IDC_SKIP_DESKTOP_CHECKBOX), FALSE);
 			}
 		}
-		
+
 		/* ---------------------------------------------------------------- */
 		/*
 		 *  general_initdialog
@@ -183,6 +201,7 @@ namespace cubeice {
 					}
 				}
 			}
+			change_ctxmenu(hWnd, Setting.context_customize());
 			
 			// 「ショートカット」グループ
 			const flag_map& shortcut = shortcut_map();
@@ -266,7 +285,7 @@ namespace cubeice {
 			switch (msg) {
 			case WM_INITDIALOG:
 				general_initdialog(hWnd);
-				return TRUE;
+				return FALSE;
 			case WM_COMMAND:
 			{
 				std::size_t parameter = LOWORD(wp);
@@ -277,7 +296,7 @@ namespace cubeice {
 				if (pos != decomp.end()) {
 					change_flag(Setting.decompression().flags(), hWnd, pos->first, pos->second);
 					Setting.associate_changed();
-					return TRUE;
+					return FALSE;
 				}
 				
 				// 「全て選択/全て解除」のボタン
@@ -288,7 +307,7 @@ namespace cubeice {
 						change_flag(Setting.decompression().flags(), hWnd, it->first, it->second);
 					}
 					Setting.associate_changed();
-					return TRUE;
+					return FALSE;
 				}
 				
 				// 「コンテキストメニュー」グループ
@@ -319,32 +338,32 @@ namespace cubeice {
 						}
 					}
 					
-					return TRUE;
+					return FALSE;
 				}
 				
 				// 「カスタマイズ」ボタン
 				if (parameter == IDC_CUSTOMIZE_MENU_BUTTON) {
-					cubeice::dialog::customize(hWnd, Setting);
-					return true;
+					if (cubeice::dialog::customize(hWnd, Setting) == IDOK) change_ctxmenu(hWnd, true);
+					return FALSE;
 				}
 				
 				// 「リセット」ボタン
 				if (parameter == IDC_RESET_MENU_BUTTON) {
-					// TODO: コンテキストメニューのチェックボックスを有効にする．
-					return TRUE;
+					change_ctxmenu(hWnd, false);
+					return FALSE;
 				}
-
+				
 				// 「ショートカット」グループ
 				const flag_map& shortcut = shortcut_map();
 				pos = shortcut.find(parameter);
 				if (pos != shortcut.end()) {
 					change_flag(Setting.shortcut_flags(), hWnd, pos->first, pos->second);
-					return TRUE;
+					return FALSE;
 				}
 				
 				if (parameter == IDC_SC_TYPE_COMBOBOX) {
 					Setting.shortcut_compress_index() = SendMessage(GetDlgItem(hWnd, IDC_SC_TYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
-					return TRUE;
+					return FALSE;
 				}
 				
 				break;
