@@ -32,8 +32,8 @@
  *  Last-modified: Wed 12 Jan 2011 14:28:04 JST
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_RESOURCE_H
-#define CUBEICE_RESOURCE_H
+#ifndef CUBEICE_CTX_RESOURCE_H
+#define CUBEICE_CTX_RESOURCE_H
 
 #define IDB_LOGO                                101
 #define IDB_COMPRESS                            102
