@@ -47,6 +47,10 @@
 extern cubeice::user_setting Setting;
 
 namespace cubeice {
+	namespace dialog {
+		extern int customize(HWND owner, cubeice::user_setting& setting);
+	}
+
 	extern INT_PTR create_propsheet(HWND parent, bool install);
 	
 	typedef std::map<std::size_t, std::size_t> flag_map;

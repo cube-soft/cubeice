@@ -322,6 +322,18 @@ namespace cubeice {
 					return TRUE;
 				}
 				
+				// 「カスタマイズ」ボタン
+				if (parameter == IDC_CUSTOMIZE_MENU_BUTTON) {
+					cubeice::dialog::customize(hWnd, Setting);
+					return true;
+				}
+				
+				// 「リセット」ボタン
+				if (parameter == IDC_RESET_MENU_BUTTON) {
+					// TODO: コンテキストメニューのチェックボックスを有効にする．
+					return TRUE;
+				}
+
 				// 「ショートカット」グループ
 				const flag_map& shortcut = shortcut_map();
 				pos = shortcut.find(parameter);
