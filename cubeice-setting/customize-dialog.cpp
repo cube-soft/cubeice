@@ -27,6 +27,9 @@
 #include <map>
 #include "../cubeice-ctx/cubeice-ctxdata.h"
 
+#define		SUBMENU_ROOT_ID		static_cast<LPARAM>(-1)
+#define		SUBMENU_DIR_ID		static_cast<LPARAM>(0)
+
 namespace cubeice {
 	namespace dialog {
 		/* ----------------------------------------------------------------- */
@@ -76,10 +79,23 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  SetMenuItem
 		/* ----------------------------------------------------------------- */
-		void SetMenuItem(HWND hMenuTreeView, HTREEITEM hTreeItem, const std::vector<cubeice::user_setting::SUBMENU> &submenu)
+		void SetMenuItem(HWND hMenuTreeView, HTREEITEM hParentItem, const std::vector<cubeice::user_setting::SUBMENU> &submenu, const std::map<cubeice::user_setting::size_type, const TCHAR*> &table)
 		{
-			BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, submenu) {
+			TVINSERTSTRUCT	tvi;
+			tvi.hParent			= hParentItem;
+			tvi.hInsertAfter	= TVI_LAST;
+			tvi.item.mask		= TVIF_TEXT | TVIF_PARAM;
 
+			BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, submenu) {
+				if(s.id == SUBMENU_DIR_ID || table.find(s.id) != table.end()) {
+					HTREEITEM					hItem;
+
+					tvi.item.pszText	= (s.id == SUBMENU_DIR_ID) ? const_cast<LPTSTR>(s.str.c_str()) : const_cast<LPTSTR>(table.find(s.id)->second);
+					tvi.item.lParam		= s.id;
+					hItem = TreeView_InsertItem(hMenuTreeView, &tvi);
+
+					SetMenuItem(hMenuTreeView, hItem, s.children, table);
+				}
 			}
 		}
 
@@ -88,7 +104,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		void InitTreeViewItem(HWND hMenuTreeView, HWND hItemListTreeView, const std::vector<cubeice::user_setting::SUBMENU> &submenu)
 		{
-			HTREEITEM	hItem;
+			HTREEITEM	hRootItem;
 
 			InitMenuList(hItemListTreeView, TVI_ROOT, MenuItem);
 
@@ -97,39 +113,33 @@ namespace cubeice {
 			tvi.hInsertAfter	= TVI_LAST;
 			tvi.item.mask		= TVIF_TEXT | TVIF_PARAM;
 			tvi.item.pszText	= TEXT("新しいフォルダを追加");
-			tvi.item.lParam		= static_cast<LPARAM>(0);
+			tvi.item.lParam		= SUBMENU_DIR_ID;
 			TreeView_InsertItem(hItemListTreeView, &tvi);
 
 			tvi.item.mask		= TVIF_TEXT | TVIF_PARAM;
 			tvi.item.pszText	= TEXT("ルート");
-			tvi.item.lParam		= static_cast<LPARAM>(-1);
-			hItem = TreeView_InsertItem(hMenuTreeView, &tvi);
-			TreeView_Select(hMenuTreeView, hItem, TVGN_CARET);
+			tvi.item.lParam		= SUBMENU_ROOT_ID;
+			hRootItem = TreeView_InsertItem(hMenuTreeView, &tvi);
 
-		//	std::map<cubeice::user_setting::size_type, TCHAR*>	table;
-		//	SerializeMenuItemData(table, MenuItem);
-		//	BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, submenu) {
-		//		if(!s.id) {
-		//			// ---------------------------------------------------------------------------------------------------------------------
-		//			// ここでUNICODEビルドでは通らない・・・
-		////			tvi.item.pszText = s.str.c_str();
-		//		} else if(table.find(s.id) != table.end()) {
-		//			tvi.item.pszText = table[s.id];
-		//		}
-		//	}
+			std::map<cubeice::user_setting::size_type, const TCHAR*>	table;
+			SerializeMenuItemData(table, MenuItem);
+			SetMenuItem(hMenuTreeView, hRootItem, submenu, table);
+
+			TreeView_Select(hMenuTreeView, hRootItem, TVGN_CARET);
+			TreeView_Expand(hMenuTreeView, hRootItem, TVE_EXPAND);
 		}
 
 		/* ----------------------------------------------------------------- */
 		//  CopyTreeViewItem
 		/* ----------------------------------------------------------------- */
-		HTREEITEM CopyTreeViewItem(HWND &hTo, HTREEITEM hToParentItem, HWND &hFrom, HTREEITEM hFromParentItem)
+		HTREEITEM CopyTreeViewItem(HWND &hTo, HTREEITEM hToParentItem, HWND &hFrom, HTREEITEM hFromParentItem, const HTREEITEM &InsertAfter = TVI_LAST)
 		{
 			static	TCHAR	str[2048];
 			TVINSERTSTRUCT	tvi;
 			HTREEITEM	hInsertItem, hChildItem;
 
 			tvi.hParent			= hToParentItem;
-			tvi.hInsertAfter	= TVI_LAST;
+			tvi.hInsertAfter	= InsertAfter;
 			tvi.item.mask		= TVIF_HANDLE | TVIF_TEXT | TVIF_PARAM;
 			tvi.item.hItem		= hFromParentItem;
 			tvi.item.pszText	= str;
@@ -148,18 +158,46 @@ namespace cubeice {
 		}
 
 		/* ----------------------------------------------------------------- */
+		//  GetSubmenuStruct
+		/* ----------------------------------------------------------------- */
+		void GetSubmenuStruct(std::vector<cubeice::user_setting::SUBMENU> &submenu, HWND hMenuTreeView, HTREEITEM hParentItem)
+		{
+			HTREEITEM	hChildItem;
+
+			submenu.clear();
+			hChildItem = TreeView_GetChild(hMenuTreeView, hParentItem);
+			while(hChildItem) {
+				static	TCHAR	str[2048];
+				TVITEM	tvi;
+				tvi.mask		= TVIF_HANDLE | TVIF_TEXT | TVIF_PARAM;
+				tvi.hItem		= hChildItem;
+				tvi.pszText		= str;
+				tvi.cchTextMax	= sizeof(str) / sizeof(str[0]);
+
+				TreeView_GetItem(hMenuTreeView, &tvi);
+				submenu.push_back(cubeice::user_setting::SUBMENU(static_cast<int>(tvi.lParam), str));
+
+				GetSubmenuStruct(submenu.back().children, hMenuTreeView, hChildItem);
+				hChildItem = TreeView_GetNextSibling(hMenuTreeView, hChildItem);
+			}
+		}
+
+		/* ----------------------------------------------------------------- */
 		//  customize_wndproc
 		/* ----------------------------------------------------------------- */
 		static INT_PTR CALLBACK customize_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
-			static cubeice::user_setting* setting = NULL;
-			HWND hTreeMenu = GetDlgItem(hWnd, IDC_CURRENT_TREEVIEW);
-			HWND hTreeOrg = GetDlgItem(hWnd, IDC_ADD_TREEVIEW);
+			static cubeice::user_setting *setting;
+			static HWND hTreeMenu;
+			static HWND hTreeOrg;
 			
 			switch (msg) {
 			case WM_INITDIALOG:
 			{
+				hTreeMenu = GetDlgItem(hWnd, IDC_CURRENT_TREEVIEW);
+				hTreeOrg = GetDlgItem(hWnd, IDC_ADD_TREEVIEW);
+
 				setting = reinterpret_cast<cubeice::user_setting*>(lp);
-				InitTreeViewItem(hTreeMenu, hTreeOrg, std::vector<cubeice::user_setting::SUBMENU>());
+				InitTreeViewItem(hTreeMenu, hTreeOrg, setting->context_submenu());
 				
 				// アイコン
 				HICON app = LoadIcon(GetModuleHandle(NULL), _T("IDI_APP"));
@@ -174,11 +212,24 @@ namespace cubeice {
 				
 				return FALSE;
 			}
+			case WM_NOTIFY:
+				if(reinterpret_cast<LPNMHDR>(lp)->code == TVN_BEGINLABELEDIT && reinterpret_cast<LPNMHDR>(lp)->hwndFrom == hTreeMenu) {
+					//if(reinterpret_cast<LPNMTVDISPINFO>(lp)->item.lParam != SUBMENU_DIR_ID)
+						SetWindowLongPtr(hWnd, DWLP_MSGRESULT, TRUE);
+					//else
+					//	SetWindowLongPtr(hWnd, DWLP_MSGRESULT, FALSE);
+					return TRUE;
+				} else if(reinterpret_cast<LPNMHDR>(lp)->code == TVN_ENDLABELEDIT && reinterpret_cast<LPNMHDR>(lp)->hwndFrom == hTreeMenu) {
+					TreeView_SetItem(hTreeMenu, &reinterpret_cast<TV_DISPINFO*>(lp)->item);
+					return TRUE;
+				}
+				break;
 			case WM_COMMAND:
-				//if (HIWORD(wp) != BN_CLICKED) break;
+				if (HIWORD(wp) != BN_CLICKED) break;
 				
 				switch (LOWORD(wp)) {
 				case IDOK:
+					GetSubmenuStruct(setting->context_submenu(), hTreeMenu, TreeView_GetChild(hTreeMenu, TVI_ROOT));
 				case IDCANCEL:
 					EndDialog(hWnd, LOWORD(wp));
 					break;
@@ -194,6 +245,19 @@ namespace cubeice {
 
 					if(!hInsertTo || !hInsertFrom)
 						break;
+
+					bool		f = false;
+					tvitem.mask		= TVIF_HANDLE | TVIF_PARAM;
+					tvitem.hItem	= hInsertTo;
+					TreeView_GetItem(hTreeMenu, &tvitem);
+					for(int i = 0 ; MenuItem[i].stringA ; ++i) {
+						if(tvitem.lParam == MenuItem[i].dispSetting) {
+							f = true;
+							break;
+						}
+					}
+					if(tvitem.lParam != SUBMENU_ROOT_ID && tvitem.lParam != SUBMENU_DIR_ID && !f)
+						return 0;
 
 					hInsertedItem = CopyTreeViewItem(hTreeMenu, hInsertTo, hTreeOrg, hInsertFrom);
 					TreeView_Expand(hTreeMenu, hInsertTo, TVE_EXPAND);
@@ -215,17 +279,55 @@ namespace cubeice {
 					break;
 				}
 				case IDC_UP_BUTTON: // 上へ
-				case IDC_DOWN_BUTTON: // 下へ
-					// TODO: 「上へ」，「下へ」は，「現在のコンテキストメニュー」の項目が選択されていれば，
-					// 選択されている項目を1つ上へ/下へずらす．
-					// 何も選択されていない場合や，「追加するメニュー」の項目が選択されている場合は無視．
-				case IDC_RESET_BUTTON: // リセット
-					// TODO: 「リセット」ボタンが押された場合は，
-					// 「現在のコンテキストメニュー」のツリーのに初期処理時と同じ構成に戻す．
-				default:
+				{
+					HTREEITEM	hTreeItem;
+					HTREEITEM	hPrevItem;
+					HTREEITEM	hNewItem;
+
+					hTreeItem = TreeView_GetSelection(hTreeMenu);
+					if(!hTreeItem)
+						break;
+
+					hPrevItem = TreeView_GetPrevSibling(hTreeMenu, hTreeItem);
+					if(!hPrevItem)
+						break;
+					hPrevItem = TreeView_GetPrevSibling(hTreeMenu, hPrevItem);
+					if(!hPrevItem)
+						hPrevItem = TVI_FIRST;
+
+					hNewItem = CopyTreeViewItem(hTreeMenu, TreeView_GetParent(hTreeMenu, hTreeItem), hTreeMenu, hTreeItem, hPrevItem);
+					TreeView_DeleteItem(hTreeMenu, hTreeItem);
+					TreeView_SelectItem(hTreeMenu, hNewItem);
 					break;
 				}
-				break;
+				case IDC_DOWN_BUTTON: // 下へ
+				{
+					HTREEITEM	hTreeItem;
+					HTREEITEM	hNextItem;
+					HTREEITEM	hNewItem;
+
+					hTreeItem = TreeView_GetSelection(hTreeMenu);
+					if(!hTreeItem)
+						break;
+
+					hNextItem = TreeView_GetNextSibling(hTreeMenu, hTreeItem);
+					if(!hNextItem)
+						break;
+
+					hNewItem = CopyTreeViewItem(hTreeMenu, TreeView_GetParent(hTreeMenu, hTreeItem), hTreeMenu, hTreeItem, hNextItem);
+					TreeView_DeleteItem(hTreeMenu, hTreeItem);
+					TreeView_SelectItem(hTreeMenu, hNewItem);
+					break;
+				}
+				case IDC_RESET_BUTTON: // リセット
+					TreeView_DeleteAllItems(hTreeMenu);
+					TreeView_DeleteAllItems(hTreeOrg);
+					InitTreeViewItem(hTreeMenu, hTreeOrg, setting->context_submenu());
+					break;
+				default:
+					return FALSE;
+				}
+				return TRUE;
 			default:
 				break;
 			}
