@@ -47,6 +47,10 @@
 extern cubeice::user_setting Setting;
 
 namespace cubeice {
+	namespace dialog {
+		extern int customize(HWND owner, cubeice::user_setting& setting);
+	}
+
 	extern INT_PTR create_propsheet(HWND parent, bool install);
 	
 	typedef std::map<std::size_t, std::size_t> flag_map;
@@ -123,6 +127,22 @@ namespace cubeice {
 		return dest;
 	}
 	
+	/* ----------------------------------------------------------------- */
+	//  context_root_map
+	/* ----------------------------------------------------------------- */
+	inline flag_map& context_root_map() {
+		static bool initialized = false;
+		static flag_map dest;
+		if (!initialized) {
+			dest[IDC_CT_COMPRESS_CHECKBOX] = COMPRESS_FLAG;
+			dest[IDC_CT_DECOMPRESS_CHECKBOX] = DECOMPRESS_FLAG;
+			dest[IDC_CT_MAIL_CHECKBOX] = MAIL_FLAG;
+			
+			initialized = true;
+		}
+		return dest;
+	}
+
 	/* ----------------------------------------------------------------- */
 	//  context_compress_map
 	/* ----------------------------------------------------------------- */
