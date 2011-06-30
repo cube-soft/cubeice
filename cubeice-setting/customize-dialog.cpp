@@ -239,10 +239,10 @@ namespace cubeice {
 			}
 			case WM_NOTIFY:
 				if(reinterpret_cast<LPNMHDR>(lp)->code == TVN_BEGINLABELEDIT && reinterpret_cast<LPNMHDR>(lp)->hwndFrom == hTreeMenu) {
-					if(reinterpret_cast<LPNMTVDISPINFO>(lp)->item.lParam == SUBMENU_ROOT_ID)
+					if(reinterpret_cast<LPNMTVDISPINFO>(lp)->item.lParam == SUBMENU_ROOT_ID) {
 						SetWindowLongPtr(hWnd, DWLP_MSGRESULT, TRUE);
-					else
-						SetWindowLongPtr(hWnd, DWLP_MSGRESULT, FALSE);
+					}
+					else SetWindowLongPtr(hWnd, DWLP_MSGRESULT, FALSE);
 					return TRUE;
 				} else if(reinterpret_cast<LPNMHDR>(lp)->code == TVN_ENDLABELEDIT && reinterpret_cast<LPNMHDR>(lp)->hwndFrom == hTreeMenu) {
 					TreeView_SetItem(hTreeMenu, &reinterpret_cast<TV_DISPINFO*>(lp)->item);
@@ -350,6 +350,12 @@ namespace cubeice {
 					hNewItem = CopyTreeViewItem(hTreeMenu, TreeView_GetParent(hTreeMenu, hTreeItem), hTreeMenu, hTreeItem, hNextItem);
 					TreeView_DeleteItem(hTreeMenu, hTreeItem);
 					TreeView_SelectItem(hTreeMenu, hNewItem);
+					break;
+				}
+				case IDC_RENAME_BUTTON: // リネーム
+				{
+					HTREEITEM hTreeItem = TreeView_GetSelection(hTreeMenu);
+					TreeView_EditLabel(hTreeMenu, hTreeItem);
 					break;
 				}
 				case IDC_RESET_BUTTON: // リセット

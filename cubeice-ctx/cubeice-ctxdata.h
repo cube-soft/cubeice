@@ -78,18 +78,18 @@ const SUB_MENU_ITEM		SubMenuCompress[] = {
 	{ COMP_SEVENZIP_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "7z" ),					NULL,				MAKE_AWSTRING( "7-zip圧縮" ),			TEXT( "/c:7z" ) },
 	{ COMP_BZIP2_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "bzip2" ),				NULL,				MAKE_AWSTRING( "bzip2圧縮" ),			TEXT( "/c:bzip2" ) },
 	{ COMP_GZIP_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "gzip" ),				NULL,				MAKE_AWSTRING( "gzip圧縮" ),			TEXT( "/c:gzip" ) },
-	{ COMP_DETAIL_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "詳細設定" ),			NULL,				MAKE_AWSTRING( "詳細設定" ),			TEXT( "/c:detail" ) },
-	//	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "自己解凍形式" ),		TEXT( "/c:exe" ) },
+	{ COMP_DETAIL_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "詳細設定" ),			NULL,				MAKE_AWSTRING( "詳細設定圧縮" ),			TEXT( "/c:detail" ) },
+//	{ 0,					ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "自己解凍形式で圧縮" ),		TEXT( "/c:exe" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
 const SUB_MENU_ITEM		SubMenuCompAndMail[] = {
-	{ MAIL_ZIP_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "zip" ),					NULL,				MAKE_AWSTRING( "zip圧縮" ),				TEXT( "/c:zip /m" ) },
-	{ MAIL_ZIP_PASS_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "zip (パスワード)" ),	NULL,				MAKE_AWSTRING( "zip圧縮(パス)" ),		TEXT( "/c:zip /p /m" ) },
-	{ MAIL_SEVENZIP_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "7z" ),					NULL,				MAKE_AWSTRING( "7-zip圧縮" ),			TEXT( "/c:7z /m" ) },
-	{ MAIL_BZIP2_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "bzip2" ),				NULL,				MAKE_AWSTRING( "bzip2圧縮" ),			TEXT( "/c:bzip2 /m" ) },
-	{ MAIL_GZIP_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "gzip" ),				NULL,				MAKE_AWSTRING( "gzip圧縮" ),			TEXT( "/c:gzip /m" ) },
-	{ MAIL_DETAIL_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "詳細設定" ),			NULL,				MAKE_AWSTRING( "詳細設定" ),			TEXT( "/c:detail /m" ) },
-//	{ 0,				ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "自己解凍形式" ),		TEXT( "/c:exe /m" ) },
+	{ MAIL_ZIP_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "zip" ),					NULL,				MAKE_AWSTRING( "zip圧縮してメール送信" ),				TEXT( "/c:zip /m" ) },
+	{ MAIL_ZIP_PASS_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "zip (パスワード)" ),	NULL,				MAKE_AWSTRING( "zip圧縮(パス)してメール送信" ),		TEXT( "/c:zip /p /m" ) },
+	{ MAIL_SEVENZIP_FLAG,	ICON_NOT_USED,	MAKE_AWSTRING( "7z" ),					NULL,				MAKE_AWSTRING( "7-zip圧縮してメール送信" ),			TEXT( "/c:7z /m" ) },
+	{ MAIL_BZIP2_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "bzip2" ),				NULL,				MAKE_AWSTRING( "bzip2圧縮してメール送信" ),			TEXT( "/c:bzip2 /m" ) },
+	{ MAIL_GZIP_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "gzip" ),				NULL,				MAKE_AWSTRING( "gzip圧縮してメール送信" ),			TEXT( "/c:gzip /m" ) },
+	{ MAIL_DETAIL_FLAG,		ICON_NOT_USED,	MAKE_AWSTRING( "詳細設定" ),			NULL,				MAKE_AWSTRING( "詳細設定してメール送信" ),			TEXT( "/c:detail /m" ) },
+//	{ 0,					ICON_NOT_USED,	MAKE_AWSTRING( "exe" ),					NULL,				MAKE_AWSTRING( "自己解凍形式で圧縮してしてメール送信" ),		TEXT( "/c:exe /m" ) },
 	{ 0, ICON_NOT_USED, NULL, NULL, NULL, NULL, NULL, NULL }		// end marker
 };
 const SUB_MENU_ITEM		SubMenuDecompress[] = {
