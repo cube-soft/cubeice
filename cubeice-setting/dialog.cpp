@@ -343,12 +343,17 @@ namespace cubeice {
 				
 				// 「カスタマイズ」ボタン
 				if (parameter == IDC_CUSTOMIZE_MENU_BUTTON) {
-					if (cubeice::dialog::customize(hWnd, Setting) == IDOK) change_ctxmenu(hWnd, true);
+					if (cubeice::dialog::customize(hWnd, Setting) == IDOK) {
+						Setting.context_customize() = true;
+						change_ctxmenu(hWnd, true);
+					}
 					return FALSE;
 				}
 				
 				// 「リセット」ボタン
 				if (parameter == IDC_RESET_MENU_BUTTON) {
+					Setting.context_submenu().clear();
+					Setting.context_customize() = false;
 					change_ctxmenu(hWnd, false);
 					return FALSE;
 				}
