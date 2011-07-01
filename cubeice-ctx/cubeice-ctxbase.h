@@ -357,13 +357,16 @@ namespace cube {
 					FileTimeToSystemTime( &localft, &st );
 					CloseHandle( hFile );
 				}
-				tooltip += _T( "サイズ: " );
-				tooltip += punct( li.QuadPart );
-				tooltip += _T( " バイト\r\n" );
 				
 				tooltip += _T( "更新日時: " );
 				wsprintf( tmp, _T( "%d/%02d/%02d %d:%02d" ), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute );
 				tooltip += tmp;
+				
+				tooltip += _T("\r\n");
+				
+				tooltip += _T( "サイズ: " );
+				tooltip += punct( li.QuadPart );
+				tooltip += _T( " バイト" );
 				
 				if( dwFlags & QITIPF_USESLOWTIP &&
 					(ctxSetting.decompression().details() & DETAIL_TOOLTIP) &&
