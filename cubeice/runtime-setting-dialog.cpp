@@ -94,7 +94,7 @@ namespace cubeice {
 				// à≥èkÉÅÉ\ÉbÉh
 				combo = GetDlgItem(hWnd, IDC_COMPMETHOD_COMBOBOX);
 				index = 0;
-				if (setting.type() != _T("zip") && setting.type() != _T("7z")) EnableWindow(combo, FALSE);
+				if (setting.type() != _T("zip") && setting.type() != _T("7z") && setting.type() != _T("exe")) EnableWindow(combo, FALSE);
 				else {
 					const cubeice::dialog_data::param_list& methods = (setting.type() == _T("zip")) ?
 						cubeice::dialog_data::zip_methods() : cubeice::dialog_data::sevenzip_methods();
@@ -303,7 +303,7 @@ namespace cubeice {
 				{
 					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
 					std::size_t index = SendMessage(GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
-					if (types.at(index) == _T("zip") || types.at(index) == _T("7z")) {
+					if (types.at(index) == _T("zip") || types.at(index) == _T("7z") || types.at(index) == _T("exe")) {
 						HWND combo = GetDlgItem(hWnd, IDC_COMPMETHOD_COMBOBOX);
 						std::size_t cursel = SendMessage(combo, CB_GETCURSEL, 0, 0);
 						std::size_t count = SendMessage(combo, CB_GETCOUNT, 0, 0);

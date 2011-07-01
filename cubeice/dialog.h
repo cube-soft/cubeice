@@ -90,6 +90,7 @@ namespace cubeice {
 				v_.push_back(_T("bzip2"));
 				v_.push_back(_T("tgz"));
 				v_.push_back(_T("tbz"));
+				v_.push_back(_T("exe"));
 
 				v2_.clear();
 				v2_.push_back(_T("zip"));

@@ -150,7 +150,7 @@
 				AdditionalIncludeDirectories="..\..\..\;..\..\..\..\"
 				PreprocessorDefinitions="NDEBUG;_SFXWIN32;_WINDOWS;EXTRACT_ONLY;NO_REGISTRY;NO_READ_FROM_CODER;_SFX"
 				StringPooling="true"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
 				PrecompiledHeaderThrough=""

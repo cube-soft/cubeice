@@ -87,11 +87,11 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
         resultString = babel::utf8_to_unicode((const char*)convString).c_str(); break;
     }
     case babel::base_encoding::sjis : {
-        bool f = true;
+        bool f = false;
         DWORD flags;
         DWORD size = sizeof(flags);
-        if (RegGetValue(HKEY_CURRENT_USER, _T("Software\\CubeSoft\\CubeICE\\Decompress"), _T("Details"), RRF_RT_REG_DWORD, NULL, &flags, &size) == ERROR_SUCCESS)
-            f = ((flags & 0x10000000) != 0);
+        //if (RegGetValue(HKEY_CURRENT_USER, _T("Software\\CubeSoft\\CubeICE\\Decompress"), _T("Details"), RRF_RT_REG_DWORD, NULL, &flags, &size) == ERROR_SUCCESS)
+        //    f = ((flags & 0x10000000) != 0);
         if (codePage == CP_UTF8 && f) { // Windows 以外で圧縮されたファイル．恐らく babel の推測ミス．
             AString convString = srcString;
             for( unsigned int i = 0 ; i < sizeof( utf_8_mac_mapping ) / sizeof( utf_8_mac_mapping[0] ) ; ++i ) {
