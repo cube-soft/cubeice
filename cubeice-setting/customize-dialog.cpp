@@ -324,7 +324,7 @@ namespace cubeice {
 					std::vector<cubeice::user_setting::SUBMENU> v;
 					GetSubmenuStruct(v, hTreeMenu, TreeView_GetChild(hTreeMenu, TVI_ROOT));
 					if(!CheckValidation(v)) {
-						MessageBox(hWnd, _T("空のフォルダが存在します。フォルダの中には必ず圧縮、または解凍項目を選択して下さい。"), _T("エラー"), MB_OK | MB_ICONINFORMATION);
+						MessageBox(hWnd, _T("空のフォルダが存在します。フォルダの中には必ず圧縮、または解凍項目を選択して下さい。"), _T("エラー"), MB_OK | MB_ICONERROR);
 						break;
 					}
 					setting->context_submenu() = v;
