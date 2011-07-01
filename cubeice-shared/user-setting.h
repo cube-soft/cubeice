@@ -165,9 +165,10 @@
 /* ------------------------------------------------------------------------- */
 //  ê›íËÉtÉ@ÉCÉãÇ…ä÷Ç∑ÇÈèÓïÒ
 /* ------------------------------------------------------------------------- */
-#define CUBEICE_XML_DIR                 "CubeSoft\\CubeICE"
+#define CUBEICE_XML_COMPANY_DIR         "CubeSoft"
+#define CUBEICE_XML_PRODUCT_DIR         "CubeICE"
 #define CUBEICE_XML_FILE_NAME           "setting.xml"
-#define CUBEICE_XML_FILE_PATH           CUBEICE_XML_DIR "\\" CUBEICE_XML_FILE_NAME
+#define CUBEICE_XML_FILE_PATH           CUBEICE_XML_COMPANY_DIR "\\" CUBEICE_XML_PRODUCT_DIR "\\" CUBEICE_XML_FILE_NAME
 #define CUBEICE_CONTEXT_ROOT            "cubeice.general.ctxmenu"
 #define CUBEICE_CONTEXT_CUSTOMIZE       "customize"
 #define CUBEICE_CONTEXT_CHECK_VALUE     "check"
@@ -597,12 +598,14 @@ namespace cubeice {
 		void save() {
 			babel::init_babel();
 
-			TCHAR		log_path[4*1024];
+			//TCHAR		log_path[4*1024];
 
-			GetModuleFileName(NULL, log_path, sizeof(log_path)/sizeof(log_path[0]));
-			PathRemoveFileSpec(log_path);
-			PathAppend(log_path, CUBEICE_LOG_NAME);
+			//GetModuleFileName(NULL, log_path, sizeof(log_path)/sizeof(log_path[0]));
+			//PathRemoveFileSpec(log_path);
+			//PathAppend(log_path, CUBEICE_LOG_NAME);
 
+			std::basic_string<TCHAR> log_path = install_ + _T("\\cubeice.log");
+			
 			class LogFile {
 			public:
 				LogFile(const TCHAR *path) : hFile(CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
@@ -627,7 +630,7 @@ namespace cubeice {
 				}
 			private:
 				HANDLE hFile;
-			} log_file(log_path);
+			} log_file(log_path.c_str());
 
 			log_file << _T("compress") << _T("\r\n");
 			comp_.save(log_file);
@@ -649,7 +652,9 @@ namespace cubeice {
 				if (ctx_customize_) context_write(ctx_root, ctx_submenu_);
 				
 				SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
-				PathAppendA(xmlpath, CUBEICE_XML_DIR);
+				PathAppendA(xmlpath, CUBEICE_XML_COMPANY_DIR);
+				CreateDirectoryA(xmlpath, NULL);
+				PathAppendA(xmlpath, CUBEICE_XML_PRODUCT_DIR);
 				CreateDirectoryA(xmlpath, NULL);
 				PathAppendA(xmlpath, CUBEICE_XML_FILE_NAME);
 				boost::property_tree::xml_parser::write_xml(xmlpath, root);

@@ -53,7 +53,15 @@ inline DWORD RegDeleteKeyNT(HKEY hStartKey , LPCTSTR pKeyName ){
 //  associate
 /* ------------------------------------------------------------------------- */
 void associate(const std::basic_string<TCHAR>& key, const std::basic_string<TCHAR>& value, bool flag) {
+	static const TCHAR* clsid_tooltip = _T("{00021500-0000-0000-C000-000000000046}");
 	HKEY subkey;
+	LONG status = RegOpenKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex" ) ).c_str(), 0, KEY_ALL_ACCESS, &subkey );
+	
+	if( !status ) {
+		RegDeleteKeyNT( subkey, clsid_tooltip );
+		RegCloseKey( subkey );
+	}
+	
 	if (flag) {
 		DWORD disposition = 0;
 		LONG status = RegCreateKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
@@ -65,6 +73,12 @@ void associate(const std::basic_string<TCHAR>& key, const std::basic_string<TCHA
 				RegSetValueEx(subkey, CUBEICE_REG_PREVARCHIVER, 0, REG_SZ, (CONST BYTE*)buffer, (_tcslen(buffer) + 1) * sizeof(TCHAR));
 			}
 			RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)value.c_str(), (value.size() + 1) * sizeof(TCHAR));
+			
+			disposition = 0;
+			status = RegCreateKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex\\") + clsid_tooltip ).c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
+			if (!status) {
+				RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)CLSID_CubeICE_STR, sizeof( CLSID_CubeICE_STR ));
+			}
 		}
 	}
 	else {

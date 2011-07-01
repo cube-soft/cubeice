@@ -33,6 +33,7 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 		);
 		
 		Setting.shortcut_flags() |= (COMPRESS_FLAG | DECOMPRESS_FLAG);
+		Setting.associate_changed();
 	}
 	
 	cubeice::create_propsheet(NULL, args == _T("install"));
