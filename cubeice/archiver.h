@@ -171,7 +171,6 @@ namespace cubeice {
 			for (InputIterator pos = first; pos != last; ++pos) cmdline += _T(" \"") + *pos + _T("\"");
 			for(std::vector<string_type>::const_iterator pos = options.begin(); pos != options.end(); ++pos) cmdline += _T(' ') + *pos;
 			cube::popen proc;
-			MessageBox(NULL, cmdline.c_str(), NULL, MB_OK);
 			if (!proc.open(cmdline.c_str(), _T("r"))) return;
 			
 			// NOTE: marquee スタイルから復帰する際，バーが 1% まで進まないと再描画されない．
