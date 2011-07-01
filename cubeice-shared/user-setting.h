@@ -95,7 +95,7 @@
 #define COMP_GZIP_FLAG              0x00001000
 #define COMP_DETAIL_FLAG            0x00002000
 #define COMP_EXE_FLAG               0x00004000
-#define COMP_ALL_FLAG               0x00003f00
+#define COMP_ALL_FLAG               0x00007f00
 
 /* ------------------------------------------------------------------------- */
 //  圧縮してメール送信のコンテキストメニューに関連するフラグ
