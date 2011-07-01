@@ -90,7 +90,10 @@ namespace cubeice {
 				if(s.id == SUBMENU_DIR_ID || table.find(s.id) != table.end()) {
 					HTREEITEM					hItem;
 
-					tvi.item.pszText	= (s.id == SUBMENU_DIR_ID) ? const_cast<LPTSTR>(s.str.c_str()) : const_cast<LPTSTR>(table.find(s.id)->second);
+					// NOTE: 規定の項目もユーザがリネーム可能に変更したため，
+					// どのような場合でも SUBMENU に保存されている文字列を使用する．
+					// tvi.item.pszText	= (s.id == SUBMENU_DIR_ID) ? const_cast<LPTSTR>(s.str.c_str()) : const_cast<LPTSTR>(table.find(s.id)->second);
+					tvi.item.pszText = const_cast<LPTSTR>(s.str.c_str());
 					tvi.item.lParam		= s.id;
 					hItem = TreeView_InsertItem(hMenuTreeView, &tvi);
 
@@ -128,7 +131,38 @@ namespace cubeice {
 			TreeView_Select(hMenuTreeView, hRootItem, TVGN_CARET);
 			TreeView_Expand(hMenuTreeView, hRootItem, TVE_EXPAND);
 		}
+		
+		/* ----------------------------------------------------------------- */
+		//  GetAlternativeString
+		/* ----------------------------------------------------------------- */
+		TCHAR* GetAlternativeString(int id) {
+			for (int i = 0; SubMenuCompress[i].stringA; ++i) {
+#ifdef UNICODE
+				if (id == SubMenuCompress[i].dispSetting) return const_cast<TCHAR*>(SubMenuCompress[i].explanationW);
+#else
+				if (id == SubMenuCompress[i].dispSetting) return const_cast<TCHAR*>(SubMenuCompress[i].explanationA);
+#endif
+			}
+			
+			for (int i = 0; SubMenuCompAndMail[i].stringA; ++i) {
+#ifdef UNICODE
+				if (id == SubMenuCompAndMail[i].dispSetting) return const_cast<TCHAR*>(SubMenuCompAndMail[i].explanationW);
+#else
+				if (id == SubMenuCompAndMail[i].dispSetting) return const_cast<TCHAR*>(SubMenuCompAndMail[i].explanationA);
+#endif
+			}
 
+			for (int i = 0; SubMenuDecompress[i].stringA; ++i) {
+#ifdef UNICODE
+				if (id == SubMenuDecompress[i].dispSetting) return const_cast<TCHAR*>(SubMenuDecompress[i].explanationW);
+#else
+				if (id == SubMenuDecompress[i].dispSetting) return const_cast<TCHAR*>(SubMenuDecompress[i].explanationA);
+#endif
+			}
+
+			return NULL;
+		}
+		
 		/* ----------------------------------------------------------------- */
 		//  CopyTreeViewItem
 		/* ----------------------------------------------------------------- */
@@ -147,8 +181,14 @@ namespace cubeice {
 
 			TreeView_GetItem(hFrom, &tvi.item);
 			tvi.item.mask		= TVIF_TEXT | TVIF_PARAM;
-			hInsertItem = TreeView_InsertItem(hTo, &tvi);
 
+			// ルート直下にリーフ要素を追加する場合は，表示する文字列を変える．
+			if (hToParentItem == TreeView_GetRoot(hTo)) {
+				TCHAR* alt = GetAlternativeString(static_cast<int>(tvi.item.lParam));
+				if (alt) tvi.item.pszText = alt;
+			}
+			
+			hInsertItem = TreeView_InsertItem(hTo, &tvi);
 			hChildItem = TreeView_GetChild(hFrom, hFromParentItem);
 			while(hChildItem) {
 				CopyTreeViewItem(hTo, hInsertItem, hFrom, hChildItem);
@@ -206,21 +246,47 @@ namespace cubeice {
 			}
 			return true;
 		}
+		
+		/* ----------------------------------------------------------------- */
+		//  NOTE: エンターキーをフックするため
+		/* ----------------------------------------------------------------- */
+		static HHOOK hKeybordHook;
+		static HWND hTreeMenu;
+		static HWND hTreeOrg;
+		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  KeyboardProc
+		 *
+		 *  エンターキーが押された際に，TreeView の項目が編集状態だった
+		 *  場合は編集を確定して終わる．
+		 */
+		/* ----------------------------------------------------------------- */
+		static LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
+			if (code == HC_ACTION) {
+				if (wParam == 0x0D) {
+					if (TreeView_GetEditControl(hTreeMenu)) {
+						TreeView_EndEditLabelNow(hTreeMenu, FALSE);
+						return TRUE;
+					}
+				}
+			}
+			return CallNextHookEx(hKeybordHook, code, wParam, lParam);
+		}
 
 		/* ----------------------------------------------------------------- */
 		//  customize_wndproc
 		/* ----------------------------------------------------------------- */
 		static INT_PTR CALLBACK customize_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			static cubeice::user_setting *setting;
-			static HWND hTreeMenu;
-			static HWND hTreeOrg;
 			
 			switch (msg) {
 			case WM_INITDIALOG:
 			{
 				hTreeMenu = GetDlgItem(hWnd, IDC_CURRENT_TREEVIEW);
 				hTreeOrg = GetDlgItem(hWnd, IDC_ADD_TREEVIEW);
-
+				hKeybordHook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, 0, GetCurrentThreadId());
+				
 				setting = reinterpret_cast<cubeice::user_setting*>(lp);
 				InitTreeViewItem(hTreeMenu, hTreeOrg, setting->context_submenu());
 				
@@ -262,8 +328,13 @@ namespace cubeice {
 						break;
 					}
 					setting->context_submenu() = v;
+					setting->context_customize() = true;
 				}
 				case IDCANCEL:
+					if (hKeybordHook) UnhookWindowsHookEx(hKeybordHook);
+					hKeybordHook = NULL;
+					hTreeMenu = NULL;
+					hTreeOrg = NULL;
 					EndDialog(hWnd, LOWORD(wp));
 					break;
 				case IDC_ADD_BUTTON: // 追加
@@ -313,41 +384,29 @@ namespace cubeice {
 				}
 				case IDC_UP_BUTTON: // 上へ
 				{
-					HTREEITEM	hTreeItem;
-					HTREEITEM	hPrevItem;
-					HTREEITEM	hNewItem;
+					HTREEITEM hTreeItem = TreeView_GetSelection(hTreeMenu);
+					if(!hTreeItem) break;
 
-					hTreeItem = TreeView_GetSelection(hTreeMenu);
-					if(!hTreeItem)
-						break;
+					HTREEITEM hPrevItem = TreeView_GetPrevSibling(hTreeMenu, hTreeItem);
+					if(!hPrevItem) break;
 
-					hPrevItem = TreeView_GetPrevSibling(hTreeMenu, hTreeItem);
-					if(!hPrevItem)
-						break;
 					hPrevItem = TreeView_GetPrevSibling(hTreeMenu, hPrevItem);
-					if(!hPrevItem)
-						hPrevItem = TVI_FIRST;
+					if(!hPrevItem) hPrevItem = TVI_FIRST;
 
-					hNewItem = CopyTreeViewItem(hTreeMenu, TreeView_GetParent(hTreeMenu, hTreeItem), hTreeMenu, hTreeItem, hPrevItem);
+					HTREEITEM hNewItem = CopyTreeViewItem(hTreeMenu, TreeView_GetParent(hTreeMenu, hTreeItem), hTreeMenu, hTreeItem, hPrevItem);
 					TreeView_DeleteItem(hTreeMenu, hTreeItem);
 					TreeView_SelectItem(hTreeMenu, hNewItem);
 					break;
 				}
 				case IDC_DOWN_BUTTON: // 下へ
 				{
-					HTREEITEM	hTreeItem;
-					HTREEITEM	hNextItem;
-					HTREEITEM	hNewItem;
+					HTREEITEM hTreeItem = TreeView_GetSelection(hTreeMenu);
+					if(!hTreeItem) break;
 
-					hTreeItem = TreeView_GetSelection(hTreeMenu);
-					if(!hTreeItem)
-						break;
+					HTREEITEM hNextItem = TreeView_GetNextSibling(hTreeMenu, hTreeItem);
+					if(!hNextItem) break;
 
-					hNextItem = TreeView_GetNextSibling(hTreeMenu, hTreeItem);
-					if(!hNextItem)
-						break;
-
-					hNewItem = CopyTreeViewItem(hTreeMenu, TreeView_GetParent(hTreeMenu, hTreeItem), hTreeMenu, hTreeItem, hNextItem);
+					HTREEITEM hNewItem = CopyTreeViewItem(hTreeMenu, TreeView_GetParent(hTreeMenu, hTreeItem), hTreeMenu, hTreeItem, hNextItem);
 					TreeView_DeleteItem(hTreeMenu, hTreeItem);
 					TreeView_SelectItem(hTreeMenu, hNewItem);
 					break;

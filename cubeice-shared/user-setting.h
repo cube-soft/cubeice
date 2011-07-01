@@ -94,6 +94,7 @@
 #define COMP_BZIP2_FLAG             0x00000800
 #define COMP_GZIP_FLAG              0x00001000
 #define COMP_DETAIL_FLAG            0x00002000
+#define COMP_EXE_FLAG               0x00004000
 #define COMP_ALL_FLAG               0x00003f00
 
 /* ------------------------------------------------------------------------- */
@@ -105,7 +106,8 @@
 #define MAIL_BZIP2_FLAG             0x00080000
 #define MAIL_GZIP_FLAG              0x00100000
 #define MAIL_DETAIL_FLAG            0x00200000
-#define MAIL_ALL_FLAG               0x003f0000
+#define MAIL_EXE_FLAG               0x00400000
+#define MAIL_ALL_FLAG               0x007f0000
 
 /* ------------------------------------------------------------------------- */
 //  出力先フォルダに関連するフラグ
@@ -163,7 +165,7 @@
 /* ------------------------------------------------------------------------- */
 //  設定ファイルに関する情報
 /* ------------------------------------------------------------------------- */
-#define CUBEICE_XML_DIR                 "cubeice"
+#define CUBEICE_XML_DIR                 "CubeSoft\\CubeICE"
 #define CUBEICE_XML_FILE_NAME           "setting.xml"
 #define CUBEICE_XML_FILE_PATH           CUBEICE_XML_DIR "\\" CUBEICE_XML_FILE_NAME
 #define CUBEICE_CONTEXT_ROOT            "cubeice.general.ctxmenu"
@@ -479,8 +481,7 @@ namespace cubeice {
 			comp_.max_filelist() = 5;
 			decomp_.output_condition() = 0x01;
 			decomp_.details() = 0x5ed;
-			if(!delay)
-				this->load();
+			if(!delay) this->load();
 		}
 		
 		explicit user_setting(const string_type& root) :
@@ -546,10 +547,14 @@ namespace cubeice {
 
 					if(ctx_root.get<std::string>(CUBEICE_CONTEXT_CUSTOMIZE) == "yes") {
 						ctx_customize_ = true;
-
 						context_read(ctx_root, ctx_submenu_);
-					} else {
-						ctx_flags_ = ctx_root.get(CUBEICE_CONTEXT_CHECK_VALUE, (size_type)0);
+					}
+					
+					boost::optional<unsigned int> value = ctx_root.get_optional<unsigned int>(CUBEICE_CONTEXT_CHECK_VALUE);
+					if (value) ctx_flags_ = *value;
+					else {
+						dwSize = sizeof(ctx_flags_);
+						RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
 					}
 				} catch( const boost::property_tree::ptree_error & ) {
 					dwSize = sizeof(ctx_flags_);
@@ -602,8 +607,8 @@ namespace cubeice {
 			public:
 				LogFile(const TCHAR *path) : hFile(CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
 				{
-					if(hFile != INVALID_HANDLE_VALUE)
-						SetFilePointer(hFile, 0, NULL, FILE_END);
+					//if(hFile != INVALID_HANDLE_VALUE)
+					//	SetFilePointer(hFile, 0, NULL, FILE_END);
 				}
 				~LogFile() {
 					if(hFile != INVALID_HANDLE_VALUE)
@@ -638,14 +643,11 @@ namespace cubeice {
 				boost::property_tree::ptree		root;
 				boost::property_tree::ptree		&ctx_root = root.put(CUBEICE_CONTEXT_ROOT, "");
 				char							xmlpath[2*MAX_PATH];
-
-				if(ctx_customize_) {
-					ctx_root.put(CUBEICE_CONTEXT_CUSTOMIZE, "yes");
-					context_write(ctx_root, ctx_submenu_);
-				} else {
-					ctx_root.put(CUBEICE_CONTEXT_CUSTOMIZE, "no");
-					ctx_root.put(CUBEICE_CONTEXT_CHECK_VALUE, clx::lexical_cast<std::string>(ctx_flags_));
-				}
+				
+				ctx_root.put(CUBEICE_CONTEXT_CUSTOMIZE, ctx_customize_ ? "yes" : "no");
+				ctx_root.put(CUBEICE_CONTEXT_CHECK_VALUE, clx::lexical_cast<std::string>(ctx_flags_));
+				if (ctx_customize_) context_write(ctx_root, ctx_submenu_);
+				
 				SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
 				PathAppendA(xmlpath, CUBEICE_XML_DIR);
 				CreateDirectoryA(xmlpath, NULL);
@@ -841,11 +843,12 @@ namespace cubeice {
 			TCHAR buffer[32] = {};
 			::_itot_s(flags, buffer, sizeof(buffer), 10);
 			
+			string_type exec = install_ + _T("\\cubeice-associate.exe");
 			SHELLEXECUTEINFO sei = {};
 			sei.cbSize = sizeof(SHELLEXECUTEINFO);
 			//sei.lpVerb = _T("runas");
 			sei.lpParameters = buffer;
-			sei.lpFile = _T("cubeice-associate.exe");
+			sei.lpFile = exec.c_str();
 			ShellExecuteEx(&sei);
 			
 			CoUninitialize();
