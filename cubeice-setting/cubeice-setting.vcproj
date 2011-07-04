@@ -368,6 +368,10 @@
 				RelativePath="..\cubeice-shared\style.h"
 				>
 			</File>
+			<File
+				RelativePath=".\user-setting-converter.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="リソース ファイル"

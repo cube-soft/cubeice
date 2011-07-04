@@ -44,6 +44,7 @@
 #include <commctrl.h>
 #include "dialog.h"
 #include "clx/split.h"
+#include "user-setting-converter.h"
 
 namespace cubeice {
 	/* ----------------------------------------------------------------- */
@@ -343,9 +344,19 @@ namespace cubeice {
 				
 				// 「カスタマイズ」ボタン
 				if (parameter == IDC_CUSTOMIZE_MENU_BUTTON) {
+					bool prev = Setting.context_customize();
+					if (!Setting.context_customize()) {
+						Setting.context_submenu() = cubeice::user_setting_converter::to_customized_ctx_menu(Setting.context_flags());
+						Setting.context_customize() = true;
+					}
+					
 					if (cubeice::dialog::customize(hWnd, Setting) == IDOK) {
 						Setting.context_customize() = true;
 						change_ctxmenu(hWnd, true);
+					}
+					else if (!prev) {
+						Setting.context_submenu().clear();
+						Setting.context_customize() = false;
 					}
 					return FALSE;
 				}
