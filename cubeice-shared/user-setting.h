@@ -538,30 +538,36 @@ namespace cubeice {
 				PathAppendA(xmlpath, CUBEICE_XML_FILE_PATH);
 
 				ctx_customize_ = false;
-				try {
-					using namespace boost::property_tree;
-					ptree		root;
-					ptree		ctx_root;
+				if (!PathFileExistsA(xmlpath)) {
+						dwSize = sizeof(ctx_flags_);
+						RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
+				}
+				else {
+					try {
+						using namespace boost::property_tree;
+						ptree		root;
+						ptree		ctx_root;
 
-					xml_parser::read_xml(xmlpath, root);
-					ctx_root = root.get_child(CUBEICE_CONTEXT_ROOT);
+						xml_parser::read_xml(xmlpath, root);
+						ctx_root = root.get_child(CUBEICE_CONTEXT_ROOT);
 
-					if(ctx_root.get<std::string>(CUBEICE_CONTEXT_CUSTOMIZE) == "yes") {
-						ctx_customize_ = true;
-						context_read(ctx_root, ctx_submenu_);
-					}
-					
-					boost::optional<unsigned int> value = ctx_root.get_optional<unsigned int>(CUBEICE_CONTEXT_CHECK_VALUE);
-					if (value) ctx_flags_ = *value;
-					else {
+						if(ctx_root.get<std::string>(CUBEICE_CONTEXT_CUSTOMIZE) == "yes") {
+							ctx_customize_ = true;
+							context_read(ctx_root, ctx_submenu_);
+						}
+						
+						boost::optional<unsigned int> value = ctx_root.get_optional<unsigned int>(CUBEICE_CONTEXT_CHECK_VALUE);
+						if (value) ctx_flags_ = *value;
+						else {
+							dwSize = sizeof(ctx_flags_);
+							RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
+						}
+					} catch( const boost::property_tree::ptree_error & ) {
 						dwSize = sizeof(ctx_flags_);
 						RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
 					}
-				} catch( const boost::property_tree::ptree_error & ) {
-					dwSize = sizeof(ctx_flags_);
-					RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
 				}
-
+				
 				sc_flags_ = 0;
 				//dwSize = sizeof(sc_flags_);
 				//RegQueryValueEx(hkResult, CUBEICE_REG_SHORTCUT, NULL, &dwType, (LPBYTE)&sc_flags_, &dwSize);
@@ -603,13 +609,23 @@ namespace cubeice {
 			//GetModuleFileName(NULL, log_path, sizeof(log_path)/sizeof(log_path[0]));
 			//PathRemoveFileSpec(log_path);
 			//PathAppend(log_path, CUBEICE_LOG_NAME);
-
+			
 			std::basic_string<TCHAR> log_path = install_ + _T("\\cubeice.log");
 			
 			class LogFile {
 			public:
-				LogFile(const TCHAR *path) : hFile(CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
+				LogFile(const TCHAR *path, const TCHAR *version) : hFile(CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
 				{
+					if (hFile) {
+						OSVERSIONINFO osinfo;
+						osinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+						::GetVersionEx(&osinfo);
+						TCHAR osinfo_str[128] = {};
+						_stprintf_s(osinfo_str, sizeof(osinfo_str) / sizeof(TCHAR), _T("%d.%d.%d"), osinfo.dwMajorVersion, osinfo.dwMinorVersion, osinfo.dwBuildNumber);
+						*this << _T("Version: ") << version << _T("\r\n");
+						*this << _T("Windows version: ") << osinfo_str << _T("(") << (sizeof(INT_PTR) == 4 ? _T("x86") : _T("x64")) << _T(")\r\n");
+						*this << _T("--------------------\r\n");
+					}
 					//if(hFile != INVALID_HANDLE_VALUE)
 					//	SetFilePointer(hFile, 0, NULL, FILE_END);
 				}
@@ -630,7 +646,7 @@ namespace cubeice {
 				}
 			private:
 				HANDLE hFile;
-			} log_file(log_path.c_str());
+			} log_file(log_path.c_str(), version_.c_str());
 
 			log_file << _T("compress") << _T("\r\n");
 			comp_.save(log_file);
@@ -657,7 +673,13 @@ namespace cubeice {
 				PathAppendA(xmlpath, CUBEICE_XML_PRODUCT_DIR);
 				CreateDirectoryA(xmlpath, NULL);
 				PathAppendA(xmlpath, CUBEICE_XML_FILE_NAME);
-				boost::property_tree::xml_parser::write_xml(xmlpath, root);
+				try {
+					boost::property_tree::xml_parser::write_xml(xmlpath, root);
+				}
+				catch (...) {
+					log_file << _T("error: boost::property_tree::xml_parser::write_xml") << _T("\r\n");
+					RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&ctx_flags_, sizeof(ctx_flags_));
+				}
 
 				// ショートカットの処理．
 				DWORD value = static_cast<DWORD>(sc_index_);
@@ -710,9 +732,6 @@ namespace cubeice {
 
 			log_file << _T("decomp_flag: ") << decomp_.flags() << _T("\r\n");
 			log_file << _T("decomp_detail: ") << decomp_.details() << _T("\r\n");
-			log_file << _T("\r\n");
-			log_file << _T("----------------------------------------------------------------------------------------------------") << _T("\r\n");
-			log_file << _T("\r\n");
 
 			if(associate_invoke_)
 				this->associate(decomp_.flags(), decomp_.details());
