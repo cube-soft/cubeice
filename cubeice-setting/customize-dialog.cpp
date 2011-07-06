@@ -33,105 +33,23 @@
 namespace cubeice {
 	namespace dialog {
 		/* ----------------------------------------------------------------- */
-		//  InitMenuList
+		//  GetItemImageIndex
 		/* ----------------------------------------------------------------- */
-		void InitMenuList(HWND hTreeView, HTREEITEM hParent, const SUB_MENU_ITEM *smi)
-		{
-			TVINSERTSTRUCT	tvi;
-
-			tvi.hParent			= hParent;
-			tvi.hInsertAfter	= TVI_LAST;
-			tvi.item.mask		= TVIF_TEXT | TVIF_PARAM;
-
-			for(int i = 0 ; smi[i].stringA ; ++i) {
-				HTREEITEM	hTreeItem;
-
-#ifdef	UNICODE
-				tvi.item.pszText	= const_cast<LPWSTR>(smi[i].stringW);
-#else
-				tvi.item.pszText	= const_cast<LPSTR>(smi[i].stringA);
-#endif
-				tvi.item.lParam		= smi[i].dispSetting;
-
-				hTreeItem = TreeView_InsertItem(hTreeView, &tvi);
-				if(smi[i].submenu)
-					InitMenuList(hTreeView, hTreeItem, smi[i].submenu);
+		int GetItemImageIndex(int id) {
+			for (int i = 0; SubMenuCompress[i].stringA; ++i) {
+				if (id == SubMenuCompress[i].dispSetting) return 0;
+			}
+			
+			for (int i = 0; SubMenuCompAndMail[i].stringA; ++i) {
+				if (id == SubMenuCompAndMail[i].dispSetting) return 0;
 			}
 
-		}
-
-		/* ----------------------------------------------------------------- */
-		//  SerializeMenuItemData
-		/* ----------------------------------------------------------------- */
-		void SerializeMenuItemData(std::map<cubeice::user_setting::size_type, const TCHAR*> &table, const SUB_MENU_ITEM *smi)
-		{
-			for(int i = 0 ; smi[i].stringA ; ++i) {
-#ifdef	UNICODE
-				table[smi[i].dispSetting] = smi[i].stringW;
-#else
-				table[smi[i].dispSetting] = smi[i].stringA;
-#endif
-				if(smi[i].submenu)
-					SerializeMenuItemData(table, smi[i].submenu);
+			for (int i = 0; SubMenuDecompress[i].stringA; ++i) {
+				if (id == SubMenuDecompress[i].dispSetting) return 1;
 			}
+			return 2;
 		}
 
-		/* ----------------------------------------------------------------- */
-		//  SetMenuItem
-		/* ----------------------------------------------------------------- */
-		void SetMenuItem(HWND hMenuTreeView, HTREEITEM hParentItem, const std::vector<cubeice::user_setting::SUBMENU> &submenu, const std::map<cubeice::user_setting::size_type, const TCHAR*> &table)
-		{
-			TVINSERTSTRUCT	tvi;
-			tvi.hParent			= hParentItem;
-			tvi.hInsertAfter	= TVI_LAST;
-			tvi.item.mask		= TVIF_TEXT | TVIF_PARAM;
-
-			BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, submenu) {
-				if(s.id == SUBMENU_DIR_ID || table.find(s.id) != table.end()) {
-					HTREEITEM					hItem;
-
-					// NOTE: 規定の項目もユーザがリネーム可能に変更したため，
-					// どのような場合でも SUBMENU に保存されている文字列を使用する．
-					// tvi.item.pszText	= (s.id == SUBMENU_DIR_ID) ? const_cast<LPTSTR>(s.str.c_str()) : const_cast<LPTSTR>(table.find(s.id)->second);
-					tvi.item.pszText = const_cast<LPTSTR>(s.str.c_str());
-					tvi.item.lParam		= s.id;
-					hItem = TreeView_InsertItem(hMenuTreeView, &tvi);
-
-					SetMenuItem(hMenuTreeView, hItem, s.children, table);
-				}
-			}
-		}
-
-		/* ----------------------------------------------------------------- */
-		//  InitTreeViewItem
-		/* ----------------------------------------------------------------- */
-		void InitTreeViewItem(HWND hMenuTreeView, HWND hItemListTreeView, const std::vector<cubeice::user_setting::SUBMENU> &submenu)
-		{
-			HTREEITEM	hRootItem;
-
-			InitMenuList(hItemListTreeView, TVI_ROOT, MenuItem);
-
-			TVINSERTSTRUCT	tvi;
-			tvi.hParent			= TVI_ROOT;
-			tvi.hInsertAfter	= TVI_LAST;
-			tvi.item.mask		= TVIF_TEXT | TVIF_PARAM;
-			tvi.item.pszText	= TEXT("新しいフォルダを追加");
-			tvi.item.lParam		= SUBMENU_DIR_ID;
-			TreeView_InsertItem(hItemListTreeView, &tvi);
-
-			tvi.item.mask		= TVIF_TEXT | TVIF_PARAM;
-			tvi.item.pszText	= TEXT("ルート");
-			tvi.item.lParam		= SUBMENU_ROOT_ID;
-			hRootItem = TreeView_InsertItem(hMenuTreeView, &tvi);
-
-			std::map<cubeice::user_setting::size_type, const TCHAR*>	table;
-			SerializeMenuItemData(table, MenuItem);
-			SetMenuItem(hMenuTreeView, hRootItem, submenu, table);
-
-			TreeView_Select(hMenuTreeView, hRootItem, TVGN_CARET);
-			TreeView_Expand(hMenuTreeView, hRootItem, TVE_EXPAND);
-		}
-		
 		/* ----------------------------------------------------------------- */
 		//  GetAlternativeString
 		/* ----------------------------------------------------------------- */
@@ -164,9 +82,120 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
+		//  InitMenuList
+		/* ----------------------------------------------------------------- */
+		void InitMenuList(HWND hTreeView, HTREEITEM hParent, const SUB_MENU_ITEM *smi)
+		{
+			TVINSERTSTRUCT	tvi;
+
+			tvi.hParent			= hParent;
+			tvi.hInsertAfter	= TVI_LAST;
+			tvi.item.mask		= TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM;
+
+			for(int i = 0 ; smi[i].stringA ; ++i) {
+				HTREEITEM	hTreeItem;
+
+#ifdef	UNICODE
+				tvi.item.pszText	= const_cast<LPWSTR>(smi[i].stringW);
+#else
+				tvi.item.pszText	= const_cast<LPSTR>(smi[i].stringA);
+#endif
+				tvi.item.lParam		= smi[i].dispSetting;
+				tvi.item.iImage		= GetItemImageIndex(smi[i].dispSetting);
+				tvi.item.iSelectedImage = GetItemImageIndex(smi[i].dispSetting);
+
+				hTreeItem = TreeView_InsertItem(hTreeView, &tvi);
+				if(smi[i].submenu)
+					InitMenuList(hTreeView, hTreeItem, smi[i].submenu);
+			}
+
+		}
+
+		/* ----------------------------------------------------------------- */
+		//  SerializeMenuItemData
+		/* ----------------------------------------------------------------- */
+		void SerializeMenuItemData(std::map<cubeice::user_setting::size_type, const TCHAR*> &table, const SUB_MENU_ITEM *smi)
+		{
+			for(int i = 0 ; smi[i].stringA ; ++i) {
+#ifdef	UNICODE
+				table[smi[i].dispSetting] = smi[i].stringW;
+#else
+				table[smi[i].dispSetting] = smi[i].stringA;
+#endif
+				if(smi[i].submenu)
+					SerializeMenuItemData(table, smi[i].submenu);
+			}
+		}
+
+		/* ----------------------------------------------------------------- */
+		//  SetMenuItem
+		/* ----------------------------------------------------------------- */
+		void SetMenuItem(HWND hMenuTreeView, HTREEITEM hParentItem, const std::vector<cubeice::user_setting::SUBMENU> &submenu, const std::map<cubeice::user_setting::size_type, const TCHAR*> &table)
+		{
+			TVINSERTSTRUCT	tvi;
+			tvi.hParent			= hParentItem;
+			tvi.hInsertAfter	= TVI_LAST;
+			tvi.item.mask		= TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM;
+
+			BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, submenu) {
+				if(s.id == SUBMENU_DIR_ID || table.find(s.id) != table.end()) {
+					HTREEITEM					hItem;
+
+					// NOTE: 規定の項目もユーザがリネーム可能に変更したため，
+					// どのような場合でも SUBMENU に保存されている文字列を使用する．
+					// tvi.item.pszText	= (s.id == SUBMENU_DIR_ID) ? const_cast<LPTSTR>(s.str.c_str()) : const_cast<LPTSTR>(table.find(s.id)->second);
+					tvi.item.pszText = const_cast<LPTSTR>(s.str.c_str());
+					tvi.item.lParam		= s.id;
+					tvi.item.iImage = GetItemImageIndex(s.id);
+					tvi.item.iSelectedImage = GetItemImageIndex(s.id);
+					hItem = TreeView_InsertItem(hMenuTreeView, &tvi);
+
+					SetMenuItem(hMenuTreeView, hItem, s.children, table);
+				}
+			}
+		}
+
+		/* ----------------------------------------------------------------- */
+		//  InitTreeViewItem
+		/* ----------------------------------------------------------------- */
+		void InitTreeViewItem(HWND hMenuTreeView, HWND hItemListTreeView, const std::vector<cubeice::user_setting::SUBMENU> &submenu)
+		{
+			HTREEITEM	hRootItem;
+
+			InitMenuList(hItemListTreeView, TVI_ROOT, MenuItem);
+
+			TVINSERTSTRUCT	tvi;
+			tvi.hParent			= TVI_ROOT;
+			tvi.hInsertAfter	= TVI_LAST;
+			
+			
+			// NOTE: 「新しいフォルダを追加」はボタンとして実装する．
+#if NOTUSED
+			tvi.item.mask		= TVIF_TEXT | TVIF_PARAM;
+			tvi.item.pszText	= TEXT("新しいフォルダを追加");
+			tvi.item.lParam		= SUBMENU_DIR_ID;
+			TreeView_InsertItem(hItemListTreeView, &tvi);
+#endif
+			
+			tvi.item.mask		= TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM;
+			tvi.item.pszText	= TEXT("ルート");
+			tvi.item.lParam		= SUBMENU_ROOT_ID;
+			tvi.item.iImage = 2;
+			tvi.item.iSelectedImage = 2;
+			hRootItem = TreeView_InsertItem(hMenuTreeView, &tvi);
+
+			std::map<cubeice::user_setting::size_type, const TCHAR*>	table;
+			SerializeMenuItemData(table, MenuItem);
+			SetMenuItem(hMenuTreeView, hRootItem, submenu, table);
+
+			TreeView_Select(hMenuTreeView, hRootItem, TVGN_CARET);
+			TreeView_Expand(hMenuTreeView, hRootItem, TVE_EXPAND);
+		}
+		
+		/* ----------------------------------------------------------------- */
 		//  CopyTreeViewItem
 		/* ----------------------------------------------------------------- */
-		HTREEITEM CopyTreeViewItem(HWND &hTo, HTREEITEM hToParentItem, HWND &hFrom, HTREEITEM hFromParentItem, const HTREEITEM &InsertAfter = TVI_LAST)
+		HTREEITEM CopyTreeViewItem(HWND &hTo, HTREEITEM hToParentItem, HWND &hFrom, HTREEITEM hFromParentItem, const HTREEITEM &InsertAfter = TVI_LAST, bool use_altname = false)
 		{
 			static	TCHAR	str[2048];
 			TVINSERTSTRUCT	tvi;
@@ -174,16 +203,16 @@ namespace cubeice {
 
 			tvi.hParent			= hToParentItem;
 			tvi.hInsertAfter	= InsertAfter;
-			tvi.item.mask		= TVIF_HANDLE | TVIF_TEXT | TVIF_PARAM;
+			tvi.item.mask		= TVIF_HANDLE | TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM;
 			tvi.item.hItem		= hFromParentItem;
 			tvi.item.pszText	= str;
 			tvi.item.cchTextMax	= sizeof(str) / sizeof(str[0]);
 
 			TreeView_GetItem(hFrom, &tvi.item);
-			tvi.item.mask		= TVIF_TEXT | TVIF_PARAM;
+			tvi.item.mask		= TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM;
 
 			// ルート直下にリーフ要素を追加する場合は，表示する文字列を変える．
-			if (hToParentItem == TreeView_GetRoot(hTo)) {
+			if (use_altname && hToParentItem == TreeView_GetRoot(hTo)) {
 				TCHAR* alt = GetAlternativeString(static_cast<int>(tvi.item.lParam));
 				if (alt) tvi.item.pszText = alt;
 			}
@@ -209,7 +238,7 @@ namespace cubeice {
 			while(hChildItem) {
 				static	TCHAR	str[2048];
 				TVITEM	tvi;
-				tvi.mask		= TVIF_HANDLE | TVIF_TEXT | TVIF_PARAM;
+				tvi.mask		= TVIF_HANDLE | TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM;
 				tvi.hItem		= hChildItem;
 				tvi.pszText		= str;
 				tvi.cchTextMax	= sizeof(str) / sizeof(str[0]);
@@ -287,6 +316,14 @@ namespace cubeice {
 				hTreeOrg = GetDlgItem(hWnd, IDC_ADD_TREEVIEW);
 				hKeybordHook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, 0, GetCurrentThreadId());
 				
+				// TreeView で使用するアイコンの初期化
+				HIMAGELIST imagelist = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 3, 1);
+				ImageList_AddIcon(imagelist, LoadIcon(GetModuleHandle(NULL), _T("IDI_COMPRESS")));
+				ImageList_AddIcon(imagelist, LoadIcon(GetModuleHandle(NULL), _T("IDI_DECOMPRESS")));
+				ImageList_AddIcon(imagelist, LoadIcon(GetModuleHandle(NULL), _T("IDI_FOLDER")));
+				TreeView_SetImageList(hTreeMenu, imagelist , TVSIL_NORMAL);
+				TreeView_SetImageList(hTreeOrg, imagelist, TVSIL_NORMAL);
+				
 				setting = reinterpret_cast<cubeice::user_setting*>(lp);
 				InitTreeViewItem(hTreeMenu, hTreeOrg, setting->context_submenu());
 				
@@ -363,7 +400,7 @@ namespace cubeice {
 					if(tvitem.lParam != SUBMENU_ROOT_ID && tvitem.lParam != SUBMENU_DIR_ID && !f)
 						return 0;
 
-					hInsertedItem = CopyTreeViewItem(hTreeMenu, hInsertTo, hTreeOrg, hInsertFrom);
+					hInsertedItem = CopyTreeViewItem(hTreeMenu, hInsertTo, hTreeOrg, hInsertFrom, TVI_LAST, true);
 					TreeView_Expand(hTreeMenu, hInsertTo, TVE_EXPAND);
 					tvitem.mask		= TVIF_HANDLE | TVIF_PARAM;
 					tvitem.hItem	= hInsertedItem;

@@ -170,7 +170,8 @@
 #define IDC_DELETE_BUTTON           6006
 #define IDC_UP_BUTTON               6007
 #define IDC_DOWN_BUTTON             6008
-#define IDC_RENAME_BUTTON           6009
-#define IDC_RESET_BUTTON            6010
+#define IDC_FOLDER_BUTTON           6009
+#define IDC_RENAME_BUTTON           6010
+#define IDC_RESET_BUTTON            6011
 
 #endif // CUBEICE_SETTING_RESOURCE_H
