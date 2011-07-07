@@ -23,15 +23,36 @@
 #include "dialog.h"
 #include <Windows.h>
 #include <CommCtrl.h>
+#include <imm.h>
 #include <vector>
 #include <map>
 #include "../cubeice-ctx/cubeice-ctxdata.h"
+
+#pragma comment(lib, "imm32.lib")
 
 #define		SUBMENU_ROOT_ID		static_cast<LPARAM>(-1)
 #define		SUBMENU_DIR_ID		static_cast<LPARAM>(0)
 
 namespace cubeice {
 	namespace dialog {
+		/* ----------------------------------------------------------------- */
+		//  IsLeaf
+		/* ----------------------------------------------------------------- */
+		bool IsLeaf(int id) {
+			for (int i = 0; SubMenuCompress[i].stringA; ++i) {
+				if (id == SubMenuCompress[i].dispSetting) return true;
+			}
+			
+			for (int i = 0; SubMenuCompAndMail[i].stringA; ++i) {
+				if (id == SubMenuCompAndMail[i].dispSetting) return true;
+			}
+
+			for (int i = 0; SubMenuDecompress[i].stringA; ++i) {
+				if (id == SubMenuDecompress[i].dispSetting) return true;
+			}
+			return false;
+		}
+
 		/* ----------------------------------------------------------------- */
 		//  GetItemImageIndex
 		/* ----------------------------------------------------------------- */
@@ -80,6 +101,17 @@ namespace cubeice {
 
 			return NULL;
 		}
+
+		/* ----------------------------------------------------------------- */
+		//  GetTreeViewItem
+		/* ----------------------------------------------------------------- */
+		TV_ITEM GetTreeViewItem(HWND handle, HTREEITEM item) {
+			TV_ITEM dest = {};
+			dest.mask = TVIF_HANDLE | TVIF_PARAM;
+			dest.hItem = item;
+			TreeView_GetItem(handle, &dest);
+			return dest;
+		}
 		
 		/* ----------------------------------------------------------------- */
 		//  InitMenuList
@@ -105,8 +137,7 @@ namespace cubeice {
 				tvi.item.iSelectedImage = GetItemImageIndex(smi[i].dispSetting);
 
 				hTreeItem = TreeView_InsertItem(hTreeView, &tvi);
-				if(smi[i].submenu)
-					InitMenuList(hTreeView, hTreeItem, smi[i].submenu);
+				if(smi[i].submenu) InitMenuList(hTreeView, hTreeItem, smi[i].submenu);
 			}
 
 		}
@@ -122,8 +153,7 @@ namespace cubeice {
 #else
 				table[smi[i].dispSetting] = smi[i].stringA;
 #endif
-				if(smi[i].submenu)
-					SerializeMenuItemData(table, smi[i].submenu);
+				if(smi[i].submenu) SerializeMenuItemData(table, smi[i].submenu);
 			}
 		}
 
@@ -163,25 +193,16 @@ namespace cubeice {
 			HTREEITEM	hRootItem;
 
 			InitMenuList(hItemListTreeView, TVI_ROOT, MenuItem);
+			TreeView_Select(hItemListTreeView, TreeView_GetRoot(hItemListTreeView), TVGN_CARET);
 
 			TVINSERTSTRUCT	tvi;
 			tvi.hParent			= TVI_ROOT;
 			tvi.hInsertAfter	= TVI_LAST;
-			
-			
-			// NOTE: 「新しいフォルダを追加」はボタンとして実装する．
-#if NOTUSED
-			tvi.item.mask		= TVIF_TEXT | TVIF_PARAM;
-			tvi.item.pszText	= TEXT("新しいフォルダを追加");
-			tvi.item.lParam		= SUBMENU_DIR_ID;
-			TreeView_InsertItem(hItemListTreeView, &tvi);
-#endif
-			
 			tvi.item.mask		= TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM;
-			tvi.item.pszText	= TEXT("ルート");
+			tvi.item.pszText	= TEXT("メニュートップ");
 			tvi.item.lParam		= SUBMENU_ROOT_ID;
-			tvi.item.iImage = 2;
-			tvi.item.iSelectedImage = 2;
+			tvi.item.iImage = 3;
+			tvi.item.iSelectedImage = 3;
 			hRootItem = TreeView_InsertItem(hMenuTreeView, &tvi);
 
 			std::map<cubeice::user_setting::size_type, const TCHAR*>	table;
@@ -292,8 +313,24 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		static LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
+			static bool ignore = false;
+			
 			if (code == HC_ACTION) {
 				if (wParam == 0x0D) {
+					HWND hWnd = ImmGetDefaultIMEWnd(GetForegroundWindow());
+					HIMC hImc = ImmGetContext(hWnd);
+					long n = ImmGetCompositionString(hImc, GCS_COMPSTR, NULL, 0);
+					ImmReleaseContext(hWnd, hImc);
+					if (n > 0) {
+						ignore = true;
+						return CallNextHookEx(hKeybordHook, code, wParam, lParam);
+					}
+					
+					if (ignore) {
+						ignore = false;
+						return TRUE;
+					}
+					
 					if (TreeView_GetEditControl(hTreeMenu)) {
 						TreeView_EndEditLabelNow(hTreeMenu, FALSE);
 						return TRUE;
@@ -307,7 +344,8 @@ namespace cubeice {
 		//  customize_wndproc
 		/* ----------------------------------------------------------------- */
 		static INT_PTR CALLBACK customize_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
-			static cubeice::user_setting *setting;
+			static cubeice::user_setting *setting = NULL;
+			static HMENU popup = NULL;
 			
 			switch (msg) {
 			case WM_INITDIALOG:
@@ -317,10 +355,11 @@ namespace cubeice {
 				hKeybordHook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, 0, GetCurrentThreadId());
 				
 				// TreeView で使用するアイコンの初期化
-				HIMAGELIST imagelist = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 3, 1);
+				HIMAGELIST imagelist = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 4, 1);
 				ImageList_AddIcon(imagelist, LoadIcon(GetModuleHandle(NULL), _T("IDI_COMPRESS")));
 				ImageList_AddIcon(imagelist, LoadIcon(GetModuleHandle(NULL), _T("IDI_DECOMPRESS")));
 				ImageList_AddIcon(imagelist, LoadIcon(GetModuleHandle(NULL), _T("IDI_FOLDER")));
+				ImageList_AddIcon(imagelist, LoadIcon(GetModuleHandle(NULL), _T("IDI_MENUTOP")));
 				TreeView_SetImageList(hTreeMenu, imagelist , TVSIL_NORMAL);
 				TreeView_SetImageList(hTreeOrg, imagelist, TVSIL_NORMAL);
 				
@@ -352,6 +391,24 @@ namespace cubeice {
 					return TRUE;
 				}
 				break;
+			case WM_CONTEXTMENU:
+				{
+					HWND handle = reinterpret_cast<HWND>(wp);
+					TV_HITTESTINFO hit = {};
+					hit.pt.x = LOWORD(lp); 
+					hit.pt.y = HIWORD(lp);
+					ScreenToClient(handle, &hit.pt);
+					HTREEITEM item = TreeView_HitTest(handle, &hit);
+					if (item) {
+						TreeView_SelectItem(handle, item);
+						// 選択されている項目によって表示するポップアップメニューを変える．
+						const int index = (handle == hTreeOrg) ? 2 : (item == TreeView_GetRoot(handle) ? 0 : 1);
+						popup = LoadMenu(GetModuleHandle(NULL), _T("IDR_CONTEXT_MENU"));
+						HMENU submenu = GetSubMenu(popup, index);
+						TrackPopupMenu(submenu, TPM_LEFTALIGN | TPM_TOPALIGN, (int)LOWORD(lp), (int)HIWORD(lp), 0, hWnd, NULL);
+					}
+					break;
+				}
 			case WM_COMMAND:
 				if (HIWORD(wp) != BN_CLICKED) break;
 				
@@ -361,13 +418,15 @@ namespace cubeice {
 					std::vector<cubeice::user_setting::SUBMENU> v;
 					GetSubmenuStruct(v, hTreeMenu, TreeView_GetChild(hTreeMenu, TVI_ROOT));
 					if(!CheckValidation(v)) {
-						MessageBox(hWnd, _T("空のフォルダが存在します。フォルダの中には必ず圧縮、または解凍項目を選択して下さい。"), _T("エラー"), MB_OK | MB_ICONERROR);
-						break;
+						static const TCHAR* message = _T("空のフォルダが存在します。空のフォルダはコンテキストメニューには表示されません。\r\n続行しますか？");
+						if (MessageBox(hWnd, message, _T("警告"), MB_YESNO | MB_ICONWARNING) == IDNO) break;
 					}
 					setting->context_submenu() = v;
 					setting->context_customize() = true;
 				}
 				case IDCANCEL:
+					if (popup) DestroyMenu(popup);
+					popup = NULL;
 					if (hKeybordHook) UnhookWindowsHookEx(hKeybordHook);
 					hKeybordHook = NULL;
 					hTreeMenu = NULL;
@@ -375,6 +434,7 @@ namespace cubeice {
 					EndDialog(hWnd, LOWORD(wp));
 					break;
 				case IDC_ADD_BUTTON: // 追加
+				case IDM_ADD_MENU:
 				{
 					HTREEITEM	hInsertTo;
 					HTREEITEM	hInsertFrom;
@@ -383,13 +443,15 @@ namespace cubeice {
 
 					hInsertTo = TreeView_GetSelection(hTreeMenu);
 					hInsertFrom = TreeView_GetSelection(hTreeOrg);
+					if(!hInsertTo || !hInsertFrom) break;
 
-					if(!hInsertTo || !hInsertFrom)
-						break;
+					// 挿入不可な項目 (Leaf) が選択されている場合は，その親に挿入する．
+					if (IsLeaf(GetTreeViewItem(hTreeMenu, hInsertTo).lParam)) hInsertTo = TreeView_GetParent(hTreeMenu, hInsertTo);
+					if (!hInsertTo) break;
 
-					bool		f = false;
-					tvitem.mask		= TVIF_HANDLE | TVIF_PARAM;
-					tvitem.hItem	= hInsertTo;
+					bool f = false;
+					tvitem.mask = TVIF_HANDLE | TVIF_PARAM;
+					tvitem.hItem = hInsertTo;
 					TreeView_GetItem(hTreeMenu, &tvitem);
 					for(int i = 0 ; MenuItem[i].stringA ; ++i) {
 						if(tvitem.lParam == MenuItem[i].dispSetting) {
@@ -397,8 +459,7 @@ namespace cubeice {
 							break;
 						}
 					}
-					if(tvitem.lParam != SUBMENU_ROOT_ID && tvitem.lParam != SUBMENU_DIR_ID && !f)
-						return 0;
+					if(tvitem.lParam != SUBMENU_ROOT_ID && tvitem.lParam != SUBMENU_DIR_ID && !f) return 0;
 
 					hInsertedItem = CopyTreeViewItem(hTreeMenu, hInsertTo, hTreeOrg, hInsertFrom, TVI_LAST, true);
 					TreeView_Expand(hTreeMenu, hInsertTo, TVE_EXPAND);
@@ -412,6 +473,7 @@ namespace cubeice {
 					break;
 				}
 				case IDC_DELETE_BUTTON: // 削除
+				case IDM_DELETE_MENU:
 				{
 					HTREEITEM	hItem;
 					hItem = TreeView_GetSelection(hTreeMenu);
@@ -419,7 +481,33 @@ namespace cubeice {
 						TreeView_DeleteItem(hTreeMenu, hItem);
 					break;
 				}
+				case IDC_FOLDER_BUTTON: // 新しいフォルダを追加
+				case IDM_FOLDER_MENU:
+				{
+					// 挿入不可な項目 (Leaf) が選択されている場合は，その親に挿入する．
+					HTREEITEM hInsertTo = TreeView_GetSelection(hTreeMenu);
+					if (hInsertTo && IsLeaf(GetTreeViewItem(hTreeMenu, hInsertTo).lParam)) hInsertTo = TreeView_GetParent(hTreeMenu, hInsertTo);
+					if (!hInsertTo) break;
+					
+					TVINSERTSTRUCT tvi = {};
+					tvi.hParent = hInsertTo;
+					tvi.hInsertAfter = TVI_LAST;
+					tvi.item.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM;
+					tvi.item.pszText = _T("新しいフォルダ");
+					tvi.item.iImage = 2;
+					tvi.item.iSelectedImage = 2;
+					tvi.item.lParam = SUBMENU_DIR_ID;
+					HTREEITEM inserted = TreeView_InsertItem(hTreeMenu, &tvi);
+					
+					tvi.item.mask = TVIF_HANDLE | TVIF_PARAM;
+					tvi.item.hItem = inserted;
+					TreeView_GetItem(hTreeMenu, &tvi.item);
+					TreeView_Select(hTreeMenu, tvi.item.hItem, TVGN_CARET);
+					TreeView_EditLabel(hTreeMenu, tvi.item.hItem);
+					break;
+				}
 				case IDC_UP_BUTTON: // 上へ
+				case IDM_UP_MENU:
 				{
 					HTREEITEM hTreeItem = TreeView_GetSelection(hTreeMenu);
 					if(!hTreeItem) break;
@@ -436,6 +524,7 @@ namespace cubeice {
 					break;
 				}
 				case IDC_DOWN_BUTTON: // 下へ
+				case IDM_DOWN_MENU:
 				{
 					HTREEITEM hTreeItem = TreeView_GetSelection(hTreeMenu);
 					if(!hTreeItem) break;
@@ -449,12 +538,14 @@ namespace cubeice {
 					break;
 				}
 				case IDC_RENAME_BUTTON: // リネーム
+				case IDM_RENAME_MENU:
 				{
 					HTREEITEM hTreeItem = TreeView_GetSelection(hTreeMenu);
 					TreeView_EditLabel(hTreeMenu, hTreeItem);
 					break;
 				}
 				case IDC_RESET_BUTTON: // リセット
+				case IDM_RESET_MENU:
 					TreeView_DeleteAllItems(hTreeMenu);
 					TreeView_DeleteAllItems(hTreeOrg);
 					InitTreeViewItem(hTreeMenu, hTreeOrg, setting->context_submenu());
