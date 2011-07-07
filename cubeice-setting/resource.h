@@ -174,4 +174,12 @@
 #define IDC_RENAME_BUTTON           6010
 #define IDC_RESET_BUTTON            6011
 
+#define IDM_UP_MENU                 6107
+#define IDM_DOWN_MENU               6108
+#define IDM_FOLDER_MENU             6109
+#define IDM_RENAME_MENU             6110
+#define IDM_RESET_MENU              6111
+#define IDM_DELETE_MENU             6106
+#define IDM_ADD_MENU                6105
+
 #endif // CUBEICE_SETTING_RESOURCE_H

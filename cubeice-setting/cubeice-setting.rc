@@ -11,6 +11,41 @@
 
 
 //
+// Menu resources
+//
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+IDR_CONTEXT_MENU MENU
+{
+    POPUP "Root"
+    {
+        MENUITEM "メニューを追加", 6105
+        MENUITEM "新しいフォルダを追加", 6109
+        MENUITEM SEPARATOR
+        MENUITEM "リセット", 6111
+    }
+    
+    POPUP "Others"
+    {
+        MENUITEM "上へ移動", 6107
+        MENUITEM "下へ移動", 6108
+        MENUITEM SEPARATOR
+        MENUITEM "メニューを追加", 6105
+        MENUITEM "新しいフォルダを追加", 6109
+        MENUITEM "削除", 6106
+        MENUITEM "名前の変更", 6110
+        MENUITEM SEPARATOR
+        MENUITEM "リセット", 6111
+    }
+    
+    POPUP "AddMenu"
+    {
+        MENUITEM "現在のコンテキストメニューに追加", 6105
+    }
+}
+
+
+
+//
 // Dialog resources
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
@@ -189,6 +224,18 @@ FONT 9, "MS UI Gothic"
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDI_APP            ICON           "app.ico"
+
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDI_COMPRESS       ICON           "compress.ico"
+
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDI_DECOMPRESS     ICON           "decompress.ico"
+
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
 IDI_FOLDER         ICON           "folder.ico"
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
+IDI_MENUTOP        ICON           "menutop.ico"
