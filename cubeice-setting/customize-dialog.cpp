@@ -298,46 +298,48 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  NOTE: エンターキーをフックするため
+		/*
+		 *  TreeViewProc
+		 *
+		 *  TreeView 独自の処理を行うためにサブクラス化する．
+		 */
 		/* ----------------------------------------------------------------- */
-		static HHOOK hKeybordHook;
-		static HWND hTreeMenu;
-		static HWND hTreeOrg;
+		static WNDPROC DefaultTreeViewProc;
+		LRESULT CALLBACK TreeViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+			HWND dialog = GetForegroundWindow();
+			switch(msg){
+			case WM_KEYDOWN:
+				switch(wParam){
+					case VK_DELETE:
+						SendMessage(dialog, WM_COMMAND, MAKEWPARAM(IDC_DELETE_BUTTON, BN_CLICKED), lParam);
+						break;
+					case VK_F2:
+						SendMessage(dialog, WM_COMMAND, MAKEWPARAM(IDC_RENAME_BUTTON, BN_CLICKED), lParam);
+						break;
+					default:
+						break;
+				}
+				break;
+			}
+			return  CallWindowProc((WNDPROC)DefaultTreeViewProc, hWnd, msg, wParam, lParam);
+		}
 		
 		/* ----------------------------------------------------------------- */
 		/*
-		 *  KeyboardProc
+		 *  EditProc
 		 *
-		 *  エンターキーが押された際に，TreeView の項目が編集状態だった
-		 *  場合は編集を確定して終わる．
+		 *  TreeView のラベルの編集中に Enter キーなどを押すと，他のボタン
+		 *  などにコントロールを奪われてしまい意図した挙動にならない．
+		 *  そのため，ラベルの編集が始まった段階でサブクラス化する．
 		 */
 		/* ----------------------------------------------------------------- */
-		static LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam) {
-			static bool ignore = false;
-			
-			if (code == HC_ACTION) {
-				if (wParam == 0x0D) {
-					HWND hWnd = ImmGetDefaultIMEWnd(GetForegroundWindow());
-					HIMC hImc = ImmGetContext(hWnd);
-					long n = ImmGetCompositionString(hImc, GCS_COMPSTR, NULL, 0);
-					ImmReleaseContext(hWnd, hImc);
-					if (n > 0) {
-						ignore = true;
-						return CallNextHookEx(hKeybordHook, code, wParam, lParam);
-					}
-					
-					if (ignore) {
-						ignore = false;
-						return TRUE;
-					}
-					
-					if (TreeView_GetEditControl(hTreeMenu)) {
-						TreeView_EndEditLabelNow(hTreeMenu, FALSE);
-						return TRUE;
-					}
-				}
+		static WNDPROC DefaultEditProc;
+		static LRESULT CALLBACK EditProc(HWND hWnd,UINT msg,WPARAM wParam,LPARAM lParam){
+			switch(msg){
+			case WM_GETDLGCODE:
+				return DLGC_WANTALLKEYS;
 			}
-			return CallNextHookEx(hKeybordHook, code, wParam, lParam);
+			return CallWindowProc((WNDPROC)DefaultEditProc, hWnd, msg, wParam, lParam);
 		}
 
 		/* ----------------------------------------------------------------- */
@@ -345,6 +347,8 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		static INT_PTR CALLBACK customize_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			static cubeice::user_setting *setting = NULL;
+			static HWND hTreeMenu = NULL;
+			static HWND hTreeOrg = NULL;
 			static HMENU popup = NULL;
 			
 			switch (msg) {
@@ -352,7 +356,6 @@ namespace cubeice {
 			{
 				hTreeMenu = GetDlgItem(hWnd, IDC_CURRENT_TREEVIEW);
 				hTreeOrg = GetDlgItem(hWnd, IDC_ADD_TREEVIEW);
-				hKeybordHook = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, 0, GetCurrentThreadId());
 				
 				// TreeView で使用するアイコンの初期化
 				HIMAGELIST imagelist = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 4, 1);
@@ -377,10 +380,17 @@ namespace cubeice {
 				int y = (GetSystemMetrics(SM_CYSCREEN) - (rect.bottom - rect.top)) / 2;
 				SetWindowPos(hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
 				
+				// TreeView (hTreeMenu) のウィンドウプロシージャのサブクラス化
+				DefaultTreeViewProc = (WNDPROC)SetWindowLongPtr(hTreeMenu, GWLP_WNDPROC, (LONG_PTR)TreeViewProc);
+				
 				return FALSE;
 			}
 			case WM_NOTIFY:
 				if(reinterpret_cast<LPNMHDR>(lp)->code == TVN_BEGINLABELEDIT && reinterpret_cast<LPNMHDR>(lp)->hwndFrom == hTreeMenu) {
+					// Enter, Esc キーの処理のためにサブクラス化
+					HWND edit = (HWND)SendMessage(hTreeMenu, TVM_GETEDITCONTROL, 0, 0);
+					DefaultEditProc = (WNDPROC)SetWindowLongPtr(edit, GWLP_WNDPROC, (LONG_PTR)&EditProc);
+					
 					if(reinterpret_cast<LPNMTVDISPINFO>(lp)->item.lParam == SUBMENU_ROOT_ID) {
 						SetWindowLongPtr(hWnd, DWLP_MSGRESULT, TRUE);
 					}
@@ -427,8 +437,6 @@ namespace cubeice {
 				case IDCANCEL:
 					if (popup) DestroyMenu(popup);
 					popup = NULL;
-					if (hKeybordHook) UnhookWindowsHookEx(hKeybordHook);
-					hKeybordHook = NULL;
 					hTreeMenu = NULL;
 					hTreeOrg = NULL;
 					EndDialog(hWnd, LOWORD(wp));
