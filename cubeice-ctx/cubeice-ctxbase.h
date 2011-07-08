@@ -751,13 +751,56 @@ namespace cube {
 				return NULL;
 			}
 
+			/* ----------------------------------------------------------------- */
+			//  IsLeaf
+			/* ----------------------------------------------------------------- */
+			bool IsLeaf(int id) {
+				for (int i = 0; SubMenuCompress[i].stringA; ++i) {
+					if (id == SubMenuCompress[i].dispSetting) return true;
+				}
+				
+				for (int i = 0; SubMenuCompAndMail[i].stringA; ++i) {
+					if (id == SubMenuCompAndMail[i].dispSetting) return true;
+				}
+
+				for (int i = 0; SubMenuDecompress[i].stringA; ++i) {
+					if (id == SubMenuDecompress[i].dispSetting) return true;
+				}
+				return false;
+			}
+
+			/* ----------------------------------------------------------------- */
+			//  CheckValidation
+			/* ----------------------------------------------------------------- */
+			bool CheckValidation(const std::vector<cubeice::user_setting::SUBMENU> &v)
+			{
+				if(!v.size())
+					return false;
+				BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, v) {
+					bool	f = false;
+					if(s.id == 0) {
+						f = true;
+					} else {
+						for(int i = 0 ; MenuItem[i].stringA ; ++i) {
+							if(MenuItem[i].dispSetting == s.id) {
+								f = true;
+								break;
+							}
+						}
+					}
+					if(f && !CheckValidation(s.children))
+						return false;
+				}
+				return true;
+			}
+			
 			HMENU ConstructSubMenu( HMENU hMenu, const std::vector<const SUB_MENU_ITEM*> &v, const std::vector<cubeice::user_setting::SUBMENU> &submenu, UINT &idCmd, const UINT &idCmdFirst, UINT &indexMenu ) {
 				BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, submenu) {
 					MENUITEMINFO			miinfo;
 					const SUB_MENU_ITEM		*smi = GetSubMenuItem( v, s.id );
 
-					if( !smi && ( s.id != 0 || !s.children.size() ) )
-						continue;
+					//if( !smi && ( s.id != 0 || !s.children.size() ) ) continue;
+					if (!IsLeaf(s.id) && !CheckValidation(s.children)) continue;
 
 					table[idCmd-idCmdFirst] = smi;
 
@@ -767,9 +810,9 @@ namespace cube {
 					miinfo.fType			= MFT_STRING;
 					miinfo.wID				= idCmd++;
 #ifndef	UNICODE
-					miinfo.dwTypeData		= s.id != 0 ? const_cast<LPSTR>( smi->stringA ) : const_cast<LPSTR>( s.str.c_str() );
+					miinfo.dwTypeData		= const_cast<LPSTR>( s.str.c_str() );
 #else	// UNICODE
-					miinfo.dwTypeData		= s.id != 0 ? const_cast<LPWSTR>( smi->stringW ) : const_cast<LPWSTR>( s.str.c_str() );
+					miinfo.dwTypeData		= const_cast<LPWSTR>( s.str.c_str() );
 #endif	// UNICODE
 					
 					if( s.children.size() ) {
