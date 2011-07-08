@@ -306,7 +306,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		static WNDPROC DefaultTreeViewProc;
 		LRESULT CALLBACK TreeViewProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-			HWND dialog = GetForegroundWindow();
+			HWND dialog = GetParent(hWnd);
 			switch(msg){
 			case WM_KEYDOWN:
 				switch(wParam){
