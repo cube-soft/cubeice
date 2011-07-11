@@ -419,11 +419,14 @@ namespace cubeice {
 			TreeView_SetInsertMark(hTreeMenu, NULL, FALSE);
 			hittest.hItem = TreeView_HitTest(hTreeMenu, &hittest);
 			if (hittest.hItem &&  hDragging.second != TreeView_GetRoot(hTreeMenu) && !IsChild(hTreeMenu, hittest.hItem, hDragging.second) && (hittest.flags & (TVHT_ONITEM|TVHT_ONITEMRIGHT))) {
-				TVITEM tvitem = GetTreeViewItem(hTreeMenu, hittest.hItem);
-				if (!IsLeaf(tvitem.lParam))
-					TreeView_SelectDropTarget(hTreeMenu, hittest.hItem);
+				TVITEM		tvitem = GetTreeViewItem(hTreeMenu, hittest.hItem);
+				HTREEITEM	hOverItem = hittest.hItem;
+				hittest.pt.y -= TreeView_GetItemHeight(hTreeMenu) / 2;
+				TreeView_HitTest(hTreeMenu, &hittest);
+				if (!IsLeaf(tvitem.lParam) && hOverItem != hittest.hItem)
+					TreeView_SelectDropTarget(hTreeMenu, hOverItem);
 				else
-					TreeView_SetInsertMark(hTreeMenu, hittest.hItem, TRUE);
+					TreeView_SetInsertMark(hTreeMenu, hOverItem, TRUE);
 			} else {
 				if(hittest.flags & TVHT_ABOVE) SendMessage(hTreeMenu, WM_VSCROLL, MAKEWPARAM(SB_LINEUP, 0), 0);
 				if(hittest.flags & TVHT_BELOW) SendMessage(hTreeMenu, WM_VSCROLL, MAKEWPARAM(SB_LINEDOWN, 0), 0);
@@ -451,13 +454,15 @@ namespace cubeice {
 
 			hittest.hItem = TreeView_HitTest(hTreeMenu, &hittest);
 			if (hittest.hItem && hittest.hItem != hDragging.second && hDragging.second != TreeView_GetRoot(hTreeMenu) && !IsChild(hTreeMenu, hittest.hItem, hDragging.second) && (hittest.flags & (TVHT_ONITEM|TVHT_ONITEMRIGHT))) {
-				TVITEM tvitem = GetTreeViewItem(hTreeMenu, hittest.hItem);
+				TVITEM		tvitem = GetTreeViewItem(hTreeMenu, hittest.hItem);
+				HTREEITEM	hOverItem = hittest.hItem;
 				HTREEITEM	hItem;
-
-				if (!IsLeaf(tvitem.lParam))
-					hItem = CopyTreeViewItem(hTreeMenu, hittest.hItem, hDragging.first, hDragging.second);
+				hittest.pt.y -= TreeView_GetItemHeight(hTreeMenu) / 2;
+				TreeView_HitTest(hTreeMenu, &hittest);
+				if (!IsLeaf(tvitem.lParam) && hOverItem != hittest.hItem)
+					hItem = CopyTreeViewItem(hTreeMenu, hOverItem, hDragging.first, hDragging.second);
 				else
-					hItem = CopyTreeViewItem(hTreeMenu, TreeView_GetParent(hTreeMenu, hittest.hItem), hDragging.first, hDragging.second, hittest.hItem);
+					hItem = CopyTreeViewItem(hTreeMenu, TreeView_GetParent(hTreeMenu, hOverItem), hDragging.first, hDragging.second, hOverItem);
 				TreeView_SelectItem(hTreeMenu, hItem);
 				if (hDragging.first == hTreeMenu)
 					TreeView_DeleteItem(hTreeMenu, hDragging.second);
