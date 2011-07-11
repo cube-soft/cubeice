@@ -165,10 +165,10 @@
 /* ------------------------------------------------------------------------- */
 //  ê›íËÉtÉ@ÉCÉãÇ…ä÷Ç∑ÇÈèÓïÒ
 /* ------------------------------------------------------------------------- */
-#define CUBEICE_XML_COMPANY_DIR         "CubeSoft"
-#define CUBEICE_XML_PRODUCT_DIR         "CubeICE"
-#define CUBEICE_XML_FILE_NAME           "setting.xml"
-#define CUBEICE_XML_FILE_PATH           CUBEICE_XML_COMPANY_DIR "\\" CUBEICE_XML_PRODUCT_DIR "\\" CUBEICE_XML_FILE_NAME
+#define CUBEICE_XML_COMPANY_DIR         _T("CubeSoft")
+#define CUBEICE_XML_PRODUCT_DIR         _T("CubeICE")
+#define CUBEICE_XML_FILE_NAME           _T("setting.xml")
+#define CUBEICE_XML_FILE_PATH           CUBEICE_XML_COMPANY_DIR _T("\\") CUBEICE_XML_PRODUCT_DIR _T("\\") CUBEICE_XML_FILE_NAME
 #define CUBEICE_CONTEXT_ROOT            "cubeice.general.ctxmenu"
 #define CUBEICE_CONTEXT_CUSTOMIZE       "customize"
 #define CUBEICE_CONTEXT_CHECK_VALUE     "check"
@@ -531,14 +531,14 @@ namespace cubeice {
 				DWORD dwType;
 				DWORD dwSize;
 				
-				char							xmlpath[2*MAX_PATH];
+				TCHAR					xmlpath[2*MAX_PATH];
 
 				ctx_flags_ = 0;
-				SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
-				PathAppendA(xmlpath, CUBEICE_XML_FILE_PATH);
+				SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
+				PathAppend(xmlpath, CUBEICE_XML_FILE_PATH);
 
 				ctx_customize_ = false;
-				if (!PathFileExistsA(xmlpath)) {
+				if (!PathFileExists(xmlpath)) {
 						dwSize = sizeof(ctx_flags_);
 						RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
 				}
@@ -661,18 +661,18 @@ namespace cubeice {
 			if (!lResult) {
 				boost::property_tree::ptree		root;
 				boost::property_tree::ptree		&ctx_root = root.put(CUBEICE_CONTEXT_ROOT, "");
-				char							xmlpath[2*MAX_PATH];
+				TCHAR							xmlpath[2*MAX_PATH];
 				
 				ctx_root.put(CUBEICE_CONTEXT_CUSTOMIZE, ctx_customize_ ? "yes" : "no");
 				ctx_root.put(CUBEICE_CONTEXT_CHECK_VALUE, clx::lexical_cast<std::string>(ctx_flags_));
 				if (ctx_customize_) context_write(ctx_root, ctx_submenu_);
 				
-				SHGetFolderPathA(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
-				PathAppendA(xmlpath, CUBEICE_XML_COMPANY_DIR);
-				CreateDirectoryA(xmlpath, NULL);
-				PathAppendA(xmlpath, CUBEICE_XML_PRODUCT_DIR);
-				CreateDirectoryA(xmlpath, NULL);
-				PathAppendA(xmlpath, CUBEICE_XML_FILE_NAME);
+				SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
+				PathAppend(xmlpath, CUBEICE_XML_COMPANY_DIR);
+				CreateDirectory(xmlpath, NULL);
+				PathAppend(xmlpath, CUBEICE_XML_PRODUCT_DIR);
+				CreateDirectory(xmlpath, NULL);
+				PathAppend(xmlpath, CUBEICE_XML_FILE_NAME);
 				try {
 					boost::property_tree::xml_parser::write_xml(xmlpath, root);
 				}
