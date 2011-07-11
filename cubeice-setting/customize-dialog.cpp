@@ -54,6 +54,22 @@ namespace cubeice {
 		}
 
 		/* ----------------------------------------------------------------- */
+		/*
+		 *  IsChild
+		 *
+		 *  m1 が m2 の子要素かどうかをチェックする．
+		 */
+		/* ----------------------------------------------------------------- */
+		bool IsChild(HWND hTreeMenu, HTREEITEM m1, HTREEITEM m2) {
+			HTREEITEM hChildItem = TreeView_GetChild(hTreeMenu, m2);
+			while(hChildItem) {
+				if (m1 == hChildItem || IsChild(hTreeMenu, m1, hChildItem)) return true;
+				hChildItem = TreeView_GetNextSibling(hTreeMenu, hChildItem);
+			}
+			return false;
+		}
+
+		/* ----------------------------------------------------------------- */
 		//  GetItemImageIndex
 		/* ----------------------------------------------------------------- */
 		int GetItemImageIndex(int id) {
@@ -124,9 +140,12 @@ namespace cubeice {
 		//  GetTreeViewItem
 		/* ----------------------------------------------------------------- */
 		TV_ITEM GetTreeViewItem(HWND handle, HTREEITEM item) {
+			static TCHAR buffer[1024] = {};
 			TV_ITEM dest = {};
-			dest.mask = TVIF_HANDLE | TVIF_PARAM;
+			dest.mask = TVIF_HANDLE | TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM;
 			dest.hItem = item;
+			dest.pszText = buffer;
+			dest.cchTextMax = 1024;
 			TreeView_GetItem(handle, &dest);
 			return dest;
 		}
@@ -359,7 +378,91 @@ namespace cubeice {
 			}
 			return CallWindowProc((WNDPROC)DefaultEditProc, hWnd, msg, wParam, lParam);
 		}
+		
+		/* ----------------------------------------------------------------- */
+		//  BeginDrag
+		/* ----------------------------------------------------------------- */
+		static BOOL bDragging;
+		static std::pair<HWND, HTREEITEM> hDragging;
+		static void BeginDrag(LPNMTREEVIEW p_nmtree) {
+			hDragging.first = p_nmtree->hdr.hwndFrom;
+			hDragging.second = p_nmtree->itemNew.hItem;
+			TreeView_SelectItem(hDragging.first, hDragging.second);
+			
+			HIMAGELIST hDragImage = TreeView_CreateDragImage(hDragging.first, hDragging.second) ;
+			ImageList_BeginDrag(hDragImage, 0, 0, 0) ;
+			SetCapture(GetParent(hDragging.first)) ;
+			bDragging = TRUE ;
+			ClientToScreen(hDragging.first, &(p_nmtree->ptDrag)) ;
+			ImageList_DragEnter(NULL, p_nmtree->ptDrag.x, p_nmtree->ptDrag.y) ;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  MouseMove
+		/* ----------------------------------------------------------------- */
+		static void MouseMove(HWND hWnd, HWND hTreeMenu, HWND hTreeOrg) {
+			ImageList_DragLeave(NULL);
+			
+			POINT pt;
+			TVHITTESTINFO hittest = {};
+			
+			GetCursorPos(&pt);
+			
+			hittest.flags = TVHT_ONITEM;
+			hittest.pt.x = pt.x;
+			hittest.pt.y = pt.y;
+			ScreenToClient(hTreeMenu, &hittest.pt);
+			
+			ImageList_DragShowNolock(FALSE);
 
+			hittest.hItem = TreeView_HitTest(hTreeMenu, &hittest);
+			if (hittest.hItem &&  hDragging.second != TreeView_GetRoot(hTreeMenu) && !IsChild(hTreeMenu, hittest.hItem, hDragging.second)) {
+				TVITEM tvitem = GetTreeViewItem(hTreeMenu, hittest.hItem);
+				if (!IsLeaf(tvitem.lParam)) TreeView_SelectDropTarget(hTreeMenu, hittest.hItem);
+				else TreeView_SelectDropTarget(hTreeMenu, TreeView_GetParent(hTreeMenu, hittest.hItem));
+			}
+			else TreeView_SelectDropTarget(hTreeMenu, NULL);
+			ImageList_DragShowNolock(TRUE);
+			
+			ImageList_DragMove(pt.x, pt.y);
+			ImageList_DragEnter(NULL, pt.x, pt.y);
+		}
+		
+		/* ----------------------------------------------------------------- */
+		//  LButtonUp
+		/* ----------------------------------------------------------------- */
+		static void LButtonUp(HWND hWnd, HWND hTreeMenu, HWND hTreeOrg) {
+			ImageList_DragShowNolock(FALSE);
+			
+			POINT pt;
+			TVHITTESTINFO hittest = {};
+			GetCursorPos(&pt);
+			hittest.flags = TVHT_ONITEM;
+			hittest.pt.x = pt.x;
+			hittest.pt.y = pt.y;
+			ScreenToClient(hTreeMenu, &hittest.pt );
+
+			hittest.hItem = TreeView_HitTest(hTreeMenu, &hittest);
+			if (hittest.hItem && hittest.hItem != hDragging.second && hDragging.second != TreeView_GetRoot(hTreeMenu) && !IsChild(hTreeMenu, hittest.hItem, hDragging.second)) {
+				TVITEM tvitem = GetTreeViewItem(hTreeMenu, hittest.hItem);
+				HTREEITEM target = !IsLeaf(tvitem.lParam) ? hittest.hItem : TreeView_GetParent(hTreeMenu, hittest.hItem);
+				if (target != TreeView_GetParent(hDragging.first, hDragging.second)) {
+					CopyTreeViewItem(hTreeMenu, target, hDragging.first, hDragging.second);
+					if (hDragging.first == hTreeMenu) TreeView_DeleteItem(hTreeMenu, hDragging.second);
+				}
+			}
+			
+			TreeView_SelectDropTarget(hTreeMenu, NULL);
+			ImageList_DragShowNolock(TRUE);
+			
+			ImageList_DragLeave(NULL);
+			ImageList_EndDrag();
+			ReleaseCapture();
+			
+			bDragging = FALSE;
+			hDragging = std::make_pair(reinterpret_cast<HWND>(NULL), reinterpret_cast<HTREEITEM>(NULL));
+		}
+		
 		/* ----------------------------------------------------------------- */
 		//  customize_wndproc
 		/* ----------------------------------------------------------------- */
@@ -374,7 +477,8 @@ namespace cubeice {
 			{
 				hTreeMenu = GetDlgItem(hWnd, IDC_CURRENT_TREEVIEW);
 				hTreeOrg = GetDlgItem(hWnd, IDC_ADD_TREEVIEW);
-				
+				bDragging = FALSE;
+
 				// TreeView で使用するアイコンの初期化
 				HIMAGELIST imagelist = ImageList_Create(16, 16, ILC_COLOR32 | ILC_MASK, 5, 1);
 				ImageList_AddIcon(imagelist, LoadIcon(GetModuleHandle(NULL), _T("IDI_COMPRESS")));
@@ -404,6 +508,12 @@ namespace cubeice {
 				
 				return FALSE;
 			}
+			case WM_MOUSEMOVE:
+				if (bDragging) MouseMove(hWnd, hTreeMenu, hTreeOrg);
+				return TRUE;
+			case WM_LBUTTONUP:
+				if (bDragging) LButtonUp(hWnd, hTreeMenu, hTreeOrg);
+				return TRUE;
 			case WM_NOTIFY:
 				if(reinterpret_cast<LPNMHDR>(lp)->code == TVN_BEGINLABELEDIT && reinterpret_cast<LPNMHDR>(lp)->hwndFrom == hTreeMenu) {
 					// Enter, Esc キーの処理のためにサブクラス化
@@ -418,6 +528,12 @@ namespace cubeice {
 				} else if(reinterpret_cast<LPNMHDR>(lp)->code == TVN_ENDLABELEDIT && reinterpret_cast<LPNMHDR>(lp)->hwndFrom == hTreeMenu) {
 					TreeView_SetItem(hTreeMenu, &reinterpret_cast<TV_DISPINFO*>(lp)->item);
 					return TRUE;
+				}
+				else if (reinterpret_cast<LPNMHDR>(lp)->code == TVN_BEGINDRAG) {
+					LPNMTREEVIEW pitem = reinterpret_cast<LPNMTREEVIEW>(lp);
+					//if (pitem->hdr.hwndFrom == hTreeMenu) BeginDrag(pitem);
+					BeginDrag(pitem);
+					break;
 				}
 				break;
 			case WM_CONTEXTMENU:
