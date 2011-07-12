@@ -70,6 +70,17 @@ namespace cubeice {
 		}
 
 		/* ----------------------------------------------------------------- */
+		//  IsInsideArea
+		/* ----------------------------------------------------------------- */
+		bool IsInsideArea(POINT pt, HWND wnd) {
+			RECT rect = {};
+			if (GetWindowRect(wnd, &rect)) {
+				if (pt.x >= rect.left && pt.x <= rect.right && pt.y >= rect.top && pt.y <= rect.bottom) return true;
+			}
+			return false;
+		}
+
+		/* ----------------------------------------------------------------- */
 		//  GetItemImageIndex
 		/* ----------------------------------------------------------------- */
 		int GetItemImageIndex(int id) {
@@ -401,20 +412,16 @@ namespace cubeice {
 		//  MouseMove
 		/* ----------------------------------------------------------------- */
 		static void MouseMove(HWND hWnd, HWND hTreeMenu, HWND hTreeOrg) {
-			//ImageList_DragLeave(NULL);
-			
-			POINT pt;
-			TVHITTESTINFO hittest = {};
-			
+			POINT pt = {};
 			GetCursorPos(&pt);
 			
+			TVHITTESTINFO hittest = {};
 			hittest.flags = TVHT_ONITEM;
 			hittest.pt.x = pt.x;
 			hittest.pt.y = pt.y;
 			ScreenToClient(hTreeMenu, &hittest.pt);
 			
 			ImageList_DragShowNolock(FALSE);
-
 			TreeView_SelectDropTarget(hTreeMenu, NULL);
 			TreeView_SetInsertMark(hTreeMenu, NULL, FALSE);
 			hittest.hItem = TreeView_HitTest(hTreeMenu, &hittest);
@@ -424,12 +431,16 @@ namespace cubeice {
 				HTREEITEM	hChild = TreeView_GetChild(hTreeMenu, hOverItem);
 				hittest.pt.y -= TreeView_GetItemHeight(hTreeMenu) / 2;
 				TreeView_HitTest(hTreeMenu, &hittest);
-				if ((hOverItem == TreeView_GetRoot(hTreeMenu) && (!(TreeView_GetItemState(hTreeMenu, hOverItem, TVIS_EXPANDED) & TVIS_EXPANDED) || !hChild)) || (!IsLeaf(tvitem.lParam) && hOverItem != hittest.hItem))
+				if ((hOverItem == TreeView_GetRoot(hTreeMenu) && (!(TreeView_GetItemState(hTreeMenu, hOverItem, TVIS_EXPANDED) & TVIS_EXPANDED) || !hChild)) || (!IsLeaf(tvitem.lParam) && hOverItem != hittest.hItem)) {
 					TreeView_SelectDropTarget(hTreeMenu, hOverItem);
-				else if (hOverItem == TreeView_GetRoot(hTreeMenu) || (!IsLeaf(tvitem.lParam) && (TreeView_GetItemState(hTreeMenu, hOverItem, TVIS_EXPANDED) & TVIS_EXPANDED) && hChild))
+				}
+				else if (hOverItem == TreeView_GetRoot(hTreeMenu) || (!IsLeaf(tvitem.lParam) && (TreeView_GetItemState(hTreeMenu, hOverItem, TVIS_EXPANDED) & TVIS_EXPANDED) && hChild)) {
 					TreeView_SetInsertMark(hTreeMenu, hChild, FALSE);
-				else
+				}
+				else {
+					TreeView_SetInsertMark(hTreeMenu, hOverItem, FALSE); // NOTE: Windows XP ‚Å•`‰æÕ‚ªŽc‚é–â‘è‚ð‰ñ”ð‚·‚é‚½‚ß
 					TreeView_SetInsertMark(hTreeMenu, hOverItem, TRUE);
+				}
 			} else {
 				if(hittest.flags & TVHT_ABOVE) SendMessage(hTreeMenu, WM_VSCROLL, MAKEWPARAM(SB_LINEUP, 0), 0);
 				if(hittest.flags & TVHT_BELOW) SendMessage(hTreeMenu, WM_VSCROLL, MAKEWPARAM(SB_LINEDOWN, 0), 0);
@@ -437,7 +448,6 @@ namespace cubeice {
 			ImageList_DragShowNolock(TRUE);
 			
 			ImageList_DragMove(pt.x, pt.y);
-			//ImageList_DragEnter(NULL, pt.x, pt.y);
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -447,33 +457,39 @@ namespace cubeice {
 			ImageList_DragShowNolock(FALSE);
 			TreeView_SetInsertMark(hTreeMenu, NULL, FALSE);
 			
-			POINT pt;
-			TVHITTESTINFO hittest = {};
+			POINT pt = {};
 			GetCursorPos(&pt);
+			
+			TVHITTESTINFO hittest = {};
 			hittest.flags = TVHT_ONITEM;
 			hittest.pt.x = pt.x;
 			hittest.pt.y = pt.y;
 			ScreenToClient(hTreeMenu, &hittest.pt );
-
-			hittest.hItem = TreeView_HitTest(hTreeMenu, &hittest);
-			if (hittest.hItem && hittest.hItem != hDragging.second && hDragging.second != TreeView_GetRoot(hTreeMenu) && !IsChild(hTreeMenu, hittest.hItem, hDragging.second) && (hittest.flags & (TVHT_ONITEM|TVHT_ONITEMRIGHT))) {
-				TVITEM		tvitem = GetTreeViewItem(hTreeMenu, hittest.hItem);
-				HTREEITEM	hOverItem = hittest.hItem;
-				HTREEITEM	hChild = TreeView_GetChild(hTreeMenu, hOverItem);
-				HTREEITEM	hItem;
-				hittest.pt.y -= TreeView_GetItemHeight(hTreeMenu) / 2;
-				TreeView_HitTest(hTreeMenu, &hittest);
-				if ((hOverItem == TreeView_GetRoot(hTreeMenu) && (!(TreeView_GetItemState(hTreeMenu, hOverItem, TVIS_EXPANDED) & TVIS_EXPANDED) || !hChild)) || (!IsLeaf(tvitem.lParam) && hOverItem != hittest.hItem))
-					hItem = CopyTreeViewItem(hTreeMenu, hOverItem, hDragging.first, hDragging.second);
-				else if (hOverItem == TreeView_GetRoot(hTreeMenu) || (!IsLeaf(tvitem.lParam) && (TreeView_GetItemState(hTreeMenu, hOverItem, TVIS_EXPANDED) & TVIS_EXPANDED) && hChild))
-					hItem = CopyTreeViewItem(hTreeMenu, hOverItem, hDragging.first, hDragging.second, TVI_FIRST);
-				else
-					hItem = CopyTreeViewItem(hTreeMenu, TreeView_GetParent(hTreeMenu, hOverItem), hDragging.first, hDragging.second, hOverItem);
-				TreeView_SelectItem(hTreeMenu, hItem);
-				if (hDragging.first == hTreeMenu)
-					TreeView_DeleteItem(hTreeMenu, hDragging.second);
-			}
 			
+			hittest.hItem = TreeView_HitTest(hTreeMenu, &hittest);
+			if (IsInsideArea(pt, hTreeMenu)) {
+				if (hittest.hItem && hittest.hItem != hDragging.second && hDragging.second != TreeView_GetRoot(hTreeMenu) && !IsChild(hTreeMenu, hittest.hItem, hDragging.second) && (hittest.flags & (TVHT_ONITEM|TVHT_ONITEMRIGHT))) {
+					TVITEM		tvitem = GetTreeViewItem(hTreeMenu, hittest.hItem);
+					HTREEITEM	hOverItem = hittest.hItem;
+					HTREEITEM	hChild = TreeView_GetChild(hTreeMenu, hOverItem);
+					HTREEITEM	hItem;
+					hittest.pt.y -= TreeView_GetItemHeight(hTreeMenu) / 2;
+					TreeView_HitTest(hTreeMenu, &hittest);
+					if ((hOverItem == TreeView_GetRoot(hTreeMenu) && (!(TreeView_GetItemState(hTreeMenu, hOverItem, TVIS_EXPANDED) & TVIS_EXPANDED) || !hChild)) || (!IsLeaf(tvitem.lParam) && hOverItem != hittest.hItem))
+						hItem = CopyTreeViewItem(hTreeMenu, hOverItem, hDragging.first, hDragging.second);
+					else if (hOverItem == TreeView_GetRoot(hTreeMenu) || (!IsLeaf(tvitem.lParam) && (TreeView_GetItemState(hTreeMenu, hOverItem, TVIS_EXPANDED) & TVIS_EXPANDED) && hChild))
+						hItem = CopyTreeViewItem(hTreeMenu, hOverItem, hDragging.first, hDragging.second, TVI_FIRST);
+					else
+						hItem = CopyTreeViewItem(hTreeMenu, TreeView_GetParent(hTreeMenu, hOverItem), hDragging.first, hDragging.second, hOverItem);
+					TreeView_SelectItem(hTreeMenu, hItem);
+					if (hDragging.first == hTreeMenu)
+						TreeView_DeleteItem(hTreeMenu, hDragging.second);
+				}
+			}
+			else if (IsInsideArea(pt, hTreeOrg) && hDragging.first == hTreeMenu) {
+				TreeView_DeleteItem(hTreeMenu, hDragging.second);
+			}
+
 			TreeView_SelectDropTarget(hTreeMenu, NULL);
 			ImageList_DragShowNolock(TRUE);
 			
