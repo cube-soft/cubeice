@@ -1237,7 +1237,7 @@ namespace cubeice {
 			op.wFunc = FO_MOVE;
 			op.pFrom = reinterpret_cast<const TCHAR*>(&src_buffer.at(0));
 			op.pTo = reinterpret_cast<const TCHAR*>(&dest_buffer.at(0));
-			op.fFlags = FOF_NOCONFIRMATION | FOF_NOCONFIRMMKDIR;
+			op.fFlags = FOF_NOCONFIRMATION | FOF_NOCONFIRMMKDIR | FOF_NOERRORUI;
 			if (SHFileOperation(&op)) return false;
 			return true;
 		}
