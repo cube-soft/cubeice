@@ -1222,6 +1222,26 @@ namespace cubeice {
 			return dest;
 		}
 		
+		bool SHFileMove(const string_type& src, const string_type& dest) {
+			// NOTE: src/dest に指定する文字列は "\0" が 2連続で終わっていないとならない
+			std::vector<TCHAR> src_buffer(src.begin(), src.end());
+			src_buffer.push_back(0);
+			src_buffer.push_back(0);
+			
+			std::vector<TCHAR> dest_buffer(dest.begin(), dest.end());
+			dest_buffer.push_back(0);
+			dest_buffer.push_back(0);
+			
+			SHFILEOPSTRUCT op = {};
+			op.hwnd = this->progress_.handle();
+			op.wFunc = FO_MOVE;
+			op.pFrom = reinterpret_cast<const TCHAR*>(&src_buffer.at(0));
+			op.pTo = reinterpret_cast<const TCHAR*>(&dest_buffer.at(0));
+			op.fFlags = FOF_NOCONFIRMATION | FOF_NOCONFIRMMKDIR;
+			if (SHFileOperation(&op)) return false;
+			return true;
+		}
+
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  move
@@ -1243,15 +1263,18 @@ namespace cubeice {
 				if (rename && PathFileExists(dest.c_str())) {
 					TCHAR drivename[8], dirname[4096], basename[1024], extname[32];
 					_wsplitpath_s(dest.c_str(), drivename, sizeof(drivename), dirname, sizeof(dirname), basename, sizeof(basename), extname, sizeof(extname));
-					TCHAR renamed[8192];
+					TCHAR renamed[8192] = {};
 					// renamed を.....(N).拡張子に変更する Nは数字。一応 N< MAX_RENAME_DIGITとしておく
 					for (int i = 2; i <= 2147483647; i++) {
 						swprintf_s(renamed, sizeof(renamed), _T("%s%s%s(%d)%s"), drivename, dirname, basename, i, extname);
 						if (!PathFileExists(renamed)) break;
 					}
-					status &= (MoveFileEx(src.c_str(), renamed, (MOVEFILE_COPY_ALLOWED)) != FALSE);
+					//status &= (MoveFileEx(src.c_str(), renamed, (MOVEFILE_COPY_ALLOWED)) != FALSE);
+					status &= SHFileMove(src, renamed);
+					
 				} else {
-					status &= (MoveFileEx(src.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) != FALSE);
+					//status &= (MoveFileEx(src.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) != FALSE);
+					status &= SHFileMove(src, dest);
 				}
 			}
 			return status;
