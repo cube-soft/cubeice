@@ -23,10 +23,22 @@
 #include "cubeice.h"
 #include "style.h"
 #include <windows.h>
+#include <psdotnet/logger.h>
+#include <psdotnet/appender.h>
 
 cubeice::user_setting UserSetting;
 
 int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int showCmd) {
+	if (UserSetting.debug()) {
+		std::basic_string<TCHAR> path(UserSetting.install_path() + _T("\\cubeice.log"));
+		PsdotNet::FileAppender writer(path, PsdotNet::FileAppender::CloseOnWrite | PsdotNet::FileAppender::WriteAll);
+		PsdotNet::Logger::Configure(writer, PsdotNet::LogLevel::Trace);
+	}
+	
+	LOG_INFO(_T("start cubeice.exe"));
+	LOG_INFO(_T("version = %s"), UserSetting.version().c_str());
+	LOG_INFO(_T("cmdline = %s"), pCmdLine);
+	
 	cubeice::cmdline::separator sep(_T(" \t"), _T("\""), _T(""));
 	cubeice::cmdline::splitter args(pCmdLine, sep);
 	cubeice::cmdline::splitter::iterator pos = args.begin();
@@ -47,5 +59,8 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 		DWORD result = (DWORD)proc;
 		if (result <= 32) return -1;
 	}
+
+	LOG_INFO(_T("end cubeice.exe"));
+	
 	return 0;
 }

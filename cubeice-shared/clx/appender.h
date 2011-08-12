@@ -40,7 +40,7 @@
 #include <fstream>
 #include <string>
 #include "shared_ptr.h"
-#include "filesystem.h"
+//#include "filesystem.h"
 #include "date_time.h"
 
 namespace clx {
@@ -50,7 +50,7 @@ namespace clx {
 	class appender {
 	public:
 		typedef std::size_t size_type;
-		typedef char char_type;
+		typedef wchar_t char_type;
 		typedef std::basic_ostream<char_type> ostream_type;
 		
 		appender() {}
@@ -99,7 +99,7 @@ namespace clx {
 		virtual bool finish() {
 			if (out_ && out_->is_open()) {
 				long n = out_->tellp();
-				if (limit_ > 0 && n >= limit_) {
+				/*if (limit_ > 0 && n >= limit_) {
 					out_->close();
 					out_ = fstream_ptr();
 					
@@ -108,7 +108,7 @@ namespace clx {
 						+ now.to_string("_%Y%m%d%H%M%S") + filesystem::extension(path_);
 					std::rename(path_.c_str(), to.c_str());
 				}
-				else if (!open_) {
+				else*/ if (!open_) {
 					out_->close();
 					out_ = fstream_ptr();
 				}

@@ -26,6 +26,10 @@
 #include "Update.h"
 #include "UpdateAction.h"
 
+#ifndef SEVENZIP_ORIGINAL // extended by CubeICE
+#include "Common/Extended/encoding.h"
+#endif
+
 extern bool g_CaseSensitive;
 
 #ifdef UNDER_CE
@@ -155,7 +159,7 @@ static const CSwitchForm kSwitchForms[] =
     { L"SLT", NSwitchType::kSimple, false },
     { L"SSW", NSwitchType::kSimple, false },
     { L"SSC", NSwitchType::kPostChar, false, 0, 0, L"-" },
-    { L"SCRC", NSwitchType::kSimple, false }
+    { L"SCRC", NSwitchType::kSimple, false },
   };
 
 static const CCommandForm g_CommandForms[] =
@@ -749,9 +753,15 @@ static int FindCharset(const NCommandLineParser::CParser &parser, int keyIndex, 
     if (name.Compare(pair.Name) == 0)
       return pair.CodePage;
   }
+
+#ifdef SEVENZIP_ORIGINAL
   if (i == sizeof(g_CodePagePairs) / sizeof(g_CodePagePairs[0]))
     ThrowUserErrorException();
   return -1;
+#else
+  cubeice::SetEncoding((const wchar_t*)name);
+  return defaultVal;
+#endif
 }
 
 static bool ConvertStringToUInt32(const wchar_t *s, UInt32 &v)

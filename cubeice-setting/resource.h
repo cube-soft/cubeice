@@ -139,7 +139,6 @@
 #define IDC_MAX_FILELIST_TEXTBOX    3112 // ツールチップの表示する最大件数
 #define IDC_FILELIST_UPDOWN         3113 // 同スピンコントロール
 #define IDC_REMOVE_SRC_CHECKBOX     3115 // 元ファイルを削除する
-#define IDC_MAC_CHECKBOX            3116 // Shift_JIS と判定された場合に UTF-8 として扱う
 
 /* ------------------------------------------------------------------------- */
 //  「フィルタリング」タブ
@@ -158,6 +157,7 @@
 #define IDC_COMPANY_LABEL           5003
 #define IDC_URI_LABEL               5004
 #define IDC_UPDATE_CHECKBOX         5005
+#define IDC_DEBUG_CHECKBOX          5006
 
 /* ------------------------------------------------------------------------- */
 //  コンテキストメニューのカスタマイズ用ダイアログ

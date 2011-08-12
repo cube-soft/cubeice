@@ -139,8 +139,6 @@
 #define DETAIL_TOOLTIP        0x0400  // ツールチップにファイル一覧を表示する
 #define DETAIL_REMOVE_SRC     0x0800  // 元ファイルを削除する
 
-#define DETAIL_MAC            0x10000000 // Shift_JIS の場合に UTF-8 として扱う
-
 /* ------------------------------------------------------------------------- */
 //  レジストリに関する情報
 /* ------------------------------------------------------------------------- */
@@ -159,6 +157,7 @@
 #define CUBEICE_REG_INSTALL             _T("InstallDirectory")
 #define CUBEICE_REG_VERSION             _T("Version")
 #define CUBEICE_REG_PREVARCHIVER        _T("PrevArchiver")
+#define CUBEICE_REG_DEBUG               _T("Debug")
 
 #define CUBEICE_LOG_NAME                _T("cubeicelog.log")
 
@@ -476,7 +475,7 @@ namespace cubeice {
 			root_(CUBEICE_REG_ROOT), install_(_T("")), version_(_T("")),
 			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), associate_invoke_(false) {
+			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), debug_(false), associate_invoke_(false) {
 			comp_.output_condition() = 0x02;
 			comp_.details() = 0x281;
 			comp_.max_filelist() = 5;
@@ -489,7 +488,7 @@ namespace cubeice {
 			root_(root), install_(_T("")), version_(_T("")),
 			comp_(root + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(root + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), associate_invoke_(false) {
+			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), debug_(false), associate_invoke_(false) {
 			comp_.output_condition() = 0x02;
 			comp_.details() = 0x281;
 			comp_.max_filelist() = 5;
@@ -586,6 +585,11 @@ namespace cubeice {
 					filters_.clear();
 					clx::split_if(s, filters_, clx::is_any_of(_T("<>")));
 				}
+
+				DWORD debug = 0;
+				dwSize = sizeof(debug);
+				RegQueryValueEx(hkResult, CUBEICE_REG_DEBUG, NULL, NULL, (LPBYTE)&debug_, &dwSize);
+				if (debug > 0) debug_ = true;
 			}
 			
 			update_ = false;
@@ -701,7 +705,10 @@ namespace cubeice {
 				string_type dest;
 				clx::join(filters_, dest, _T("<>"));
 				RegSetValueEx(hkResult, CUBEICE_REG_FILTER, 0, REG_SZ, (CONST BYTE*)dest.c_str(), (dest.length() + 1) * sizeof(char_type));
-
+				
+				value = debug_ ? 1 : 0;
+				RegSetValueEx(hkResult, CUBEICE_REG_DEBUG, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
+				
 				log_file << CUBEICE_REG_FILTER << _T(": ") << dest << _T("\r\n");
 
 				{
@@ -834,21 +841,13 @@ namespace cubeice {
 		bool& update() { return update_; }
 		const bool& update() const { return update_; }
 		
+		/* ----------------------------------------------------------------- */
+		//  debug
+		/* ----------------------------------------------------------------- */
+		bool& debug() { return debug_; }
+		const bool& debug() const { return debug_; }
+
 	private:
-		string_type root_;
-		string_type install_;
-		string_type version_;
-		archive_type comp_;
-		archive_type decomp_;
-		size_type ctx_flags_;
-		size_type sc_flags_;
-		size_type sc_index_;
-		container_type filters_;
-		bool update_;
-		bool ctx_customize_;
-		std::vector<SUBMENU> ctx_submenu_;
-		bool associate_invoke_;
-		
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  associate
@@ -1093,6 +1092,22 @@ cleanup:
 				context_write(item, s.children);
 			}
 		}
+		
+	private:
+		string_type root_;
+		string_type install_;
+		string_type version_;
+		archive_type comp_;
+		archive_type decomp_;
+		size_type ctx_flags_;
+		size_type sc_flags_;
+		size_type sc_index_;
+		container_type filters_;
+		bool update_;
+		bool debug_;
+		bool ctx_customize_;
+		std::vector<SUBMENU> ctx_submenu_;
+		bool associate_invoke_;
 	};
 }
 

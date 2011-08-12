@@ -580,12 +580,17 @@ namespace cubeice {
 				// アップデートの確認
 				if (Setting.update()) CheckDlgButton(hWnd, IDC_UPDATE_CHECKBOX, BM_SETCHECK);
 				
+				// デバッグログ出力
+				if (Setting.debug()) CheckDlgButton(hWnd, IDC_DEBUG_CHECKBOX, BM_SETCHECK);
 				break;
 			}
 			case WM_COMMAND:
 				switch (LOWORD(wp)) {
 				case IDC_UPDATE_CHECKBOX:
 					Setting.update() = (IsDlgButtonChecked(hWnd, IDC_UPDATE_CHECKBOX) == BST_CHECKED);
+					return TRUE;
+				case IDC_DEBUG_CHECKBOX:
+					Setting.debug() = (IsDlgButtonChecked(hWnd, IDC_DEBUG_CHECKBOX) == BST_CHECKED);
 					return TRUE;
 				}
 				break;
