@@ -35,6 +35,10 @@
 
 #include "../../MyVersion.h"
 
+#ifndef SEVENZIP_ORIGINAL // extended by CubeICE
+#include "Common/Extended/encoding.h"
+#endif
+
 using namespace NWindows;
 using namespace NFile;
 using namespace NCommandLineParser;
@@ -101,7 +105,8 @@ static const char *kHelpString =
     "  -v{Size}[b|k|m|g]: Create volumes\n"
     "  -w[{path}]: assign Work directory. Empty path means a temporary directory\n"
     "  -x[r[-|0]]]{@listfile|!wildcard}: eXclude filenames\n"
-    "  -y: assume Yes on all queries\n";
+    "  -y: assume Yes on all queries\n"
+    "  -e{sjis | euc | jis| utf8 | utf16}: set encoding for list files\n";
 
 // ---------------------------
 // exception messages
@@ -594,5 +599,12 @@ int Main2(
   }
   else
     PrintHelpAndExit(stdStream);
+
+#ifndef SEVENZIP_ORIGINAL
+	int encoding = cubeice::GetEncoding();
+	if (encoding != cubeice::EncodingDialog::Unknown) {
+		stdStream << "Encoding: " << cubeice::EncodingToStringA(encoding).c_str() << endl;
+	}
+#endif
   return 0;
 }

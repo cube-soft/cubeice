@@ -665,7 +665,7 @@ namespace cube {
 			/* ----------------------------------------------------------------- */
 			void decompress_filelist(const string_type& path, std::vector<fileinfo> &flist) {
 				string_type cmdline = cubeiceEnginePath;
-				cmdline += _T(" l ");
+				cmdline += _T(" l -scsIGNORE ");
 				cmdline += _T("\"") + path + _T("\"");
 				
 				flist.clear();

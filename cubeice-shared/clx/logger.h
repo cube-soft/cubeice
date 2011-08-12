@@ -55,8 +55,8 @@ namespace clx {
 	class logger {
 	public:
 		typedef std::size_t size_type;
-		typedef char char_type;
-		typedef std::basic_string<char> string_type;
+		typedef wchar_t char_type;
+		typedef std::basic_string<char_type> string_type;
 		typedef std::basic_ostream<char_type> ostream_type;
 		
 		static void configure(ostream_type& out, size_type lv = loglevel::error) {
