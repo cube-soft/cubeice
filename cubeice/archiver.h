@@ -32,12 +32,12 @@
 #include <shlwapi.h>
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 #include <clx/strip.h>
 #include <clx/split.h>
 #include <clx/replace.h>
 #include <clx/date_time.h>
 #include <clx/timer.h>
-#include <clx/lexical_cast.h>
 #include <psdotnet/logger.h>
 #include <psdotnet/appender.h>
 #include <babel/babel.h>
@@ -48,7 +48,7 @@
 #include "sendmail.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
-#define CUBEICE_MAXCOLUMN 50
+#define CUBEICE_MAXCOLUMN 45
 #define MAIL_SUBJECT ""
 #define MAIL_BODY ""
 
@@ -118,7 +118,7 @@ namespace cubeice {
 			string_type ext;
 			string_type dest;
 			std::vector<string_type> options;
-			bool update;
+			bool update = false;
 			if (filetype == _T("detail")) {
 				LOG_TRACE(_T("set detail-mode"));
 				cubeice::runtime_setting runtime;
@@ -139,10 +139,10 @@ namespace cubeice {
 				else if (filetype == _T("tbz")) filetype = _T("bzip2");
 				LOG_INFO(_T("filetype = %s, ext = %s"), filetype.c_str(), ext.c_str());
 				
-				options.push_back(_T("-mx=") + clx::lexical_cast<string_type>(runtime.level()));
+				options.push_back(_T("-mx=") + boost::lexical_cast<string_type>(runtime.level()));
 				if (runtime.type() == _T("zip")) options.push_back(_T("mm=") + runtime.method());
 				else if (runtime.type() == _T("7z")) options.push_back(_T("m0=") + runtime.method());
-				options.push_back(_T("-mmt=") + clx::lexical_cast<string_type>(runtime.thread_size()));
+				options.push_back(_T("-mmt=") + boost::lexical_cast<string_type>(runtime.thread_size()));
 				if (runtime.enable_password()) {
 					pass = true;
 					cubeice::password() = runtime.password();
@@ -167,6 +167,7 @@ namespace cubeice {
 			
 			// 一時ファイルのパスを決定
 			string_type tmp = update ? dest : tmpfile(_T("cubeice"));
+			if (update) LOG_INFO(_T("update-mode, path = %s"), tmp);
 			if (tmp.empty()) return;
 			
 			progress_.style(cubeice::dialog::progressbar::simple);
@@ -237,7 +238,7 @@ namespace cubeice {
 					clx::strip_if(s, clx::is_any_of(_T(":% ")));
 					line.erase(pos);
 					int prev = percent;
-					percent = clx::lexical_cast<int>(s) * 100;
+					percent = _ttoi(s.c_str()) * 100;
 					progress_.position(percent);
 					if (percent > prev) {
 						string_type title = s + _T("% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE");
@@ -247,7 +248,7 @@ namespace cubeice {
 				
 				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) {
-					LOG_TRACE(_T("unknown-message = %s"), line.c_str());
+					if (!line.empty()) LOG_TRACE(_T("unknown-message = %s"), line.c_str());
 					continue;
 				}
 				
@@ -299,8 +300,11 @@ namespace cubeice {
 					}
 				}
 				
-				if( !update )
+				if(!update) {
+					LOG_INFO(_T("move, src = %s, dest = %s"), tmp.c_str(), dest.c_str());
+					if (PathFileExists(dest.c_str())) DeleteFile(dest.c_str());
 					MoveFileEx(tmp.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED));
+				}
 				
 				// フィルタリング
 				if ((setting_.compression().details() & DETAIL_FILTER) && !setting_.filters().empty()) {
@@ -490,7 +494,7 @@ namespace cubeice {
 							int prev = percent;
 							percent = (tmppos > 1.0) ? static_cast<int>(tmppos / 100.0) : 0;
 							if (percent > prev) {
-								string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + title_message;
+								string_type title = boost::lexical_cast<string_type>(percent) + _T("% - ") + title_message;
 								progress_.title(title);
 							}
 							if (!this->refresh(proc)) break;
@@ -598,7 +602,7 @@ namespace cubeice {
 						int prev = percent;
 						percent = (calcpos > 1.0) ? static_cast<int>(calcpos / 100.0) : 0;
 						if (percent > prev) {
-							string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + title_message;
+							string_type title = boost::lexical_cast<string_type>(percent) + _T("% - ") + title_message;
 							progress_.title(title);
 						}
 					}
@@ -863,7 +867,7 @@ namespace cubeice {
 					clx::strip_if(s, clx::is_any_of(_T(":% ")));
 					line.erase(pos);
 					int prev = percent;
-					percent = clx::lexical_cast<int>(s) * 100;
+					percent = _ttoi(s.c_str()) * 100;
 					progress_.position(percent);
 					if (percent > prev) {
 						string_type title = s + _T("% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE");
@@ -1170,7 +1174,7 @@ namespace cubeice {
 						int prev = percent;
 						percent = (tmppos > 1.0) ? static_cast<int>(tmppos / 100.0) : 0;
 						if (percent > prev) {
-							string_type title = clx::lexical_cast<string_type>(percent) + _T("% - ") + title_message;
+							string_type title = boost::lexical_cast<string_type>(percent) + _T("% - ") + title_message;
 							progress_.title(title);
 						}
 						if (!this->refresh(proc)) break;
