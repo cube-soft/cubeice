@@ -325,7 +325,7 @@ namespace cubeice {
 		//  load
 		/* ----------------------------------------------------------------- */
 		void load() {
-			LOG_TRACE(_T("function load() start"));
+			LOG_TRACE(_T("function archive_setting::load() start"));
 			
 			HKEY hkResult;
 			LONG lResult = RegOpenKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, KEY_ALL_ACCESS, &hkResult);
@@ -356,7 +356,7 @@ namespace cubeice {
 				if (this->is_associated(pos->first, pos->second.first)) flags_ |= pos->second.second;
 			}
 			
-			LOG_TRACE(_T("function load() end"));
+			LOG_TRACE(_T("function archive_setting::load() end"));
 		}
 		
 		
@@ -364,7 +364,7 @@ namespace cubeice {
 		//  save
 		/* ----------------------------------------------------------------- */
 		void save() {
-			LOG_TRACE(_T("function save() start"));
+			LOG_TRACE(_T("function archive_setting::save() start"));
 			
 			HKEY hkResult; // キーのハンドル
 			DWORD dwDisposition; // 処理結果を受け取る
@@ -393,7 +393,7 @@ namespace cubeice {
 				LOG_ERROR(_T("RegCreateKeyEx(HKCU, %s)"), root_.c_str());
 			}
 			
-			LOG_TRACE(_T("function save() end"));
+			LOG_TRACE(_T("function archive_setting::save() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -514,7 +514,7 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void load() {
-			LOG_TRACE(_T("function load() start"));
+			LOG_TRACE(_T("function user_setting::load() start"));
 			
 			babel::init_babel();
 			
@@ -623,13 +623,15 @@ namespace cubeice {
 			else {
 				LOG_ERROR(_T("RegOpenKeyEX(HKCU, Software\\Microsoft\\Windows\\CurrentVersion\\Run)"));
 			}
+			
+			LOG_TRACE(_T("function user_setting::load() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
 		//  save
 		/* ----------------------------------------------------------------- */
 		void save() {
-			LOG_TRACE(_T("function save() start"));
+			LOG_TRACE(_T("function user_setting::save() start"));
 			
 			comp_.save();
 			decomp_.save();
@@ -724,7 +726,7 @@ namespace cubeice {
 			
 			if(associate_invoke_) this->associate(decomp_.flags(), decomp_.details());
 			
-			LOG_TRACE(_T("function save() end"));
+			LOG_TRACE(_T("function user_setting::save() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -861,7 +863,7 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void associate(size_type flags, size_type details) {
-			LOG_TRACE(_T("function associate() start"));
+			LOG_TRACE(_T("function user_setting::associate() start"));
 			LOG_TRACE(_T("flags = %d"), flags);
 			LOG_TRACE(_T("details = %d"), details);
 			
@@ -891,7 +893,7 @@ namespace cubeice {
 			SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
 #endif // SPLIT_ADMIN_OPERATIONS
 			
-			LOG_TRACE(_T("function associate() end"));
+			LOG_TRACE(_T("function user_setting::associate() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -983,7 +985,7 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void create_shortcut(const std::basic_string<TCHAR>& path, const std::basic_string<TCHAR>& args, const std::basic_string<TCHAR>& link, int icon) {
-			LOG_TRACE(_T("function create_shortcut() start"));
+			LOG_TRACE(_T("function user_setting::create_shortcut() start"));
 			LOG_TRACE(_T("path = %s"), path.c_str());
 			LOG_TRACE(_T("args = %s"), args.c_str());
 			LOG_TRACE(_T("link = %s"), link.c_str());
@@ -1047,7 +1049,7 @@ cleanup:
 			if (psl) psl->Release();
 			CoUninitialize();
 			
-			LOG_TRACE(_T("function create_shortcut() end"));
+			LOG_TRACE(_T("function user_setting::create_shortcut() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -1058,7 +1060,7 @@ cleanup:
 		 */
 		/* ----------------------------------------------------------------- */
 		void remove_shortcut(const std::basic_string<TCHAR>& link) {
-			LOG_TRACE(_T("function remove_shortcut() start"));
+			LOG_TRACE(_T("function user_setting::remove_shortcut() start"));
 			LOG_TRACE(_T("link = %s"), link.c_str());
 			
 			LPITEMIDLIST pidl;
@@ -1071,9 +1073,9 @@ cleanup:
 			
 			DeleteFile(buf);
 			
-			LOG_TRACE(_T("function remove_shortcut() end"));
+			LOG_TRACE(_T("function user_setting::remove_shortcut() end"));
 		}
-
+		
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  context_read

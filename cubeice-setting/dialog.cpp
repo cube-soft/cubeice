@@ -42,6 +42,7 @@
 #include <tchar.h>
 #include <windows.h>
 #include <commctrl.h>
+#include <psdotnet/logger.h>
 #include "dialog.h"
 #include "clx/split.h"
 #include "user-setting-converter.h"
@@ -125,6 +126,8 @@ namespace cubeice {
 		 */
 		/* ---------------------------------------------------------------- */
 		static void archive_initdialog(HWND hWnd, user_setting::archive_type& setting) {
+			LOG_TRACE(_T("function archive_initdialog() start"));
+			
 			// 「出力先フォルダ」グループ
 			if (setting.output_condition() == OUTPUT_SPECIFIC) {
 				CheckDlgButton(hWnd, IDC_SPECIFIC_RADIO, BM_SETCHECK);
@@ -159,6 +162,8 @@ namespace cubeice {
 			if ((setting.details() & DETAIL_OPEN) == 0) {
 				EnableWindow(GetDlgItem(hWnd, IDC_SKIP_DESKTOP_CHECKBOX), FALSE);
 			}
+			
+			LOG_TRACE(_T("function archive_initdialog() end"));
 		}
 
 		/* ---------------------------------------------------------------- */
@@ -169,6 +174,8 @@ namespace cubeice {
 		 */
 		/* ---------------------------------------------------------------- */
 		static void general_initdialog(HWND hWnd) {
+			LOG_TRACE(_T("function general_initdialog() start"));
+			
 			// 「関連付け」グループ
 			const flag_map& decomp = decompress_map();
 			for (flag_map::const_iterator pos = decomp.begin(); pos != decomp.end(); ++pos) {
@@ -219,35 +226,62 @@ namespace cubeice {
 				SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)pos->second.first.c_str());
 			}
 			SendMessage(combo, CB_SETCURSEL, Setting.shortcut_compress_index(), 0L);
+			
+			LOG_TRACE(_T("function general_initdialog() end"));
 		}
 		
 		/* ---------------------------------------------------------------- */
 		//  filter_initdialog
 		/* ---------------------------------------------------------------- */
 		static void filter_initdialog(HWND hWnd) {
+			LOG_TRACE(_T("function filter_initdialog() start"));
 			if (!Setting.filters().empty()) {
 				std::basic_string<TCHAR> s;
 				clx::join(Setting.filters(), s, _T("\r\n"));
 				HWND handle = GetDlgItem(hWnd, IDC_FILTER_TEXTBOX);
-				SetWindowText(handle, s.c_str());
+				if (handle == NULL) {
+					LOG_ERROR(_T("GetDlgItem(hWnd, IDC_FILTER_TEXTBOX)"));
+				}
+				else if (SetWindowText(handle, s.c_str()) == FALSE) {
+					LOG_ERROR(_T("SetWindowText(), ErrorCode = %d"), GetLastError());
+					s.erase();
+					clx::join(Setting.filters(), s, _T(","));
+					LOG_INFO(_T("Filtering = %s"), s.c_str());
+				}
 			}
+			else {
+				LOG_DEBUG(_T("Filtering is empty"));
+			}
+			LOG_TRACE(_T("function filter_initdialog() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
 		//  filter_gettext
 		/* ----------------------------------------------------------------- */
 		static void filter_gettext(HWND hWnd) {
-			const int maxlen = 64 * 1024;
-			int len = GetWindowTextLength(GetDlgItem(hWnd, IDC_FILTER_TEXTBOX));
-			if (len < maxlen) {  
-				cubeice::user_setting::char_type buffer[maxlen] = {};
-				std::size_t status = GetDlgItemText(hWnd, IDC_FILTER_TEXTBOX, (LPTSTR)buffer,  sizeof(buffer));
-				if (status > 0 || GetLastError() == 0) {
-					cubeice::user_setting::string_type s(buffer);
-					Setting.filters().clear();
-					clx::split_if(s, Setting.filters(), clx::is_any_of(_T("\r\n")));
-				}
+			LOG_TRACE(_T("function filter_gettext() start"));
+			HWND handle = GetDlgItem(hWnd, IDC_FILTER_TEXTBOX);
+			if (handle == NULL) {
+				LOG_WARN(_T("GetDlgItem(IDC_FILTER_TEXTBOX), Is Other tabs ?"));
+				return;
 			}
+			
+			int length = GetWindowTextLength(handle);
+			LOG_DEBUG(_T("TextLength = %d"), length);
+			std::vector<TCHAR> buffer(length + 1, 0);
+			UINT result = GetDlgItemText(hWnd, IDC_FILTER_TEXTBOX, reinterpret_cast<TCHAR*>(&buffer[0]), buffer.size());
+			if (result == 0 && GetLastError() != 0) {
+				LOG_ERROR(_T("GetDlgItemText(), ErrorCode = %d"), GetLastError());
+				return;
+			}
+			
+			std::vector<TCHAR>::iterator pos = buffer.begin();
+			std::advance(pos, result);
+			cubeice::user_setting::string_type s(buffer.begin(), pos);
+			Setting.filters().clear();
+			clx::split_if(s, Setting.filters(), clx::is_any_of(_T("\r\n")));
+			
+			LOG_TRACE(_T("function filter_gettext() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
