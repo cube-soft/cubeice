@@ -40,7 +40,7 @@ namespace PsdotNet {
 	}
 	typedef TypesafeEnum<Detail::LogLevel_Def> LogLevel;
 	
-	namespace Detail {
+	namespace Utility {
 		inline PsdotNet::LogLevel ToLogLevel(int level) {
 			switch (level) {
 				case PsdotNet::LogLevel::Trace: return PsdotNet::LogLevel::Trace;

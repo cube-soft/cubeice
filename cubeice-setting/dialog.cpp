@@ -615,7 +615,9 @@ namespace cubeice {
 				if (Setting.update()) CheckDlgButton(hWnd, IDC_UPDATE_CHECKBOX, BM_SETCHECK);
 				
 				// デバッグログ出力
-				if (Setting.loglevel() < 5) CheckDlgButton(hWnd, IDC_DEBUG_CHECKBOX, BM_SETCHECK);
+				if (Setting.loglevel() < PsdotNet::LogLevel::Error) {
+					CheckDlgButton(hWnd, IDC_DEBUG_CHECKBOX, BM_SETCHECK);
+				}
 				break;
 			}
 			case WM_COMMAND:
@@ -624,7 +626,7 @@ namespace cubeice {
 					Setting.update() = (IsDlgButtonChecked(hWnd, IDC_UPDATE_CHECKBOX) == BST_CHECKED);
 					return TRUE;
 				case IDC_DEBUG_CHECKBOX:
-					Setting.loglevel() = (IsDlgButtonChecked(hWnd, IDC_DEBUG_CHECKBOX) == BST_CHECKED) ? 1 : 5;
+					Setting.loglevel() = (IsDlgButtonChecked(hWnd, IDC_DEBUG_CHECKBOX) == BST_CHECKED) ? PsdotNet::LogLevel::Trace : PsdotNet::LogLevel::Error;
 					return TRUE;
 				}
 				break;

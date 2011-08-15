@@ -16,7 +16,7 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 #ifndef PSDOTNET_INVALIDATE_LOG_MACRO
 	std::basic_string<TCHAR> path(Setting.install_path() + _T("\\cubeice-setting.log"));
 	PsdotNet::FileAppender writer(path, PsdotNet::FileAppender::CloseOnWrite | PsdotNet::FileAppender::WriteAll);
-	PsdotNet::Logger::Configure(writer, PsdotNet::Detail::ToLogLevel(Setting.loglevel()));
+	PsdotNet::Logger::Configure(writer, PsdotNet::Utility::ToLogLevel(Setting.loglevel()));
 #endif
 	
 	LOG_INFO(_T("CubeICE version %s"), Setting.version().c_str());
