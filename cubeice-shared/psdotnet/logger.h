@@ -40,6 +40,21 @@ namespace PsdotNet {
 	}
 	typedef TypesafeEnum<Detail::LogLevel_Def> LogLevel;
 	
+	namespace Detail {
+		inline PsdotNet::LogLevel ToLogLevel(int level) {
+			switch (level) {
+				case PsdotNet::LogLevel::Trace: return PsdotNet::LogLevel::Trace;
+				case PsdotNet::LogLevel::Debug: return PsdotNet::LogLevel::Debug;
+				case PsdotNet::LogLevel::Info:  return PsdotNet::LogLevel::Info;
+				case PsdotNet::LogLevel::Warn:  return PsdotNet::LogLevel::Warn;
+				case PsdotNet::LogLevel::Error: return PsdotNet::LogLevel::Error;
+				case PsdotNet::LogLevel::Fatal: return PsdotNet::LogLevel::Fatal;
+				default: break;
+			}
+			return PsdotNet::LogLevel::Quiet;
+		}
+	}
+	
 	/* --------------------------------------------------------------------- */
 	//  IAppender
 	/* --------------------------------------------------------------------- */
@@ -199,42 +214,64 @@ namespace PsdotNet {
 	
 } // namespace PsdotNet
 
-#ifndef PSDOTNET_INVALIDATE_LOG_MACRO
 #ifndef LOG_TRACE
+#ifdef PSDOTNET_INVALIDATE_LOG_MACRO
+#define LOG_TRACE(x, ...)
+#else
 #define LOG_TRACE PsdotNet::LogInfo(PsdotNet::LogLevel::Trace, _T(__DATE__), _T(__TIME__), _T(__FILE__), __LINE__).SetToAppender()
+#endif // PSDOTNET_INVALIDATE_LOG_MACRO
 #else
 #error LOG_TRACE is already defined.
 #endif // LOG_TRACE
 
 #ifndef LOG_DEBUG
+#ifdef PSDOTNET_INVALIDATE_LOG_MACRO
+#define LOG_DEBUG(x, ...)
+#else
 #define LOG_DEBUG PsdotNet::LogInfo(PsdotNet::LogLevel::Debug, _T(__DATE__), _T(__TIME__), _T(__FILE__), __LINE__).SetToAppender()
+#endif // PSDOTNET_INVALIDATE_LOG_MACRO
 #else
 #error LOG_DEBUG is already defined.
 #endif // LOG_DEBUG
 
 #ifndef LOG_INFO
+#ifdef PSDOTNET_INVALIDATE_LOG_MACRO
+#define LOG_INFO(x, ...)
+#else
 #define LOG_INFO PsdotNet::LogInfo(PsdotNet::LogLevel::Info, _T(__DATE__), _T(__TIME__), _T(__FILE__), __LINE__).SetToAppender()
+#endif // PSDOTNET_INVALIDATE_LOG_MACRO
 #else
 #error LOG_INFO is already defined.
 #endif // LOG_INFO
 
 #ifndef LOG_WARN
+#ifdef PSDOTNET_INVALIDATE_LOG_MACRO
+#define LOG_WARN(x, ...)
+#else
 #define LOG_WARN PsdotNet::LogInfo(PsdotNet::LogLevel::Warn, _T(__DATE__), _T(__TIME__), _T(__FILE__), __LINE__).SetToAppender()
+#endif // PSDOTNET_INVALIDATE_LOG_MACRO
 #else
 #error LOG_WARN is already defined.
 #endif // LOG_WARN
 
 #ifndef LOG_ERROR
+#ifdef PSDOTNET_INVALIDATE_LOG_MACRO
+#define LOG_ERROR(x, ...)
+#else
 #define LOG_ERROR PsdotNet::LogInfo(PsdotNet::LogLevel::Error, _T(__DATE__), _T(__TIME__), _T(__FILE__), __LINE__).SetToAppender()
+#endif // PSDOTNET_INVALIDATE_LOG_MACRO
 #else
 #error LOG_ERROR is already defined.
 #endif // LOG_ERROR
 
 #ifndef LOG_FATAL
+#ifdef PSDOTNET_INVALIDATE_LOG_MACRO
+#define LOG_FATAL(x, ...)
+#else
 #define LOG_FATAL PsdotNet::LogInfo(PsdotNet::LogLevel::Fatal, _T(__DATE__), _T(__TIME__), _T(__FILE__), __LINE__).SetToAppender()
+#endif // PSDOTNET_INVALIDATE_LOG_MACRO
 #else
 #error LOG_FATAL is already defined.
 #endif // LOG_FATAL
-#endif // PSDOTNET_INVALIDATE_LOG_MACRO
 
 #endif // PSDOTNET_LOGGER_H
