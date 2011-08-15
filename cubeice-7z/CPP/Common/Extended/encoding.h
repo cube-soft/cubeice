@@ -374,20 +374,20 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  StaticWndProc
 		/* ----------------------------------------------------------------- */
-		static BOOL CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+		static INT_PTR CALLBACK StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			switch (uMsg) {
 			case WM_INITDIALOG:
 			{
 				EncodingDialog* instance = reinterpret_cast<EncodingDialog*>(lParam);
 				instance->Handle() = hWnd;
-				::SetWindowLong(hWnd, GWL_USERDATA, reinterpret_cast<LONG>(instance));
+				::SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG>(instance));
 				break;
 			}
 			default:
 				break;
 			}
 			
-			LONG ptr = ::GetWindowLong(hWnd, GWL_USERDATA);
+			LONG ptr = ::GetWindowLongPtr(hWnd, GWLP_USERDATA);
 			if (ptr != 0) {
 				EncodingDialog* instance = reinterpret_cast<EncodingDialog*>(ptr);
 				return instance->WndProc(uMsg, wParam, lParam) ? TRUE : FALSE;
