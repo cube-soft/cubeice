@@ -2,6 +2,8 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <string>
+#include <psdotnet/logger.h>
+#include <psdotnet/appender.h>
 #include "cubeice-setting.h"
 #include "dialog.h"
 #include "style.h"
@@ -10,7 +12,22 @@ cubeice::user_setting Setting(true);
 
 int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int showCmd) {
 	Setting.load();
-
+	
+#ifndef PSDOTNET_INVALIDATE_LOG_MACRO
+	std::basic_string<TCHAR> path(Setting.install_path() + _T("\\cubeice-setting.log"));
+	PsdotNet::FileAppender writer(path, PsdotNet::FileAppender::CloseOnWrite | PsdotNet::FileAppender::WriteAll);
+	PsdotNet::Logger::Configure(writer, PsdotNet::Detail::ToLogLevel(Setting.loglevel()));
+#endif
+	
+	LOG_INFO(_T("CubeICE version %s"), Setting.version().c_str());
+	
+	OSVERSIONINFO osinfo;
+	osinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+	GetVersionEx(&osinfo);
+	std::basic_string<TCHAR> edition = sizeof(INT_PTR) == 4 ? _T("x86") : _T("x64");
+	LOG_INFO(_T("Windows version %d.%d.%d (%s)"), osinfo.dwMajorVersion, osinfo.dwMinorVersion, osinfo.dwBuildNumber, edition.c_str());
+	LOG_INFO(_T("InstallPath = %s"), Setting.install_path().c_str());
+	
 	std::basic_string<TCHAR> args(pCmdLine);
 	if (args == _T("install")) {
 		/*

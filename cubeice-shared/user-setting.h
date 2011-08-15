@@ -28,18 +28,20 @@
 #include <tchar.h>
 #include <cstdlib>
 #include <set>
+#include <map>
 #include <string>
 #include <windows.h>
 #include <winreg.h>
 #include <shlobj.h>
 #include <shlwapi.h>
-#include <clx/base64.h>
 #include <clx/split.h>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/foreach.hpp>
 #include <boost/optional.hpp>
+#include <boost/lexical_cast.hpp>
 #include <babel/babel.h>
+#include <psdotnet/logger.h>
 #include "guid.h"
 
 /* ------------------------------------------------------------------------- */
@@ -157,9 +159,7 @@
 #define CUBEICE_REG_INSTALL             _T("InstallDirectory")
 #define CUBEICE_REG_VERSION             _T("Version")
 #define CUBEICE_REG_PREVARCHIVER        _T("PrevArchiver")
-#define CUBEICE_REG_DEBUG               _T("Debug")
-
-#define CUBEICE_LOG_NAME                _T("cubeicelog.log")
+#define CUBEICE_REG_LOGLEVEL            _T("LogLevel")
 
 /* ------------------------------------------------------------------------- */
 //  設定ファイルに関する情報
@@ -325,6 +325,8 @@ namespace cubeice {
 		//  load
 		/* ----------------------------------------------------------------- */
 		void load() {
+			LOG_TRACE(_T("function load() start"));
+			
 			HKEY hkResult;
 			LONG lResult = RegOpenKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, KEY_ALL_ACCESS, &hkResult);
 			if (!lResult) {
@@ -353,41 +355,45 @@ namespace cubeice {
 			for (detail::ext_map::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
 				if (this->is_associated(pos->first, pos->second.first)) flags_ |= pos->second.second;
 			}
+			
+			LOG_TRACE(_T("function load() end"));
 		}
 		
 		
 		/* ----------------------------------------------------------------- */
 		//  save
 		/* ----------------------------------------------------------------- */
-		void save(HANDLE hFile) {
+		void save() {
+			LOG_TRACE(_T("function save() start"));
+			
 			HKEY hkResult; // キーのハンドル
 			DWORD dwDisposition; // 処理結果を受け取る
 			LONG lResult; // 関数の戻り値を格納する
 			string_type		str;
 			lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
 			if (!lResult) {
+				LOG_INFO(_T("HKCU, %s"), root_.c_str());
 				//RegSetValueEx(hkResult, CUBEICE_REG_FLAGS, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
 				
 				DWORD value = static_cast<DWORD>(details_);
 				RegSetValueEx(hkResult, CUBEICE_REG_DETAILS, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
+				LOG_INFO(_T("%s = 0x%x"), CUBEICE_REG_DETAILS, details_);
 				
 				value = static_cast<DWORD>(max_filelist_);
 				RegSetValueEx(hkResult, CUBEICE_REG_MAX_FILELIST, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
+				LOG_INFO(_T("%s = %d"), CUBEICE_REG_MAX_FILELIST, max_filelist_);
 				
 				value = static_cast<DWORD>(output_condition_);
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_CONDITION, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, 0, REG_SZ, (CONST BYTE*)output_path_.c_str(), (output_path_.length() + 1) * sizeof(char_type));
-
-				str  = CUBEICE_REG_DETAILS			_T(": ") + clx::lexical_cast<string_type>(details_)				+ _T("\r\n");
-				str += CUBEICE_REG_MAX_FILELIST		_T(": ") + clx::lexical_cast<string_type>(max_filelist_)		+ _T("\r\n");
-				str += CUBEICE_REG_OUTPUT_CONDITION	_T(": ") + clx::lexical_cast<string_type>(output_condition_)	+ _T("\r\n");
-				str += CUBEICE_REG_OUTPUT_PATH		_T(": ") + output_path_											+ _T("\r\n");
-			} else {
-				str  = _T("Reg open error\r\n");
+				LOG_INFO(_T("%s = %d"), CUBEICE_REG_OUTPUT_CONDITION, output_condition_);
+				LOG_INFO(_T("%s = %s"), CUBEICE_REG_OUTPUT_PATH, output_path_.c_str());
 			}
-
-			DWORD	nWritten = 0;
-			WriteFile(hFile, str.c_str(), str.size() * sizeof(char_type), &nWritten, NULL);
+			else {
+				LOG_ERROR(_T("RegCreateKeyEx(HKCU, %s)"), root_.c_str());
+			}
+			
+			LOG_TRACE(_T("function save() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -475,7 +481,7 @@ namespace cubeice {
 			root_(CUBEICE_REG_ROOT), install_(_T("")), version_(_T("")),
 			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), debug_(false), associate_invoke_(false) {
+			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), loglevel_(5), associate_invoke_(false) {
 			comp_.output_condition() = 0x02;
 			comp_.details() = 0x281;
 			comp_.max_filelist() = 5;
@@ -488,7 +494,7 @@ namespace cubeice {
 			root_(root), install_(_T("")), version_(_T("")),
 			comp_(root + _T('\\') + CUBEICE_REG_COMPRESS),
 			decomp_(root + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), debug_(false), associate_invoke_(false) {
+			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), loglevel_(5), associate_invoke_(false) {
 			comp_.output_condition() = 0x02;
 			comp_.details() = 0x281;
 			comp_.max_filelist() = 5;
@@ -498,11 +504,20 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  load
+		/*
+		 *  load
+		 *
+		 *  NOTE: 通常，load() のログは出力されない（ロード後でないと，
+		 *  ログの出力先が確定しないため．load() のログを確認したい場合は，
+		 *  load() をコールする前に適当なパスで PsdotNet::Logger を初期化
+		 *  する必要がある．
+		 */
 		/* ----------------------------------------------------------------- */
 		void load() {
+			LOG_TRACE(_T("function load() start"));
+			
 			babel::init_babel();
-
+			
 			comp_.load();
 			decomp_.load();
 			
@@ -524,14 +539,17 @@ namespace cubeice {
 					version_ = version;
 				}
 			}
+			else {
+				LOG_ERROR(_T("RegOpenKeyEx(HKLM, %s)"), root_.c_str());
+			}
 			
 			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, KEY_ALL_ACCESS, &hkResult);
 			if (!lResult) {
 				DWORD dwType;
 				DWORD dwSize;
 				
-				TCHAR					xmlpath[2*MAX_PATH];
-
+				TCHAR xmlpath[2*MAX_PATH];
+				
 				ctx_flags_ = 0;
 				SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
 				PathAppend(xmlpath, CUBEICE_XML_FILE_PATH);
@@ -586,10 +604,11 @@ namespace cubeice {
 					clx::split_if(s, filters_, clx::is_any_of(_T("<>")));
 				}
 
-				DWORD debug = 0;
-				dwSize = sizeof(debug);
-				RegQueryValueEx(hkResult, CUBEICE_REG_DEBUG, NULL, NULL, (LPBYTE)&debug_, &dwSize);
-				if (debug > 0) debug_ = true;
+				dwSize = sizeof(loglevel_);
+				RegQueryValueEx(hkResult, CUBEICE_REG_LOGLEVEL, NULL, NULL, (LPBYTE)&loglevel_, &dwSize);
+			}
+			else {
+				LOG_ERROR(_T("RegOpenKeyEx(HKCU, %s)"), root_.c_str());
 			}
 			
 			update_ = false;
@@ -599,6 +618,10 @@ namespace cubeice {
 				DWORD dwType;
 				DWORD dwSize = sizeof(buffer);
 				if (RegQueryValueEx(hkResult, _T("cubeice-checker"), NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) update_ = true;
+				LOG_INFO(_T("UpdateCheck = %d"), (update_ ? 1 : 0));
+			}
+			else {
+				LOG_ERROR(_T("RegOpenKeyEX(HKCU, Software\\Microsoft\\Windows\\CurrentVersion\\Run)"));
 			}
 		}
 		
@@ -606,58 +629,10 @@ namespace cubeice {
 		//  save
 		/* ----------------------------------------------------------------- */
 		void save() {
-			babel::init_babel();
-
-			//TCHAR		log_path[4*1024];
-
-			//GetModuleFileName(NULL, log_path, sizeof(log_path)/sizeof(log_path[0]));
-			//PathRemoveFileSpec(log_path);
-			//PathAppend(log_path, CUBEICE_LOG_NAME);
+			LOG_TRACE(_T("function save() start"));
 			
-			std::basic_string<TCHAR> log_path = install_ + _T("\\cubeice.log");
-			
-			class LogFile {
-			public:
-				LogFile(const TCHAR *path, const TCHAR *version) : hFile(CreateFile(path, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL))
-				{
-					if (hFile) {
-						OSVERSIONINFO osinfo;
-						osinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-						::GetVersionEx(&osinfo);
-						TCHAR osinfo_str[128] = {};
-						_stprintf_s(osinfo_str, sizeof(osinfo_str) / sizeof(TCHAR), _T("%d.%d.%d"), osinfo.dwMajorVersion, osinfo.dwMinorVersion, osinfo.dwBuildNumber);
-						*this << _T("Version: ") << version << _T("\r\n");
-						*this << _T("Windows version: ") << osinfo_str << _T("(") << (sizeof(INT_PTR) == 4 ? _T("x86") : _T("x64")) << _T(")\r\n");
-						*this << _T("--------------------\r\n");
-					}
-					//if(hFile != INVALID_HANDLE_VALUE)
-					//	SetFilePointer(hFile, 0, NULL, FILE_END);
-				}
-				~LogFile() {
-					if(hFile != INVALID_HANDLE_VALUE)
-						CloseHandle(hFile);
-				}
-				operator HANDLE() {
-					return hFile;
-				}
-				LogFile &operator<<(const size_type &i) {
-					return (*this << clx::lexical_cast<string_type>(i));
-				}
-				LogFile &operator<<(const string_type &str) {
-					DWORD	nWritten = 0;
-					WriteFile(hFile, str.c_str(), str.size() * sizeof(char_type), &nWritten, NULL);
-					return *this;
-				}
-			private:
-				HANDLE hFile;
-			} log_file(log_path.c_str(), version_.c_str());
-
-			log_file << _T("compress") << _T("\r\n");
-			comp_.save(log_file);
-			log_file << _T("--------------------") << _T("\r\n");
-			log_file << _T("decompress") << _T("\r\n");
-			decomp_.save(log_file);
-			log_file << _T("--------------------") << _T("\r\n");
+			comp_.save();
+			decomp_.save();
 			
 			HKEY hkResult;
 			DWORD dwDisposition;
@@ -668,7 +643,7 @@ namespace cubeice {
 				TCHAR							xmlpath[2*MAX_PATH];
 				
 				ctx_root.put(CUBEICE_CONTEXT_CUSTOMIZE, ctx_customize_ ? "yes" : "no");
-				ctx_root.put(CUBEICE_CONTEXT_CHECK_VALUE, clx::lexical_cast<std::string>(ctx_flags_));
+				ctx_root.put(CUBEICE_CONTEXT_CHECK_VALUE, boost::lexical_cast<std::string>(ctx_flags_));
 				if (ctx_customize_) context_write(ctx_root, ctx_submenu_);
 				
 				SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
@@ -681,10 +656,11 @@ namespace cubeice {
 					boost::property_tree::xml_parser::write_xml(xmlpath, root);
 				}
 				catch (...) {
-					log_file << _T("error: boost::property_tree::xml_parser::write_xml") << _T("\r\n");
+					LOG_ERROR(_T("boost::property_tree::xml_parser::write_xml"));
 					RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&ctx_flags_, sizeof(ctx_flags_));
+					LOG_INFO(_T("%s = 0x%x"), CUBEICE_REG_CONTEXT, ctx_flags_);
 				}
-
+				
 				// ショートカットの処理．
 				DWORD value = static_cast<DWORD>(sc_index_);
 				RegSetValueEx(hkResult, CUBEICE_REG_SCCOMPRESS, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
@@ -705,25 +681,27 @@ namespace cubeice {
 				string_type dest;
 				clx::join(filters_, dest, _T("<>"));
 				RegSetValueEx(hkResult, CUBEICE_REG_FILTER, 0, REG_SZ, (CONST BYTE*)dest.c_str(), (dest.length() + 1) * sizeof(char_type));
+				LOG_INFO(_T("%s = %s"), CUBEICE_REG_FILTER, dest.c_str());
 				
-				value = debug_ ? 1 : 0;
-				RegSetValueEx(hkResult, CUBEICE_REG_DEBUG, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
-				
-				log_file << CUBEICE_REG_FILTER << _T(": ") << dest << _T("\r\n");
-
 				{
 					// ちゃんと書き込めたかチェック
 					char_type buffer[8 * 1024] = {};
 					DWORD dwSize = sizeof(buffer);
-					DWORD dwType;
 					LSTATUS result;
-					if ((result = RegQueryValueEx(hkResult, CUBEICE_REG_FILTER, NULL, &dwType, (LPBYTE)buffer, &dwSize)) == ERROR_SUCCESS)
-						log_file << CUBEICE_REG_FILTER << _T(" checker: ") << ((dest == buffer) ? _T("ok") : (_T("failed [") + string_type(buffer) + _T("]"))) << _T("\r\n");
-					else
-						log_file << CUBEICE_REG_FILTER << _T(" checker: ") << _T("Reg Query error [") << clx::lexical_cast<string_type>(result) << _T("]") << _T("\r\n");
+					if ((result = RegQueryValueEx(hkResult, CUBEICE_REG_FILTER, NULL, NULL, (LPBYTE)buffer, &dwSize)) == ERROR_SUCCESS) {
+						if (dest != buffer) {
+							LOG_WARN(_T("Filtering is unmatched (%s)"), buffer);
+						}
+					}
+					else {
+						LOG_ERROR(_T("RegQueryValueEx(%s), ErrorCode = %d"), CUBEICE_REG_FILTER, result);
+					}
 				}
-			} else {
-				log_file << _T("Reg open error") << _T("\r\n");
+				
+				RegSetValueEx(hkResult, CUBEICE_REG_LOGLEVEL, 0, REG_DWORD, (CONST BYTE*)&loglevel_, sizeof(loglevel_));
+			}
+			else {
+				LOG_ERROR(_T("RegCreateKeyEx(HKCU, %s)"), root_.c_str());
 			}
 			
 			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 0, KEY_ALL_ACCESS, &hkResult);
@@ -733,15 +711,20 @@ namespace cubeice {
 					value += install_;
 					value += _T("\\cubeice-checker.exe\"");
 					RegSetValueEx(hkResult, _T("cubeice-checker"), 0, REG_SZ, (CONST BYTE*)value.c_str(), (value.length() + 1) * sizeof(char_type));
+					LOG_DEBUG(_T("RegSetValueEx(cubeice-checker, %s)"), value.c_str());
 				}
-				else RegDeleteValue(hkResult, _T("cubeice-checker"));
+				else {
+					RegDeleteValue(hkResult, _T("cubeice-checker"));
+					LOG_DEBUG(_T("RegDeleteValue(cubeice-checker)"));
+				}
 			}
-
-			log_file << _T("decomp_flag: ") << decomp_.flags() << _T("\r\n");
-			log_file << _T("decomp_detail: ") << decomp_.details() << _T("\r\n");
-
-			if(associate_invoke_)
-				this->associate(decomp_.flags(), decomp_.details());
+			else {
+				LOG_ERROR(_T("RegOpenKeyEx(HKCU, Software\\Microsoft\\Windows\\CurrentVersion\\Run)"));
+			}
+			
+			if(associate_invoke_) this->associate(decomp_.flags(), decomp_.details());
+			
+			LOG_TRACE(_T("function save() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -842,11 +825,30 @@ namespace cubeice {
 		const bool& update() const { return update_; }
 		
 		/* ----------------------------------------------------------------- */
-		//  debug
+		/*
+		 *  loglevel
+		 *
+		 *  ログレベルの定義は以下の通り．
+		 *
+		 *   1: TRACE
+		 *   2: DEBUG
+		 *   3: INFO
+		 *   4: WARN
+		 *   5: ERROR
+		 *   6: FATAL
+		 *
+		 *  設定されたレベル「以上」のログが出力されるようになる．例えば，
+		 *  INFO (3) を設定した場合，INFO, WARN, ERROR, FATAL の 4 種類の
+		 *  ログが出力される．
+		 *
+		 *  NOTE: ログを出力する場合は，アプリケーションの最初に
+		 *  PsdotNet::Logger::Configure(path, loglevel);
+		 *  と言う形でロガーの初期設定を行う必要がある．
+		 */
 		/* ----------------------------------------------------------------- */
-		bool& debug() { return debug_; }
-		const bool& debug() const { return debug_; }
-
+		int& loglevel() { return loglevel_; }
+		const int& loglevel() const { return loglevel_; }
+		
 	private:
 		/* ----------------------------------------------------------------- */
 		/*
@@ -859,6 +861,10 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void associate(size_type flags, size_type details) {
+			LOG_TRACE(_T("function associate() start"));
+			LOG_TRACE(_T("flags = %d"), flags);
+			LOG_TRACE(_T("details = %d"), details);
+			
 #define SPLIT_ADMIN_OPERATIONS
 #ifdef  SPLIT_ADMIN_OPERATIONS
 			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
@@ -870,8 +876,10 @@ namespace cubeice {
 			SHELLEXECUTEINFO sei = {};
 			sei.cbSize = sizeof(SHELLEXECUTEINFO);
 			//sei.lpVerb = _T("runas");
-			sei.lpParameters = buffer;
 			sei.lpFile = exec.c_str();
+			sei.lpParameters = buffer;
+			LOG_DEBUG(_T("SHELLEXECUTEINFO::lpFile = %s"), exec.c_str());
+			LOG_DEBUG(_T("SHELLEXECUTEINFO::lpParameters = %s"), buffer);
 			ShellExecuteEx(&sei);
 			
 			CoUninitialize();
@@ -882,6 +890,8 @@ namespace cubeice {
 			}
 			SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
 #endif // SPLIT_ADMIN_OPERATIONS
+			
+			LOG_TRACE(_T("function associate() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -973,23 +983,41 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		void create_shortcut(const std::basic_string<TCHAR>& path, const std::basic_string<TCHAR>& args, const std::basic_string<TCHAR>& link, int icon) {
+			LOG_TRACE(_T("function create_shortcut() start"));
+			LOG_TRACE(_T("path = %s"), path.c_str());
+			LOG_TRACE(_T("args = %s"), args.c_str());
+			LOG_TRACE(_T("link = %s"), link.c_str());
+			LOG_TRACE(_T("icon = %d"), icon);
+			
 			HRESULT hres = CoInitialize(NULL);
 			if (FAILED(hres)) return;
 			
 			IShellLink *psl = NULL;
 			hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl);
-			if (FAILED(hres)) goto cleanup;
+			if (FAILED(hres)) {
+				LOG_ERROR(_T("CoCreateInstance"));
+				goto cleanup;
+			}
 			
 			IPersistFile *pPf = NULL;
 			hres = psl->QueryInterface(IID_IPersistFile, (LPVOID*)&pPf);
-			if (FAILED(hres)) goto cleanup;
+			if (FAILED(hres)) {
+				LOG_ERROR(_T("IShellLink::QueryInterface"));
+				goto cleanup;
+			}
 			
 			hres = psl->SetPath(path.c_str());
-			if (FAILED(hres)) goto cleanup;
+			if (FAILED(hres)) {
+				LOG_ERROR(_T("IShellLink::SetPath(%s)"), path.c_str());
+				goto cleanup;
+			}
 			
 			if (!args.empty()) {
 				hres = psl->SetArguments(args.c_str());
-				if (FAILED(hres)) goto cleanup;
+				if (FAILED(hres)) {
+					LOG_ERROR(_T("IShellLink::SetArguments(%s)"), args.c_str());
+					goto cleanup;
+				}
 			}
 			
 			//place the shortcut on the desktop
@@ -1008,23 +1036,31 @@ namespace cubeice {
 			MultiByteToWideChar(CP_ACP, 0, buf, -1, (LPWSTR)wsz, 2048);
 #endif	// UNICODE
 			hres = psl->SetIconLocation(path.c_str(), icon);
-			if (FAILED(hres)) goto cleanup;
+			if (FAILED(hres)) {
+				LOG_ERROR(_T("IShellLink::SetIconLocation(%s, %d)"), path.c_str(), icon);
+				goto cleanup;
+			}
 			
 			pPf->Save((LPCOLESTR)wsz, TRUE);
 cleanup:
 			if (pPf) pPf->Release();
 			if (psl) psl->Release();
 			CoUninitialize();
+			
+			LOG_TRACE(_T("function create_shortcut() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
 		/*
-		 *  create_shortcut
+		 *  remove_shortcut
 		 *
 		 *  ショートカットを削除する．
 		 */
 		/* ----------------------------------------------------------------- */
 		void remove_shortcut(const std::basic_string<TCHAR>& link) {
+			LOG_TRACE(_T("function remove_shortcut() start"));
+			LOG_TRACE(_T("link = %s"), link.c_str());
+			
 			LPITEMIDLIST pidl;
 			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl);
 			
@@ -1034,6 +1070,8 @@ cleanup:
 			lstrcat(buf, link.c_str());
 			
 			DeleteFile(buf);
+			
+			LOG_TRACE(_T("function remove_shortcut() end"));
 		}
 
 		/* ----------------------------------------------------------------- */
@@ -1050,22 +1088,20 @@ cleanup:
 
 			BOOST_FOREACH(const ptree::value_type &v, pt) {
 				if(v.first == "item") {
-					optional<int>			attr_id		= v.second.get_optional<int>("<xmlattr>.id");
-					optional<std::string>	attr_name	= v.second.get_optional<std::string>("<xmlattr>.name");
+					optional<int> attr_id = v.second.get_optional<int>("<xmlattr>.id");
+					optional<std::string> attr_name = v.second.get_optional<std::string>("<xmlattr>.name");
 					if(attr_id) {
 #ifdef	UNICODE
 						parent.push_back(SUBMENU( *attr_id, attr_name ? babel::utf8_to_unicode(*attr_name) : L"" ));
 #else
 						parent.push_back(SUBMENU( *attr_id, attr_name ? babel::utf8_to_sjis(*attr_name) : "" ));
 #endif
-						if(v.second.size())
-							context_read(v.second, parent.back().children);
+						if(v.second.size()) context_read(v.second, parent.back().children);
 					}
 				}
 			}
-			return;
 		}
-
+		
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  context_write
@@ -1077,11 +1113,11 @@ cleanup:
 		{
 			using namespace boost;
 			using namespace boost::property_tree;
-
+			
 			BOOST_FOREACH(const SUBMENU &s, submenu) {
-				ptree	&item = pt.add("item", "");
-				ptree	&attr = item.put("<xmlattr>", "");
-				attr.put("id", clx::lexical_cast<std::string>(s.id));
+				ptree& item = pt.add("item", "");
+				ptree& attr = item.put("<xmlattr>", "");
+				attr.put("id", boost::lexical_cast<std::string>(s.id));
 				if(s.str!=_T("")) {
 #ifdef	UNICODE
 					attr.put("name", babel::unicode_to_utf8(s.str));
@@ -1104,7 +1140,7 @@ cleanup:
 		size_type sc_index_;
 		container_type filters_;
 		bool update_;
-		bool debug_;
+		int loglevel_;
 		bool ctx_customize_;
 		std::vector<SUBMENU> ctx_submenu_;
 		bool associate_invoke_;
