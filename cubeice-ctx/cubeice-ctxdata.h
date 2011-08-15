@@ -40,9 +40,13 @@
 #include <windows.h>
 #include <vector>
 #include <string>
-#include "user-setting.h"
 #include "resource.h"
 
+// ƒƒOo—Í‚ğ–³Œø‚É‚·‚éD
+#ifndef PSDOTNET_INVALIDATE_LOG_MACRO
+#define PSDOTNET_INVALIDATE_LOG_MACRO
+#endif
+#include "user-setting.h"
 
 const int	ICON_SIZE = 16;
 const int	ICON_Y_SIZE = ICON_SIZE;
