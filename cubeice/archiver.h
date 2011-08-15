@@ -85,7 +85,7 @@ namespace cubeice {
 			static const string_type keyword = _T("Compressing");
 			static const string_type error = _T("ERROR:");
 			
-			LOG_TRACE(_T("start archiver::compress()"));
+			LOG_TRACE(_T("function archiver::compress() start"));
 			
 			bool pass = false;
 			bool mail = false;
@@ -322,7 +322,7 @@ namespace cubeice {
 			
 			if (!update && PathFileExists(tmp.c_str())) DeleteFile(tmp.c_str());
 
-			LOG_TRACE(_T("end archiver::compress()"));
+			LOG_TRACE(_T("function archiver::compress() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -340,12 +340,14 @@ namespace cubeice {
 			static const string_type password(_T("Enter password"));
 			static const string_type password_error(_T("Wrong password?"));
 			
-			LOG_TRACE(_T("start archiver::decompress()"));
+			LOG_TRACE(_T("function archiver::decompress() start"));
 			
 			// レジストリの設定を無視するコマンドかどうか．
 			string_type force;
 			if (first->compare(0, 3, _T("/x:")) == 0) force = first->substr(3);
-			if (!force.empty()) LOG_TRACE(_T("force-command = %s"), force.c_str());
+			if (!force.empty()) {
+				LOG_TRACE(_T("ForceCmd = %s"), force.c_str());
+			}
 			
 			// オプションを読み飛ばす．
 			while (first != last && first->at(0) == _T('/')) ++first;
@@ -355,14 +357,14 @@ namespace cubeice {
 			// TODO: それ以外の場合も想定したメッセージを表示する必要があるかどうか．
 			if (first == last) {
 				string_type err(_T("解凍したい圧縮ファイルを「CubeICE 解凍」ショートカットにドラッグ&ドロップして下さい。"));
-				LOG_ERROR(_T("message = %s"), err.c_str());
+				LOG_ERROR(_T("Message = %s"), err.c_str());
 				MessageBox(NULL, err.c_str(), _T("CubeICE 解凍"), MB_OK | MB_ICONINFORMATION);
 				return;
 			}
 			
 			for (; first != last; ++first) {
-				LOG_INFO(_T("start decompressing %s"), first->c_str());
 				string_type report; // エラーレポート
+				LOG_INFO(_T("SrcFile = %s"), first->c_str());
 				
 				string_type src = *first;
 				string_type original = src;
@@ -370,14 +372,13 @@ namespace cubeice {
 				string_type filetype;
 				if (!this->decompress_filetype(src, filetype)) {
 					string_type message = src + _T(" は未対応のファイル形式のため解凍できません。");
-					LOG_ERROR(_T("message = %s"), message.c_str());
+					LOG_ERROR(_T("Message = %s"), message.c_str());
 					MessageBox(NULL, message.c_str(), _T("CubeICE 解凍エラー"), MB_OK | MB_ICONERROR);
 					return;
 				}
 				
 				// 保存先パスの取得
 				string_type root = this->decompress_path(setting_.decompression(), src, force);
-				LOG_INFO(_T("root = %s"), root.c_str());
 				if (root.empty()) break;
 				
 				progress_.show();
@@ -392,7 +393,7 @@ namespace cubeice {
 				// プログレスバーの進行度の設定
 				string_type encoding;
 				string_type folder = this->decompress_filelist(src, encoding);
-				LOG_INFO(_T("num-of-files = %d"), this->size_);
+				LOG_INFO(_T("TotalSize = %I64d"), this->size_);
 				if (progress_.is_cancel()) break;
 				if (this->size_ == 0) progress_.marquee(true);
 				else if (progress_.is_marquee()) progress_.marquee(false);
@@ -401,15 +402,14 @@ namespace cubeice {
 				// TODO: 現在，拡張子が本来の種類と異なるファイルも対象にしているが，
 				// それらの偽装（？）拡張子のファイルが *.tar かどうかをどう判断するか．
 				if ((filetype == _T("gzip") || filetype == _T("bzip2")) && this->is_tar(src)) {
-					LOG_TRACE(_T("start *.tar.* operations"));
 					src = this->decompress_tar(src, tmp, report);
 					progress_.position(progress_.minimum());
 					progress_.subposition(progress_.minimum());
 					progress_.title(_T("0% - ") + title_message);
 					folder = this->decompress_filelist(src, encoding);
-					LOG_INFO(_T("num-of-files = %d (*.tar.*)"), this->size_);
+					LOG_INFO(_T("TotalSize = %I64d (After decompressing *.tar.*)"), this->size_);
 					if (src.empty() || !PathFileExists(src.c_str())) {
-						LOG_ERROR(_T("file-not-found = %s"), src.c_str());
+						LOG_ERROR(_T("Filename = %s"), src.c_str());
 						break;
 					}
 					if (this->size_ == 0) progress_.marquee(true);
@@ -418,20 +418,19 @@ namespace cubeice {
 				
 				// フォルダの作成
 				if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER)) {
-					LOG_TRACE(_T("start creating folder"));
 					if ((setting_.decompression().details() & DETAIL_SINGLE_FOLDER) == 0 || folder.empty()) {
 						root = this->decompress_dirname(setting_.decompression(), root, src);
-						LOG_INFO(_T("root = %s"), root.c_str());
+						LOG_INFO(_T("RootDir = %s"), root.c_str());
 					}
 				}
 				
 				// コマンドラインの生成
 				string_type cmdline = decompress_cmdline(src, tmp, encoding, false);
-				LOG_TRACE(_T("cmdline-7z = %s"), cmdline.c_str());
+				LOG_TRACE(_T("CmdLine-7z = %s"), cmdline.c_str());
 				
 				cube::popen proc;
 				if (!proc.open(cmdline.c_str(), _T("r"))) {
-					LOG_ERROR(_T("proccess open"));
+					LOG_ERROR(_T("cube::popen::open()"));
 					return;
 				}
 				
@@ -503,10 +502,10 @@ namespace cubeice {
 						continue;
 					}
 					assert(status == 1);
+					LOG_TRACE(_T("Message = %s"), line.c_str());
 					
 					string_type::size_type pos = line.find(keyword);
 					if (pos == string_type::npos || line.size() <= keyword.size()) {
-						LOG_TRACE(_T("unknown-message = %s"), line.c_str());
 						continue;
 					}
 					string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
@@ -514,7 +513,7 @@ namespace cubeice {
 					if(pos != string_type::npos) filename = filename.substr(pos + 1);
 					pos = filename.rfind(_T('>'));
 					if(pos != string_type::npos) filename = filename.substr(0, pos);
-					LOG_INFO(_T("filename = %s"), filename.c_str());
+					LOG_DEBUG(_T("Filename = %s"), filename.c_str());
 					
 					// パスワード処理
 					if (this->createinfo(tmp+_T("\\")+filename).size == 0 || line.find(password_error) != string_type::npos) {
@@ -529,15 +528,13 @@ namespace cubeice {
 								}
 								Sleep(10);
 							}
-							if( f )
-								break;
-							if( st < 0 || st == 2 )
-								break;
+							if(f) break;
+							if( st < 0 || st == 2 ) break;
 							assert(st == 1);
 						}
 						
 						if (line.find(password_error) != string_type::npos || nextline.find(password) != string_type::npos) {
-							LOG_TRACE(_T("start password operations"));
+							LOG_TRACE(_T("Password operations start"));
 							proc.close();
 							
 							string_type remove_file = root + _T("\\") + files_[std::max(static_cast<int>(index - 1), 0)].name;
@@ -556,13 +553,13 @@ namespace cubeice {
 									RemoveDirectory(deldir.c_str());
 								return;
 							}
-							LOG_INFO(_T("password = %s"), cubeice::password().c_str());
+							LOG_INFO(_T("Password = %s"), cubeice::password().c_str());
 							
 							cmdline = decompress_cmdline(src, tmp, encoding, true);
-							LOG_TRACE(_T("cmdline-7z = %s"), cmdline.c_str());
+							LOG_TRACE(_T("CmdLine-7z = %s"), cmdline.c_str());
 							
 							if (!proc.open(cmdline.c_str(), _T("r"))) {
-								LOG_ERROR(_T("proccess open"));
+								LOG_ERROR(_T("cube::popen::open()"));
 								break;
 							}
 							
@@ -618,13 +615,13 @@ namespace cubeice {
 					
 					// フィルタリング
 					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
-						LOG_INFO(_T("filtering = %s"), filename.c_str());
+						LOG_INFO(_T("Filtering = %s"), filename.c_str());
 					}
 					else if (!this->move(tmp + _T('\\') + filename, root + _T('\\') + filename, result == IDRENAME)) {
 						// TODO:
 						// - move を実行する前に MAX_PATH のチェック
 						// - false だった場合に GetLastError() に対応するメッセージを出力（改行を抜く）
-						LOG_ERROR(_T("move = %s"), filename.c_str());
+						LOG_ERROR(_T("Filename = %s, ErrCode = %d"), filename.c_str(), GetLastError());
 						report += error + _T(" Can not move file.");
 						report += _T(" (") + keyword + _T(' ') + filename + _T(")\r\n");
 					}
@@ -636,7 +633,7 @@ namespace cubeice {
 				}
 				
 				if (status < 0) {
-					LOG_ERROR(_T("status = %d"), status);
+					LOG_ERROR(_T("Status = %d"), status);
 					report += error + _T(" Broken pipe.");
 				}
 				
@@ -665,7 +662,7 @@ namespace cubeice {
 					DeleteFile(original.c_str());
 				}
 
-				LOG_TRACE(_T("end archiver::decompress()"));
+				LOG_TRACE(_T("function archiver::decompress() end"));
 			}
 		}
 		
@@ -832,6 +829,12 @@ namespace cubeice {
 		void compress_tar(const string_type& src, const string_type& dest, const string_type& filetype, bool pass) {
 			static const string_type keyword = _T("Compressing");
 			
+			LOG_TRACE(_T("function archiver::compress_tar() start"));
+			LOG_TRACE(_T("src = %s"), src.c_str());
+			LOG_TRACE(_T("dest = %s"), dest.c_str());
+			LOG_TRACE(_T("filetype = %s"), filetype.c_str());
+			LOG_TRACE(_T("pass = %d"), (pass ? 1 : 0));
+			
 			string_type tar;
 			string_type ext = dest.substr(dest.find_last_of(_T('.')));
 			tar = dest.substr(0, dest.find_last_of(_T('.')));
@@ -843,8 +846,13 @@ namespace cubeice {
 			if (pass) cmdline += _T(" -p") + cubeice::password();
 			cmdline += _T(" -scsWIN -y \"") + dest + _T("\"");
 			cmdline += _T(" \"") + tar + _T("\"");
+			LOG_DEBUG(_T("CmdLine-7z = %s"), cmdline.c_str());
+			
 			cube::popen proc;
-			if (!proc.open(cmdline.c_str(), _T("r"))) return;
+			if (!proc.open(cmdline.c_str(), _T("r"))) {
+				LOG_ERROR(_T("cube::popen::open()"));
+				return;
+			}
 			
 			progress_.title(_T("0% - ") + this->filename(dest) + _T(" を圧縮しています - CubeICE"));
 			progress_.position(progress_.minimum());
@@ -878,6 +886,8 @@ namespace cubeice {
 				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) continue;
 				string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
+				LOG_TRACE(_T("filename = %s"), filename.c_str());
+				
 				if (filename.size() > CUBEICE_MAXCOLUMN) {
 					string_type::size_type startpos = filename.size() - CUBEICE_MAXCOLUMN;
 					filename = _T("...") + filename.substr(startpos);
@@ -886,20 +896,30 @@ namespace cubeice {
 			}
 			
 			DeleteFile(tar.c_str());
+			LOG_TRACE(_T("function archiver::compress_tar() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
 		//  compress_filter
 		/* ----------------------------------------------------------------- */
 		void compress_filter(const string_type& path, const std::set<string_type>& filters) {
+			LOG_TRACE(_T("function archiver::compress_filter() start"));
+			LOG_TRACE(_T("path = %s"), path.c_str());
+			LOG_TRACE(_T("filters (size) = %d"), filters.size());
+			
 			std::basic_string<TCHAR> cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" d -r -bd -scsWIN -y \"") + path + _T("\"");
 			for (std::set<string_type>::const_iterator pos = filters.begin(); pos != filters.end(); ++pos) {
 				cmdline += _T(" \"") + *pos + _T("\"");
 			}
+			LOG_DEBUG(_T("CmdLine-7z = %s"), cmdline.c_str());
 			
 			cube::popen proc;
-			if (!proc.open(cmdline.c_str(), _T("r"))) return;
+			if (!proc.open(cmdline.c_str(), _T("r"))) {
+				LOG_ERROR(_T("cube::popen::open()"));
+				return;
+			}
+			
 			int status = 0;
 			string_type line;
 			while ((status = proc.gets(line)) >= 0) {
@@ -910,6 +930,8 @@ namespace cubeice {
 				}
 				assert(status == 1);
 			}
+			
+			LOG_TRACE(_T("function archiver::compress_filter() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -933,7 +955,6 @@ namespace cubeice {
 		//  decompress_cmdline
 		/* ----------------------------------------------------------------- */
 		string_type decompress_cmdline(const string_type& src, const string_type& tmp, const string_type& encoding, bool is_password) {
-			LOG_TRACE(_T("start archiver::decompress_cmdline()"));
 			string_type cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" x -bd -y");
 			if (!encoding.empty()) cmdline += _T(" -scs") + encoding;
@@ -948,7 +969,6 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		string_type decompress_path(const setting_type::archive_type& setting, const string_type& src, string_type force) {
 			// 保存先パスの決定
-			LOG_TRACE(_T("start archiver::decompress_path()"));
 			string_type root = this->rootdir(setting, src, force);
 			if (root.empty()) {
 				string_type init = src.substr(0, src.find_last_of(_T('\\')));
@@ -961,7 +981,6 @@ namespace cubeice {
 		//  decompress_dirname
 		/* ----------------------------------------------------------------- */
 		string_type decompress_dirname(const setting_type::archive_type& setting, const string_type& root, const string_type& src) {
-			LOG_TRACE(_T("start archiver::decompress_dirname()"));
 			string_type dest = root;
 			
 			// フォルダの作成
@@ -977,15 +996,23 @@ namespace cubeice {
 		//  decompress_filetype
 		/* ----------------------------------------------------------------- */
 		bool decompress_filetype(const string_type& path, string_type& filetype) {
-			LOG_TRACE(_T("start archiver::decompress_filetype()"));
+			LOG_TRACE(_T("function archiver::decompress_filetype() start"));
+			LOG_TRACE(_T("path = %s"), path.c_str());
+			LOG_TRACE(_T("filetype = %s"), filetype.c_str());
+			
 			if (PathIsDirectory(path.c_str())) return false;
 			
 			string_type cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" l ");
 			cmdline += _T("\"") + path + _T("\"");
+			LOG_DEBUG(_T("CmdLine-7z = %s"), cmdline.c_str());
 			
 			cube::popen proc;
-			if (!proc.open(cmdline.c_str(), _T("r"))) return false;
+			if (!proc.open(cmdline.c_str(), _T("r"))) {
+				LOG_ERROR(_T("cube::popen::open()"));
+				return false;
+			}
+			
 			string_type buffer;
 			int status = 0;
 			while ((status = proc.gets(buffer)) >= 0) {
@@ -1010,9 +1037,13 @@ namespace cubeice {
 			// 拡張子が *.7z の場合はスルーする．
 			string_type::size_type pos = path.find_last_of(_T('.'));
 			if (pos != string_type::npos && path.substr(pos) == _T(".7z")) {
+				LOG_DEBUG(_T("get filetype from ext (for *.7z)"));
 				filetype = _T("7z");
 				return true;
 			}
+			
+			LOG_DEBUG(_T("filetype = %s"), filetype.c_str());
+			LOG_TRACE(_T("function archiver::decompress_filetype() end"));
 			
 			return false;
 		}
@@ -1028,12 +1059,15 @@ namespace cubeice {
 		string_type decompress_filelist(const string_type& path, string_type& encoding) {
 			static string_type keyword_encoding = _T("Encoding:");
 			
-			LOG_TRACE(_T("start archiver::decompress_filelist()"));
+			LOG_TRACE(_T("function archiver::decompress_filelist() start"));
+			LOG_TRACE(_T("path = %s"), path.c_str());
+			LOG_TRACE(_T("encoding = %s"), encoding.c_str());
+			
 			string_type cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" l ");
 			if (!encoding.empty()) cmdline += _T("-scs") + encoding + _T(" ");
 			cmdline += _T("\"") + path + _T("\"");
-			LOG_TRACE(_T("cmdline-7z = %s"), cmdline.c_str());
+			LOG_DEBUG(_T("CmdLine-7z = %s"), cmdline.c_str());
 			
 			this->size_ = 0;
 			this->files_.clear();
@@ -1041,9 +1075,10 @@ namespace cubeice {
 			
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) {
-				LOG_ERROR(_T("proccess open"));
+				LOG_ERROR(_T("cube::popen::open()"));
 				return dest;
 			}
+			
 			string_type buffer, src;
 			int status = 0;
 			bool single = true;
@@ -1064,7 +1099,10 @@ namespace cubeice {
 				}
 				
 				if (status == 2) break; // pipe closed
-				else if (status == 1 && !buffer.empty()) src = buffer;
+				else if (status == 1 && !buffer.empty()) {
+					LOG_TRACE(_T("Message = %s"), buffer.c_str());
+					src = buffer;
+				}
 				
 				string_type::size_type pos = buffer.find(keyword_encoding);
 				if (pos != string_type::npos && buffer.size() > keyword_encoding.size()) {
@@ -1085,7 +1123,6 @@ namespace cubeice {
 					elem.name = v.at(5);
 
 					elem.size = v.at(3) != _T("-") ? _ttoi64(v.at(3).c_str()) : 0;
-					if (elem.size == 0) LOG_ERROR(_T("filesize = 0, message = %s"), buffer.c_str());
 					if (v.at(1) != _T("-")) elem.time.from_string(v.at(1), string_type(_T("%Y-%m-d %H:%M:%S")));
 					
 					elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
@@ -1093,7 +1130,7 @@ namespace cubeice {
 					progress_.denomcount();
 					this->size_ += elem.size;
 					
-					LOG_TRACE(_T("filename = %s"), elem.name.c_str());
+					LOG_TRACE(_T("fileinfo = %s, (%I64d Byte)"), elem.name.c_str(), elem.size);
 
 					// 単一フォルダかどうかのチェック
 					if (single) {
@@ -1106,11 +1143,14 @@ namespace cubeice {
 						else single = false;
 					}
 				}
-				else LOG_TRACE(_T("unknown-message = %s"), buffer.c_str());
 				buffer.clear();
 			}
 			if (!single) dest.erase();
 			progress_.denomcount(0);
+			
+			LOG_DEBUG(_T("RootDir = %s"), dest.c_str());
+			LOG_DEBUG(_T("Encoding = %s"), encoding.c_str());
+			LOG_TRACE(_T("function archiver::decompress_filelist() end"));
 			
 			return dest;
 		}
@@ -1122,15 +1162,21 @@ namespace cubeice {
 			static const string_type keyword = _T("Extracting");
 			static const string_type error = _T("ERROR:");
 			
-			LOG_TRACE(_T("start archiver::decompress_tar()"));
+			LOG_TRACE(_T("function archiver::decompress_tar() start"));
+			LOG_TRACE(_T("src = %s"), src.c_str());
+			LOG_TRACE(_T("root = %s"), root.c_str());
+			
 			string_type cmdline = CUBEICE_ENGINE;
 			cmdline += _T(" x -bd -scsWIN -y");
 			cmdline += _T(" -o\"") + root + _T("\"");
 			cmdline += _T(" \"") + src + _T("\"");
-			LOG_TRACE(_T("cmdline-7z = %s"), cmdline.c_str());
+			LOG_TRACE(_T("CmdLine-7z = %s"), cmdline.c_str());
 			
 			cube::popen proc;
-			if (!proc.open(cmdline.c_str(), _T("r"))) return src;
+			if (!proc.open(cmdline.c_str(), _T("r"))) {
+				LOG_ERROR(_T("cube::popen::open()"));
+				return src;
+			}
 			
 			string_type message = progress_.text();
 			if (!this->files_.empty()) {
@@ -1204,7 +1250,10 @@ namespace cubeice {
 			}
 			
 			progress_.text(message);
-			LOG_TRACE(_T("filename = %s\\%s"), root.c_str(), filename.c_str());
+			
+			LOG_DEBUG(_T("filename = %s\\%s"), root.c_str(), filename.c_str());
+			LOG_TRACE(_T("function archiver::decompress_tar() end"));
+			
 			return root + _T('\\') + filename;
 		}
 		
@@ -1361,6 +1410,11 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		bool move(const string_type& src, const string_type& dest, bool rename) {
+			LOG_TRACE(_T("function archiver::move() start"));
+			LOG_TRACE(_T("src = %s"), src.c_str());
+			LOG_TRACE(_T("dest = %s"), dest.c_str());
+			LOG_TRACE(_T("rename = %d"), (rename ? 1 : 0));
+			
 			bool status = false;
 			if (PathIsDirectory(src.c_str())) {
 				status = createdir(dest);
@@ -1368,6 +1422,8 @@ namespace cubeice {
 				// dest からディレクトリ部分を抽出 Path.GetDirectoryName(dest);
 				// TODO: この部分がおかしい場合があるので調査．
 				string_type branch(dest.substr(0, dest.find_last_of(_T('\\'))));
+				LOG_TRACE(_T("DirectoryName = %s"), branch.c_str());
+				
 				status = createdir(branch);
 				// TODO: リネーム処理を追加
 				if (rename && PathFileExists(dest.c_str())) {
@@ -1379,14 +1435,17 @@ namespace cubeice {
 						swprintf_s(renamed, sizeof(renamed), _T("%s%s%s(%d)%s"), drivename, dirname, basename, i, extname);
 						if (!PathFileExists(renamed)) break;
 					}
-					//status &= (MoveFileEx(src.c_str(), renamed, (MOVEFILE_COPY_ALLOWED)) != FALSE);
 					status &= SHFileMove(src, renamed);
+					LOG_TRACE(_T("SHFileMove(%s, %s), status = %d"), src.c_str(), renamed, GetLastError());
 					
 				} else {
-					//status &= (MoveFileEx(src.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED | MOVEFILE_REPLACE_EXISTING)) != FALSE);
 					status &= SHFileMove(src, dest);
+					LOG_TRACE(_T("SHFileMove(%s, %s), status = %d"), src.c_str(), dest.c_str(), GetLastError());
 				}
 			}
+			
+			LOG_TRACE(_T("function archiver::move() end"));
+			
 			return status;
 		}
 		
