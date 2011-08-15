@@ -555,7 +555,7 @@ namespace cubeice {
 			std::basic_string<TCHAR> str(buffer.begin(), buffer.end());
 			for (std::basic_string<TCHAR>::const_iterator it = invalids.begin(); it != invalids.end(); ++it) {
 				std::basic_string<TCHAR>::size_type pos = str.find(*it);
-				if (pos != std::basic_string<TCHAR>::npos) {
+				while (pos != std::basic_string<TCHAR>::npos) {
 					EDITBALLOONTIP balloon = {};
 					balloon.cbStruct = sizeof(EDITBALLOONTIP);
 					balloon.pszTitle = _T("ファイル名には次の文字は使えません。");
@@ -568,6 +568,7 @@ namespace cubeice {
 					SendMessage(handle, EM_GETSEL, (WPARAM)&first, (WPARAM)&last);
 					SetWindowText(handle, str.c_str());
 					SendMessage(handle, EM_SETSEL, (first - 1 > 0) ? (first - 1) : 0, (last - 1) > 0 ? (last - 1) : 0);
+					pos = str.find(*it, pos);
 				}
 			}
 			return FALSE;
