@@ -188,7 +188,6 @@ namespace cubeice {
 			if( update ) cmdline += _T(" u");
 			else cmdline += _T(" a");
 			if (filetype == _T("exe")) cmdline += _T(" -sfx7z.sfx");
-			//else if (ext == _T(".tgz") || ext == _T(".tbz") || ext.find(_T(".tar")) != string_type::npos) cmdline += _T(" -ttar");
 			else if (optar) cmdline += _T(" -ttar");
 			else cmdline += _T(" -t") + filetype;
 			if (pass) cmdline += _T(" -p\"") + cubeice::password() + _T("\"");
@@ -250,12 +249,14 @@ namespace cubeice {
 				
 				pos = line.find(keyword);
 				if (pos == string_type::npos || line.size() <= keyword.size()) {
-					if (!line.empty()) LOG_TRACE(_T("unknown-message = %s"), line.c_str());
+					if (!line.empty()) {
+						LOG_TRACE(_T("UnknownMessage = %s"), line.c_str());
+					}
 					continue;
 				}
 				
 				string_type filename = clx::strip_copy(line.substr(pos + keyword.size()));
-				LOG_INFO(_T("filename = %s"), filename.c_str());
+				LOG_INFO(_T("Filename = %s"), filename.c_str());
 				
 				if (filename.size() > CUBEICE_MAXCOLUMN) {
 					string_type::size_type startpos = filename.size() - CUBEICE_MAXCOLUMN;
@@ -268,7 +269,7 @@ namespace cubeice {
 			}
 			
 			if (status < 0) {
-				LOG_ERROR(_T("status = %d"), status);
+				LOG_ERROR(_T("Status = %d"), status);
 				report += error + _T(" Broken pipe.\r\n");
 			}
 			
@@ -277,10 +278,7 @@ namespace cubeice {
 			}
 			
 			if (status == 2) {
-				//if ((filetype == _T("gzip") || filetype == _T("bzip2")) &&
-				//	(ext.find(_T(".tar")) != string_type::npos || ext == _T(".tgz") || ext == _T(".tbz"))) {
 				if (optar) {
-					LOG_TRACE(_T("start *.tar.* operations"));
 					string_type prev = tmp;
 					tmp = tmpfile(_T("cubeice"));
 					tmp = tmp.substr(0, tmp.find_last_of(_T('\\'))+1);
