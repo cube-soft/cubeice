@@ -119,10 +119,11 @@ namespace cubeice {
 			string_type dest;
 			std::vector<string_type> options;
 			bool update = false;
+			bool optar = false;
 			if (filetype == _T("detail")) {
 				LOG_TRACE(_T("set detail-mode"));
 				cubeice::runtime_setting runtime;
-				ext = this->compress_extension(runtime.type(), first, last);
+				ext = this->compress_extension(runtime.type(), first, last, optar);
 				dest = first->substr(0, first->find_last_of(_T('.'))) + ext;
 				runtime.path() = dest;
 				if (cubeice::dialog::runtime_setting(progress_.handle(), runtime) == IDCANCEL) return;
@@ -134,7 +135,7 @@ namespace cubeice {
 				
 				filetype = runtime.type();
 				update = runtime.update();
-				ext = this->compress_extension(filetype, first, last);
+				ext = this->compress_extension(filetype, first, last, optar);
 				if (filetype == _T("tgz")) filetype = _T("gzip");
 				else if (filetype == _T("tbz")) filetype = _T("bzip2");
 				LOG_INFO(_T("filetype = %s, ext = %s"), filetype.c_str(), ext.c_str());
@@ -152,7 +153,7 @@ namespace cubeice {
 			}
 			else {
 				// ï€ë∂êÊÉpÉXÇÃåàíË
-				ext = this->compress_extension(filetype, first, last);
+				ext = this->compress_extension(filetype, first, last, optar);
 				LOG_INFO(_T("filetype = %s, ext = %s"), filetype.c_str(), ext.c_str());
 				
 				dest = this->compress_path(setting_.compression(), *first, ext);
@@ -187,7 +188,8 @@ namespace cubeice {
 			if( update ) cmdline += _T(" u");
 			else cmdline += _T(" a");
 			if (filetype == _T("exe")) cmdline += _T(" -sfx7z.sfx");
-			else if (ext == _T(".tgz") || ext == _T(".tbz") || ext.find(_T(".tar")) != string_type::npos) cmdline += _T(" -ttar");
+			//else if (ext == _T(".tgz") || ext == _T(".tbz") || ext.find(_T(".tar")) != string_type::npos) cmdline += _T(" -ttar");
+			else if (optar) cmdline += _T(" -ttar");
 			else cmdline += _T(" -t") + filetype;
 			if (pass) cmdline += _T(" -p\"") + cubeice::password() + _T("\"");
 			cmdline += _T(" -scsWIN -y \"") + tmp + _T("\"");
@@ -275,10 +277,10 @@ namespace cubeice {
 			}
 			
 			if (status == 2) {
-				// *.tar ÇÃèàóù
-				LOG_TRACE(_T("start *.tar.* operations"));
-				if ((filetype == _T("gzip") || filetype == _T("bzip2")) &&
-				    (ext.find(_T(".tar")) != string_type::npos || ext == _T(".tgz") || ext == _T(".tbz"))) {
+				//if ((filetype == _T("gzip") || filetype == _T("bzip2")) &&
+				//	(ext.find(_T(".tar")) != string_type::npos || ext == _T(".tgz") || ext == _T(".tbz"))) {
+				if (optar) {
+					LOG_TRACE(_T("start *.tar.* operations"));
 					string_type prev = tmp;
 					tmp = tmpfile(_T("cubeice"));
 					tmp = tmp.substr(0, tmp.find_last_of(_T('\\'))+1);
@@ -692,18 +694,26 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		template <class InputIterator>
-		string_type compress_extension(const string_type& filetype, InputIterator first, InputIterator last) {
+		string_type compress_extension(const string_type& filetype, InputIterator first, InputIterator last, bool& optar) {
 			string_type ext = _T(".");
 			if (filetype == _T("gzip")) ext += _T("gz");
 			else if (filetype == _T("bzip2")) ext += _T("bz2");
 			else ext += filetype;
-
+			
+			optar = false;
 			if (filetype == _T("gzip") || filetype == _T("bzip2")) {
 				int n = 0;
-				for (InputIterator pos = first; pos != last; ++pos) ++n;
+				bool is_tar = false;
+				for (InputIterator pos = first; pos != last; ++pos) {
+					++n;
+					if (first->substr(first->find_last_of('.')) == _T(".tar")) is_tar = true;
+				}
+				
 				if (n > 1 || PathIsDirectory(first->c_str())) {
 					ext = _T(".tar") + ext;
+					optar = true;
 				}
+				else if (is_tar) ext = _T(".tar") + ext;
 				else if (filetype == _T("bzip2")) ext = first->substr(first->find_last_of('.')) + ext;
 			}
 			
