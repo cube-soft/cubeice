@@ -832,12 +832,12 @@ namespace cubeice {
 		 *
 		 *  ログレベルの定義は以下の通り．
 		 *
-		 *   1: TRACE
-		 *   2: DEBUG
-		 *   3: INFO
-		 *   4: WARN
-		 *   5: ERROR
-		 *   6: FATAL
+		 *   10: TRACE
+		 *   20: DEBUG
+		 *   30: INFO
+		 *   40: WARN
+		 *   50: ERROR
+		 *   60: FATAL
 		 *
 		 *  設定されたレベル「以上」のログが出力されるようになる．例えば，
 		 *  INFO (3) を設定した場合，INFO, WARN, ERROR, FATAL の 4 種類の
