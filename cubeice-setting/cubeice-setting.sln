@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual C++ Express 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cubeice-setting", "cubeice-setting.vcproj", "{A55CC976-009A-4022-BCDE-F59CC15EEC2B}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C++ Express 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cubeice-setting", "cubeice-setting.vcxproj", "{A55CC976-009A-4022-BCDE-F59CC15EEC2B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
