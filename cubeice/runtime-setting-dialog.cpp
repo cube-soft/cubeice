@@ -351,7 +351,6 @@ namespace cubeice {
 						EnableWindow(GetDlgItem(hWnd, IDC_COMPLEVEL_COMBOBOX), TRUE);
 					
 					// o—ÍƒpƒX‚Ìİ’è
-					//std::basic_string<TCHAR> path = setting.path().substr(0, setting.path().find_last_of(_T('.')));
 					std::basic_string<TCHAR> path = detail::gettext(hWnd, IDC_OUTPUT_TEXTBOX);
 					path = path.substr(0, path.find_last_of(_T('.')));
 					if (path.find(_T(".tar")) != std::basic_string<TCHAR>::npos) path.erase(path.find_last_of(_T('.')));
