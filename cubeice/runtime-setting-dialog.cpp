@@ -35,6 +35,30 @@ namespace cubeice {
 					if (filetype == _T("gzip") || filetype == _T("bzip2")) ext = _T(".tar") + ext;
 					return ext;
 				}
+
+				/* --------------------------------------------------------- */
+				//  gettext
+				/* --------------------------------------------------------- */
+				static std::basic_string<TCHAR> gettext(HWND hWnd, int id) {
+					HWND handle = GetDlgItem(hWnd, id);
+					if (handle == NULL) std::basic_string<TCHAR>();
+
+					int length = GetWindowTextLength(handle);
+					LOG_DEBUG(_T("TextLength = %d"), length);
+					std::vector<TCHAR> buffer(length + 1, 0);
+					UINT result = GetDlgItemText(hWnd, id, reinterpret_cast<TCHAR*>(&buffer[0]), buffer.size());
+					if (result == 0 && GetLastError() != 0) {
+						LOG_ERROR(_T("GetDlgItemText(), ErrorCode = %d"), GetLastError());
+						return std::basic_string<TCHAR>();
+					}
+
+					std::vector<TCHAR>::iterator pos = buffer.begin();
+					std::advance(pos, result);
+					std::basic_string<TCHAR> dest(buffer.begin(), pos);
+					LOG_DEBUG(_T("Text = %s"), dest.c_str());
+
+					return dest;
+				}
 			}
 			/* ----------------------------------------------------------------- */
 			/*
@@ -159,9 +183,7 @@ namespace cubeice {
 				setting.update() = SendDlgItemMessage(hWnd, IDC_OUTPUT_COMBOBOX, CB_GETCURSEL, 0, 0) != 0;
 
 				// 出力先
-				TCHAR path[2048] = {};
-				GetDlgItemText(hWnd, IDC_OUTPUT_TEXTBOX, path, 2048);
-				setting.path() = path;
+				setting.path() = detail::gettext(hWnd, IDC_OUTPUT_TEXTBOX);
 				
 				// 圧縮形式
 				const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
@@ -329,7 +351,9 @@ namespace cubeice {
 						EnableWindow(GetDlgItem(hWnd, IDC_COMPLEVEL_COMBOBOX), TRUE);
 					
 					// 出力パスの設定
-					std::basic_string<TCHAR> path = setting.path().substr(0, setting.path().find_last_of(_T('.')));
+					//std::basic_string<TCHAR> path = setting.path().substr(0, setting.path().find_last_of(_T('.')));
+					std::basic_string<TCHAR> path = detail::gettext(hWnd, IDC_OUTPUT_TEXTBOX);
+					path = path.substr(0, path.find_last_of(_T('.')));
 					if (path.find(_T(".tar")) != std::basic_string<TCHAR>::npos) path.erase(path.find_last_of(_T('.')));
 					setting.path() = path + detail::extension(types.at(index));
 					SetWindowText(GetDlgItem(hWnd, IDC_OUTPUT_TEXTBOX), setting.path().c_str());
