@@ -256,32 +256,36 @@ namespace cubeice {
 		}
 		
 		/* ----------------------------------------------------------------- */
-		//  filter_gettext
+		//  gettext
 		/* ----------------------------------------------------------------- */
-		static void filter_gettext(HWND hWnd) {
-			LOG_TRACE(_T("function filter_gettext() start"));
-			HWND handle = GetDlgItem(hWnd, IDC_FILTER_TEXTBOX);
-			if (handle == NULL) {
-				LOG_WARN(_T("GetDlgItem(IDC_FILTER_TEXTBOX), Is Other tabs ?"));
-				return;
-			}
-			
+		static std::basic_string<TCHAR> gettext(HWND hWnd, int id) {
+			HWND handle = GetDlgItem(hWnd, id);
+			if (handle == NULL) std::basic_string<TCHAR>();
+
 			int length = GetWindowTextLength(handle);
 			LOG_DEBUG(_T("TextLength = %d"), length);
 			std::vector<TCHAR> buffer(length + 1, 0);
-			UINT result = GetDlgItemText(hWnd, IDC_FILTER_TEXTBOX, reinterpret_cast<TCHAR*>(&buffer[0]), buffer.size());
+			UINT result = GetDlgItemText(hWnd, id, reinterpret_cast<TCHAR*>(&buffer[0]), buffer.size());
 			if (result == 0 && GetLastError() != 0) {
 				LOG_ERROR(_T("GetDlgItemText(), ErrorCode = %d"), GetLastError());
-				return;
+				return std::basic_string<TCHAR>();
 			}
-			
+
 			std::vector<TCHAR>::iterator pos = buffer.begin();
 			std::advance(pos, result);
-			cubeice::user_setting::string_type s(buffer.begin(), pos);
+			std::basic_string<TCHAR> dest(buffer.begin(), pos);
+			LOG_DEBUG(_T("Text = %s"), dest.c_str());
+
+			return dest;
+		}
+
+		/* ----------------------------------------------------------------- */
+		//  filter_gettext
+		/* ----------------------------------------------------------------- */
+		static void filter_gettext(HWND hWnd) {
+			cubeice::user_setting::string_type s = gettext(hWnd, IDC_FILTER_TEXTBOX);
 			Setting.filters().clear();
 			clx::split_if(s, Setting.filters(), clx::is_any_of(_T("\r\n")));
-			
-			LOG_TRACE(_T("function filter_gettext() end"));
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -479,8 +483,17 @@ namespace cubeice {
 				if (!dest.empty()) {
 					setting.output_path() = dest;
 					SetWindowText(GetDlgItem(hWnd, IDC_DEST_TEXTBOX), dest.c_str());
+					return TRUE;
 				}
+				else return FALSE;
 			}
+
+			if (LOWORD(wp) == IDC_DEST_TEXTBOX && HIWORD(wp) == EN_UPDATE) {
+				LOG_TRACE(_T("UpdateOutputPath"));
+				setting.output_path() = gettext(hWnd, IDC_DEST_TEXTBOX);
+				return TRUE;
+			}
+			
 			return common_dialogproc(hWnd, msg, wp, lp);
 		}
 		
