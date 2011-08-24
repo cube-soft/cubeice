@@ -20,7 +20,7 @@
  *  Last-modified: Tue 28 Dec 2010 20:42:00 JST
  */
 /* ------------------------------------------------------------------------- */
-#include "dialog.h"
+#include "cubeice.h"
 #include <string>
 #include <windows.h>
 #include <tchar.h>

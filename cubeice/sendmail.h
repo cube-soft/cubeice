@@ -36,7 +36,7 @@ namespace cube {
 				/* --------------------------------------------------------- */
 				//  Exec
 				/* --------------------------------------------------------- */
-				bool Exec( MapiMessage &mms ) {
+				inline bool Exec( MapiMessage &mms ) {
 					HINSTANCE	hDll;
 					bool		res = false;
 
@@ -61,7 +61,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			//  SendMail
 			/* ------------------------------------------------------------- */
-			bool SendMail( const char *subject, const char *body ) {
+			inline bool SendMail( const char *subject, const char *body ) {
 				MapiMessage		mms;
 				ZeroMemory( &mms, sizeof( mms ) );
 				mms.lpszSubject		= const_cast<char*>(subject);
@@ -74,7 +74,7 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			//  SendMail
 			/* ------------------------------------------------------------- */
-			bool SendMail( const char *subject, const char *body, const char *attach, const char *name = NULL ) {
+			inline bool SendMail( const char *subject, const char *body, const char *attach, const char *name = NULL ) {
 				MapiFileDesc	mfd;
 				
 				ZeroMemory( &mfd, sizeof( mfd ) );
