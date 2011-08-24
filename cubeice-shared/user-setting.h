@@ -25,6 +25,13 @@
 #define CLX_USE_WCHAR
 #endif
 
+// 64bit 版コンパイル時のみ発生する警告を抑制する．
+// TODO: 修正できたら外す．
+#ifdef WIN64
+#pragma warning(disable:4244)
+#pragma warning(disable:4267)
+#endif
+
 #include <tchar.h>
 #include <cstdlib>
 #include <set>

@@ -379,7 +379,9 @@ namespace cubeice {
 				
 				// •Û‘¶æƒpƒX‚ÌŽæ“¾
 				string_type root = this->decompress_path(setting_.decompression(), src, force);
+				clx::rstrip_if(root, clx::is_any_of(_T("\\")));
 				if (root.empty()) break;
+				LOG_INFO(_T("RootDir = %s"), root.c_str());
 				
 				progress_.show();
 				progress_.title(_T("0% - ") + title_message);
@@ -420,6 +422,7 @@ namespace cubeice {
 				if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER)) {
 					if ((setting_.decompression().details() & DETAIL_SINGLE_FOLDER) == 0 || folder.empty()) {
 						root = this->decompress_dirname(setting_.decompression(), root, src);
+						clx::rstrip_if(root, clx::is_any_of(_T("\\")));
 						LOG_INFO(_T("RootDir = %s"), root.c_str());
 					}
 				}
@@ -651,6 +654,7 @@ namespace cubeice {
 					
 					bool skip_flag = (setting_.decompression().details() & DETAIL_SKIP_DESKTOP) != 0;
 					if ((!skip_flag || !this->is_desktop(root)) && PathFileExists(root.c_str())) {
+						LOG_INFO(_T("OpenDir = %s"), root.c_str());
 						ShellExecute(NULL, _T("open"), _T("explorer.exe"), ( _T("\"") + root + _T("\"") ).c_str(), NULL, SW_SHOWNORMAL);
 					}
 				}

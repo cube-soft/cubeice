@@ -21,6 +21,7 @@
 #ifndef CUBEICE_PROGRESSBAR_H
 #define CUBEICE_PROGRESSBAR_H
 
+#include "cubeice.h"
 #include <shobjidl.h>
 #include <clx/time.h>
 

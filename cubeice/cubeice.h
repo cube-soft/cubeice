@@ -39,9 +39,10 @@
 #include <clx/config.h>
 #include <clx/tokenizer.h>
 
+#include "user-setting.h"
 #include "dialog.h"
 #include "archiver.h"
-#include "user-setting.h"
+#include "sendmail.h"
 
 extern cubeice::user_setting UserSetting;
 
