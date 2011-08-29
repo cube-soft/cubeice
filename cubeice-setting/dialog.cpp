@@ -46,46 +46,9 @@
 #include "dialog.h"
 #include "clx/split.h"
 #include "user-setting-converter.h"
+#include "file-dialog.h"
 
-namespace cubeice {
-	/* ----------------------------------------------------------------- */
-	//  browse_proc
-	/* ----------------------------------------------------------------- */
-	static int CALLBACK browse_proc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData) {
-		if(uMsg == BFFM_INITIALIZED){
-			SendMessage(hwnd, BFFM_SETSELECTION, (WPARAM)TRUE, lpData);
-		}
-		return 0;
-	}
-	
-	/* ----------------------------------------------------------------- */
-	/*
-	 *  browsefolder
-	 *
-	 *  see also:
-	 *  http://msdn.microsoft.com/en-us/library/bb762115(VS.85).aspx
-	 *  http://msdn.microsoft.com/en-us/library/bb773205(VS.85).aspx
-	 */
-	/* ----------------------------------------------------------------- */
-	static std::basic_string<TCHAR> browsefolder(const TCHAR* description) {
-		typedef TCHAR char_type;
-		char_type path[CUBE_MAX_PATH] = {};
-		GetCurrentDirectory(CUBE_MAX_PATH, path);
-		
-		BROWSEINFO info = {};
-		info.pszDisplayName = path;
-		info.lpszTitle = description;
-		info.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
-		info.lpfn = &browse_proc;
-		info.lParam = (LPARAM)path;
-		LPITEMIDLIST dest = SHBrowseForFolder(&info);
-		
-		SHGetPathFromIDList(dest, path);
-		CoTaskMemFree(dest);
-		
-		return path;
-	}
-	
+namespace cubeice {	
 	namespace detail {
 		/* ----------------------------------------------------------------- */
 		/*
@@ -147,6 +110,7 @@ namespace cubeice {
 			
 			if (!setting.output_path().empty()) {
 				SetWindowText(GetDlgItem(hWnd, IDC_DEST_TEXTBOX), setting.output_path().c_str());
+				LOG_INFO(_T("OutputPath = %s (initialized)"), setting.output_path().c_str());
 			}
 			
 			// 「詳細」グループ
@@ -161,6 +125,13 @@ namespace cubeice {
 			
 			if ((setting.details() & DETAIL_OPEN) == 0) {
 				EnableWindow(GetDlgItem(hWnd, IDC_SKIP_DESKTOP_CHECKBOX), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_EXPLORER_TEXTBOX), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_EXPLORER_BUTTON), FALSE);
+			}
+			
+			if (!setting.explorer().empty()) {
+				SetWindowText(GetDlgItem(hWnd, IDC_EXPLORER_TEXTBOX), setting.explorer().c_str());
+				LOG_INFO(_T("Explorer = %s (initialized)"), setting.explorer().c_str());
 			}
 			
 			LOG_TRACE(_T("function archive_initdialog() end"));
@@ -462,6 +433,8 @@ namespace cubeice {
 				if (pos->first == IDC_POSTOPEN_CHECKBOX) {
 					BOOL enabled = (setting.details() & DETAIL_OPEN) ? TRUE : FALSE;
 					EnableWindow(GetDlgItem(hWnd, IDC_SKIP_DESKTOP_CHECKBOX), enabled);
+					EnableWindow(GetDlgItem(hWnd, IDC_EXPLORER_TEXTBOX), enabled);
+					EnableWindow(GetDlgItem(hWnd, IDC_EXPLORER_BUTTON), enabled);
 				}
 				
 				if (pos->first == IDC_CREATE_FOLDER_CHECKBOX) {
@@ -478,8 +451,9 @@ namespace cubeice {
 				return TRUE;
 			}
 			
+			// 出力先ディレクトリの指定
 			if (parameter == IDC_DEST_BUTTON) {
-				std::basic_string<TCHAR> dest = browsefolder(_T("保存先ディレクトリを選択して下さい。"));
+				std::basic_string<TCHAR> dest = cubeice::dialog::browsefolder(hWnd, setting.output_path().c_str(), _T("保存先ディレクトリを選択して下さい。"));
 				if (!dest.empty()) {
 					setting.output_path() = dest;
 					SetWindowText(GetDlgItem(hWnd, IDC_DEST_TEXTBOX), dest.c_str());
@@ -491,6 +465,24 @@ namespace cubeice {
 			if (LOWORD(wp) == IDC_DEST_TEXTBOX && HIWORD(wp) == EN_UPDATE) {
 				LOG_TRACE(_T("UpdateOutputPath"));
 				setting.output_path() = gettext(hWnd, IDC_DEST_TEXTBOX);
+				return TRUE;
+			}
+
+			// 「ファイルを開く」で使用するプログラムの指定
+			if (parameter == IDC_EXPLORER_BUTTON) {
+				const TCHAR* filter = _T("実行可能プログラム (*.exe)\0*.exe\0すべてのプログラム (*.*)\0*.*\0");
+				std::basic_string<TCHAR> dest = cubeice::dialog::openfile(hWnd, filter, setting.explorer().c_str(), _T("プログラムを選択して下さい。"));
+				if (!dest.empty()) {
+					setting.explorer() = dest;
+					SetWindowText(GetDlgItem(hWnd, IDC_EXPLORER_TEXTBOX), dest.c_str());
+					return TRUE;
+				}
+				return FALSE;
+			}
+
+			if (LOWORD(wp) == IDC_EXPLORER_TEXTBOX && HIWORD(wp) == EN_UPDATE) {
+				LOG_TRACE(_T("UpdateExplorer"));
+				setting.explorer() = gettext(hWnd, IDC_EXPLORER_TEXTBOX);
 				return TRUE;
 			}
 			

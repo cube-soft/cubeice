@@ -47,24 +47,26 @@ IDR_CONTEXT_MENU MENU
 // Dialog resources
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDD_COMPRESS DIALOG 0, 0, 230, 250
+IDD_COMPRESS DIALOG 0, 0, 230, 270
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
 CAPTION "圧縮"
 FONT 9, "MS UI Gothic"
 {
-    GROUPBOX        "出力先フォルダ", 3000, 8, 8, 214, 92
-    AUTORADIOBUTTON "指定したフォルダ （省略時はデスクトップ）", 3001, 16, 24, 125, 10
-    EDITTEXT        3004, 24, 40, 160, 14, ES_AUTOHSCROLL
-    PUSHBUTTON      "...", 3005, 190, 40, 15, 14
-    AUTORADIOBUTTON "元のファイルと同じフォルダ", 3002, 16, 64, 85, 10
-    AUTORADIOBUTTON "実行時に指定する", 3003, 16, 80, 66, 10
-    GROUPBOX        "詳細", 3100, 8, 112, 214, 120
+    EDITTEXT        3004, 28, 40, 160, 14, ES_AUTOHSCROLL
+    PUSHBUTTON      "...", 3005, 194, 40, 15, 14
     AUTOCHECKBOX    "上書きの確認を行う", 3101, 16, 128, 70, 10
     AUTOCHECKBOX    "ファイルのフィルタリングを行う", 3105, 16, 144, 90, 10
-    AUTOCHECKBOX    "保存先フォルダを開く", 3106, 16, 160, 72, 10
-    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 176, 94, 10
-    AUTOCHECKBOX    "圧縮してメール送信を選択時にファイルを残さない", 3110, 16, 192, 148, 10
-    AUTOCHECKBOX    "エラーレポートを表示する", 3108, 16, 208, 82, 10
+    AUTOCHECKBOX    "保存先フォルダを開く （省略時は explorer.exe で開く）", 3106, 16, 160, 163, 8
+    EDITTEXT        3116, 28, 174, 160, 13, ES_AUTOHSCROLL
+    PUSHBUTTON      "...", 3117, 194, 174, 15, 14
+    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 192, 94, 10
+    AUTOCHECKBOX    "圧縮してメール送信を選択時にファイルを残さない", 3110, 16, 208, 148, 10
+    AUTOCHECKBOX    "エラーレポートを表示する", 3108, 16, 224, 82, 10
+    GROUPBOX        "出力先フォルダ", 3000, 8, 8, 214, 92
+    AUTORADIOBUTTON "指定したフォルダ （省略時はデスクトップ）", 3001, 16, 24, 125, 10
+    AUTORADIOBUTTON "元のファイルと同じフォルダ", 3002, 16, 64, 85, 10
+    AUTORADIOBUTTON "実行時に指定する", 3003, 16, 80, 66, 10
+    GROUPBOX        "詳細", 3100, 8, 112, 214, 136
 }
 
 
@@ -93,14 +95,14 @@ FONT 9, "MS UI Gothic"
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDD_DECOMPRESS DIALOG 0, 0, 230, 314
+IDD_DECOMPRESS DIALOG 0, 0, 230, 330
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
 CAPTION "解凍"
 FONT 9, "MS UI Gothic"
 {
     AUTORADIOBUTTON "指定したフォルダ （省略時はデスクトップ）", 3001, 16, 24, 125, 10, WS_TABSTOP
-    EDITTEXT        3004, 24, 40, 160, 14, ES_AUTOHSCROLL
-    PUSHBUTTON      "...", 3005, 190, 40, 15, 14
+    EDITTEXT        3004, 28, 40, 160, 14, ES_AUTOHSCROLL
+    PUSHBUTTON      "...", 3005, 194, 40, 15, 14
     AUTORADIOBUTTON "元のファイルと同じフォルダ", 3002, 16, 64, 85, 10, WS_TABSTOP
     AUTORADIOBUTTON "実行時に指定する", 3003, 16, 80, 66, 10, WS_TABSTOP
     AUTOCHECKBOX    "上書きの確認を行う", 3101, 16, 128, 70, 10
@@ -108,16 +110,18 @@ FONT 9, "MS UI Gothic"
     AUTOCHECKBOX    "フォルダを自動生成する", 3103, 16, 160, 79, 10
     AUTOCHECKBOX    "単一フォルダの場合は生成しない", 3109, 28, 176, 105, 10
     AUTOCHECKBOX    "ファイルのフィルタリングを行う", 3105, 16, 192, 90, 10
-    AUTOCHECKBOX    "保存先フォルダを開く", 3106, 16, 208, 72, 10
-    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 226, 94, 10
-    AUTOCHECKBOX    "解凍後に元ファイルを削除する", 3115, 16, 242, 98, 10
-    AUTOCHECKBOX    "ツールチップにファイル一覧を表示する", 3111, 16, 258, 115, 10
-    EDITTEXT        3112, 182, 257, 30, 12, ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "", 3113, UPDOWN_CLASS, UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_SETBUDDYINT, 202, 257, 10, 12
-    AUTOCHECKBOX    "エラーレポートを表示する", 3108, 16, 274, 82, 10
+    AUTOCHECKBOX    "保存先フォルダを開く （省略時は explorer.exe で開く）", 3106, 16, 208, 163, 8
+    EDITTEXT        3116, 28, 222, 160, 14, ES_AUTOHSCROLL
+    PUSHBUTTON      "...", 3117, 194, 222, 15, 14
+    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 242, 94, 10
+    AUTOCHECKBOX    "解凍後に元ファイルを削除する", 3115, 16, 258, 98, 10
+    AUTOCHECKBOX    "ツールチップにファイル一覧を表示する", 3111, 16, 274, 115, 10
+    EDITTEXT        3112, 182, 273, 30, 12, ES_AUTOHSCROLL | ES_NUMBER
+    AUTOCHECKBOX    "エラーレポートを表示する", 3108, 16, 290, 82, 10
+    CONTROL         "", 3113, UPDOWN_CLASS, UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_SETBUDDYINT, 202, 273, 10, 12
     GROUPBOX        "出力先フォルダ", 3000, 8, 8, 214, 92
-    GROUPBOX        "詳細", 3100, 8, 112, 214, 186
-    LTEXT           "最大表示件数 :", 3114, 134, 259, 46, 8, SS_LEFT
+    GROUPBOX        "詳細", 3100, 8, 112, 214, 202
+    LTEXT           "最大表示件数 :", 3114, 134, 275, 46, 8, SS_LEFT
 }
 
 

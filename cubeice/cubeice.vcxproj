@@ -175,7 +175,6 @@
   <ItemGroup>
     <ClCompile Include="..\cubeice-shared\babel\babel.cpp" />
     <ClCompile Include="cubeice.cpp" />
-    <ClCompile Include="file-dialog.cpp" />
     <ClCompile Include="overwrite-dialog.cpp" />
     <ClCompile Include="password-dialog.cpp" />
     <ClCompile Include="report-dialgo.cpp" />
