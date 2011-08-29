@@ -139,6 +139,8 @@
 #define IDC_MAX_FILELIST_TEXTBOX    3112 // ツールチップの表示する最大件数
 #define IDC_FILELIST_UPDOWN         3113 // 同スピンコントロール
 #define IDC_REMOVE_SRC_CHECKBOX     3115 // 元ファイルを削除する
+#define IDC_EXPLORER_TEXTBOX        3116 // 「ファイルを開く」で使用するアプリケーション
+#define IDC_EXPLORER_BUTTON         3117 // 「ファイルを開く」で使用するアプリケーション
 
 /* ------------------------------------------------------------------------- */
 //  「フィルタリング」タブ

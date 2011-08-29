@@ -20,7 +20,6 @@
  *  Last-modified: Tue 28 Dec 2010 20:42:00 JST
  */
 /* ------------------------------------------------------------------------- */
-#include "cubeice.h"
 #include <string>
 #include <windows.h>
 #include <tchar.h>
@@ -35,7 +34,7 @@ namespace cubeice {
 		 *  '\0' を使用しているため string は使用できない．
 		 */
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> openfile(HWND hWnd, const TCHAR* filter, const TCHAR* init, const TCHAR* title) {
+		inline std::basic_string<TCHAR> openfile(HWND hWnd, const TCHAR* filter, const TCHAR* init, const TCHAR* title = _T("ファイルを開く")) {
 			typedef TCHAR char_type;
 			char_type path[CUBE_MAX_PATH] = {};
 			char_type filename[CUBE_MAX_PATH] = {};
@@ -59,7 +58,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  savefile
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> savefile(HWND hWnd, const TCHAR* filter, const TCHAR* init, const DWORD flag, const TCHAR* title) {
+		inline std::basic_string<TCHAR> savefile(HWND hWnd, const TCHAR* filter, const TCHAR* init, const DWORD flag = OFN_OVERWRITEPROMPT, const TCHAR* title = _T("名前を付けて保存")) {
 			typedef TCHAR char_type;
 			typedef std::basic_string<TCHAR> string_type;
 			
@@ -101,7 +100,7 @@ namespace cubeice {
 		 *  http://msdn.microsoft.com/en-us/library/bb773205(VS.85).aspx
 		 */
 		/* ----------------------------------------------------------------- */
-		std::basic_string<TCHAR> browsefolder(HWND hWnd, const TCHAR* init, const TCHAR* description) {
+		inline std::basic_string<TCHAR> browsefolder(HWND hWnd, const TCHAR* init, const TCHAR* description = _T("フォルダの参照")) {
 			typedef TCHAR char_type;
 			
 			BROWSEINFO info = {};

@@ -167,6 +167,7 @@
 #define CUBEICE_REG_VERSION             _T("Version")
 #define CUBEICE_REG_PREVARCHIVER        _T("PrevArchiver")
 #define CUBEICE_REG_LOGLEVEL            _T("LogLevel")
+#define CUBEICE_REG_EXPLORER            _T("Explorer")
 
 /* ------------------------------------------------------------------------- */
 //  設定ファイルに関する情報
@@ -307,7 +308,7 @@ namespace cubeice {
 		//  constructor
 		/* ----------------------------------------------------------------- */
 		explicit archive_setting(const string_type& root) :
-			root_(root), flags_(0), details_(0), max_filelist_(0), output_condition_(0), output_path_() {
+			root_(root), flags_(0), details_(0), max_filelist_(0), output_condition_(0), output_path_(), explorer_() {
 			//this->load();
 		}
 		
@@ -354,6 +355,12 @@ namespace cubeice {
 				if (RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) {
 					output_path_ = buffer;
 				}
+				
+				ZeroMemory(buffer, sizeof(buffer));
+				dwSize = sizeof(buffer);
+				if (RegQueryValueEx(hkResult, CUBEICE_REG_EXPLORER, NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) {
+					explorer_ = buffer;
+				}
 			}
 			
 			// Flagsはレジストリに置かず，それぞれの拡張子のキーの既定値が cubeice_XXX かどうかで判断
@@ -395,6 +402,8 @@ namespace cubeice {
 				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, 0, REG_SZ, (CONST BYTE*)output_path_.c_str(), (output_path_.length() + 1) * sizeof(char_type));
 				LOG_INFO(_T("%s = %d"), CUBEICE_REG_OUTPUT_CONDITION, output_condition_);
 				LOG_INFO(_T("%s = %s"), CUBEICE_REG_OUTPUT_PATH, output_path_.c_str());
+				
+				RegSetValueEx(hkResult, CUBEICE_REG_EXPLORER, 0, REG_SZ, (CONST BYTE*)explorer_.c_str(), (explorer_.length() + 1) * sizeof(char_type));
 			}
 			else {
 				LOG_ERROR(_T("RegCreateKeyEx(HKCU, %s)"), root_.c_str());
@@ -450,6 +459,16 @@ namespace cubeice {
 		string_type& output_path() { return output_path_; }
 		const string_type& output_path() const { return output_path_; }
 		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  explorer
+		 *
+		 *  「ファイルを開く」際に使用するプログラム (explorer.exe 等)
+		 */
+		/* ----------------------------------------------------------------- */
+		string_type& explorer() { return explorer_; }
+		const string_type& explorer() const { return explorer_; }
+		
 	private:
 		string_type root_;
 		size_type flags_;
@@ -457,7 +476,7 @@ namespace cubeice {
 		size_type max_filelist_;
 		size_type output_condition_;
 		string_type output_path_;
-		
+		string_type explorer_;
 	};
 	
 	/* --------------------------------------------------------------------- */

@@ -281,7 +281,7 @@ namespace cubeice {
 				if (optar) {
 					string_type prev = tmp;
 					tmp = tmpfile(_T("cubeice"));
-					tmp = tmp.substr(0, tmp.find_last_of(_T('\\'))+1);
+					tmp = tmp.substr(0, tmp.find_last_of(_T('\\')) + 1);
 					tmp += PathFindFileName(dest.c_str());
 					this->compress_tar(prev, tmp, filetype, pass);
 					if (PathFileExists(prev.c_str())) DeleteFile(prev.c_str());
@@ -315,7 +315,11 @@ namespace cubeice {
 				if (setting_.compression().details() & DETAIL_OPEN) {
 					string_type root = dest.substr(0, dest.find_last_of(_T('\\')));
 					if ((setting_.compression().details() & DETAIL_SKIP_DESKTOP) == 0 || !this->is_desktop(root)) {
-						ShellExecute(NULL, _T("open"), _T("explorer.exe"), root.c_str(), NULL, SW_SHOWNORMAL);
+						string_type explorer = setting_.compression().explorer();
+						if (explorer.empty() || !PathFileExists(explorer.c_str())) explorer = _T("explorer.exe");
+						LOG_INFO(_T("Explorer = %s"), explorer.c_str());
+						LOG_INFO(_T("OpenDir = %s"), root.c_str());
+						ShellExecute(NULL, _T("open"), explorer.c_str(), ( _T("\"") + root + _T("\"") ).c_str(), NULL, SW_SHOWNORMAL);
 					}
 				}
 			}
@@ -654,8 +658,11 @@ namespace cubeice {
 					
 					bool skip_flag = (setting_.decompression().details() & DETAIL_SKIP_DESKTOP) != 0;
 					if ((!skip_flag || !this->is_desktop(root)) && PathFileExists(root.c_str())) {
+						string_type explorer = setting_.decompression().explorer();
+						if (explorer.empty() || !PathFileExists(explorer.c_str())) explorer = _T("explorer.exe");
+						LOG_INFO(_T("Explorer = %s"), explorer.c_str());
 						LOG_INFO(_T("OpenDir = %s"), root.c_str());
-						ShellExecute(NULL, _T("open"), _T("explorer.exe"), ( _T("\"") + root + _T("\"") ).c_str(), NULL, SW_SHOWNORMAL);
+						ShellExecute(NULL, _T("open"), explorer.c_str(), ( _T("\"") + root + _T("\"") ).c_str(), NULL, SW_SHOWNORMAL);
 					}
 				}
 				
@@ -717,7 +724,10 @@ namespace cubeice {
 					optar = true;
 				}
 				else if (is_tar) ext = _T(".tar") + ext;
-				else if (filetype == _T("bzip2")) ext = first->substr(first->find_last_of('.')) + ext;
+				else if (filetype == _T("bzip2")) {
+					string_type::size_type pos = first->find_last_of('.');
+					if (pos != string_type::npos) ext = first->substr(pos) + ext;
+				}
 			}
 			
 			return ext;
@@ -849,7 +859,8 @@ namespace cubeice {
 			LOG_TRACE(_T("pass = %d"), (pass ? 1 : 0));
 			
 			string_type tar;
-			string_type ext = dest.substr(dest.find_last_of(_T('.')));
+			string_type::size_type pos_ext = dest.find_last_of(_T('.'));
+			string_type ext = (pos_ext != string_type::npos) ? dest.substr(pos_ext) : _T("");
 			tar = dest.substr(0, dest.find_last_of(_T('.')));
 			if (ext != _T(".gz") && ext != _T(".bz2")) tar += _T(".tar");
 			if (!MoveFileEx(src.c_str(), tar.c_str(), MOVEFILE_COPY_ALLOWED)) return;
