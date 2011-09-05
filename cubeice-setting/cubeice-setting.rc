@@ -100,11 +100,8 @@ STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VIS
 CAPTION "解凍"
 FONT 9, "MS UI Gothic"
 {
-    AUTORADIOBUTTON "指定したフォルダ （省略時はデスクトップ）", 3001, 16, 24, 125, 10, WS_TABSTOP
     EDITTEXT        3004, 28, 40, 160, 14, ES_AUTOHSCROLL
     PUSHBUTTON      "...", 3005, 194, 40, 15, 14
-    AUTORADIOBUTTON "元のファイルと同じフォルダ", 3002, 16, 64, 85, 10, WS_TABSTOP
-    AUTORADIOBUTTON "実行時に指定する", 3003, 16, 80, 66, 10, WS_TABSTOP
     AUTOCHECKBOX    "上書きの確認を行う", 3101, 16, 128, 70, 10
     AUTOCHECKBOX    "更新日時が新しい場合は確認しない", 3102, 28, 144, 117, 10
     AUTOCHECKBOX    "フォルダを自動生成する", 3103, 16, 160, 79, 10
@@ -122,6 +119,9 @@ FONT 9, "MS UI Gothic"
     GROUPBOX        "出力先フォルダ", 3000, 8, 8, 214, 92
     GROUPBOX        "詳細", 3100, 8, 112, 214, 202
     LTEXT           "最大表示件数 :", 3114, 134, 275, 46, 8, SS_LEFT
+    AUTORADIOBUTTON "指定したフォルダ （省略時はデスクトップ）", 3001, 16, 24, 125, 10, WS_TABSTOP
+    AUTORADIOBUTTON "元のファイルと同じフォルダ", 3002, 16, 64, 85, 10, WS_TABSTOP
+    AUTORADIOBUTTON "実行時に指定する", 3003, 16, 80, 66, 10, WS_TABSTOP
 }
 
 
