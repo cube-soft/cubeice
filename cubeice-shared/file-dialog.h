@@ -107,7 +107,7 @@ namespace cubeice {
 			info.hwndOwner = hWnd;
 			info.pszDisplayName = const_cast<TCHAR*>(init);
 			info.lpszTitle = description;
-			info.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE;
+			info.ulFlags = BIF_RETURNONLYFSDIRS; // | BIF_NEWDIALOGSTYLE;
 			info.lpfn = &browse_proc;
 			info.lParam = (LPARAM)init;
 			LPITEMIDLIST dest = SHBrowseForFolder(&info);
