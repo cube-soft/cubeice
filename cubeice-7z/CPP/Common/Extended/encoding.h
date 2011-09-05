@@ -10,8 +10,8 @@
 #include <shlwapi.h>
 #include <babel/babel.h>
 #define	CLX_USE_WCHAR
-#include "clx/split.h"
-#include "clx/predicate.h"
+#include <clx/split.h>
+#include <clx/predicate.h>
 
 #pragma comment(lib, "shlwapi.lib")
 #pragma warning(disable:4996)
