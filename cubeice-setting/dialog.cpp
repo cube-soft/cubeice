@@ -43,8 +43,9 @@
 #include <windows.h>
 #include <commctrl.h>
 #include <psdotnet/logger.h>
+#include <clx/split.h>
+#include <clx/replace.h>
 #include "dialog.h"
-#include "clx/split.h"
 #include "user-setting-converter.h"
 #include "file-dialog.h"
 
@@ -245,7 +246,7 @@ namespace cubeice {
 			std::vector<TCHAR>::iterator pos = buffer.begin();
 			std::advance(pos, result);
 			std::basic_string<TCHAR> dest(buffer.begin(), pos);
-			LOG_DEBUG(_T("Text = %s"), dest.c_str());
+			LOG_DEBUG(_T("Text = %s"), clx::replace_all_copy(dest, _T("\r\n"), _T("<>")).c_str());
 
 			return dest;
 		}
@@ -254,9 +255,24 @@ namespace cubeice {
 		//  filter_gettext
 		/* ----------------------------------------------------------------- */
 		static void filter_gettext(HWND hWnd) {
-			cubeice::user_setting::string_type s = gettext(hWnd, IDC_FILTER_TEXTBOX);
+			HWND handle = GetDlgItem(hWnd, IDC_FILTER_TEXTBOX);
+			if (handle == NULL) return;
+
+			int length = GetWindowTextLength(handle);
+			LOG_DEBUG(_T("TextLength = %d"), length);
+			std::vector<TCHAR> buffer(length + 1, 0);
+			UINT result = GetDlgItemText(hWnd, IDC_FILTER_TEXTBOX, reinterpret_cast<TCHAR*>(&buffer[0]), buffer.size());
+			if (result == 0 && GetLastError() != 0) {
+				LOG_ERROR(_T("GetDlgItemText(), ErrorCode = %d"), GetLastError());
+				return;
+			}
+
+			std::vector<TCHAR>::iterator pos = buffer.begin();
+			std::advance(pos, result);
+			std::basic_string<TCHAR> dest(buffer.begin(), pos);
+			LOG_DEBUG(_T("Filtering = %s"), clx::replace_all_copy(dest, _T("\r\n"), _T("<>")).c_str());
 			Setting.filters().clear();
-			clx::split_if(s, Setting.filters(), clx::is_any_of(_T("\r\n")));
+			clx::split_if(dest, Setting.filters(), clx::is_any_of(_T("\r\n")));
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -558,6 +574,7 @@ namespace cubeice {
 			
 			static const std::basic_string<TCHAR> invalids(_T("/:?\"<>|"));
 			std::basic_string<TCHAR> str(buffer.begin(), buffer.end());
+			LOG_TRACE(_T("Filtering = %s"), clx::replace_all_copy(str, _T("\r\n"), _T("<>")).c_str());
 			for (std::basic_string<TCHAR>::const_iterator it = invalids.begin(); it != invalids.end(); ++it) {
 				std::basic_string<TCHAR>::size_type pos = str.find(*it);
 				while (pos != std::basic_string<TCHAR>::npos) {
@@ -589,7 +606,7 @@ namespace cubeice {
 				break;
 			case WM_COMMAND:
 				if (LOWORD(wp) == IDC_FILTER_TEXTBOX && HIWORD(wp) == EN_UPDATE) {
-					return filter_validate(hWnd, GetDlgItem(hWnd, IDC_FILTER_TEXTBOX));
+					return  filter_validate(hWnd, GetDlgItem(hWnd, IDC_FILTER_TEXTBOX));
 				}
 				break;
 			default:
