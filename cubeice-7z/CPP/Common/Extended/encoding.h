@@ -94,7 +94,7 @@ namespace cubeice {
 			HANDLE test = CreateFile(path.c_str(),
 				GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-			if (!test) return false;
+			if (test == INVALID_HANDLE_VALUE) return false;
 			::CloseHandle(test);
 			::DeleteFile(path.c_str());
 			return true;
@@ -450,6 +450,72 @@ namespace cubeice {
 			default: break;
 		}
 		return std::basic_string<char>();
+	}
+
+	/* --------------------------------------------------------------------- */
+	/*
+	 *  Normalize
+	 *
+	 *  文字エンコードの指定が不正，Windows で許されていない名前の設定等，
+	 *  ファイル名として不適切である名前が指定された場合に，
+	 *  「CubeICEによってリネームされたファイルYYYYMMDDHHMMSS(N).ext」
+	 *  と言うファイル名にリネームする．
+	 */
+	/* --------------------------------------------------------------------- */
+	inline std::basic_string<wchar_t> Normalize(const std::basic_string<wchar_t>& src) {
+		typedef wchar_t char_type;
+		typedef std::basic_string<char_type> string_type;
+		typedef std::map<string_type, string_type> filemap_type;
+		
+		static const string_type prefix_ = _T("CubeICEによってリネームされたファイル");
+		static filemap_type v_;
+		static SYSTEMTIME now_;
+		static bool initialized_ = false;
+
+		if (!initialized_) {
+			v_.clear();
+			::GetLocalTime(&now_);
+			initialized_ = true;
+		}
+
+		if (PathFileExists(src.c_str()) || PathIsDirectory(src.c_str())) return src;
+		
+		wchar_t dir[1024] = {};
+		if (::GetTempPath(1024, dir) == 0) return src;
+		string_type path = dir + src;
+		HANDLE test = CreateFile(path.c_str(),
+			GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+		
+		if (test != INVALID_HANDLE_VALUE) {
+			DWORD type = GetFileType(test);
+			::CloseHandle(test);
+			if (type == FILE_TYPE_DISK) return src;
+		}
+
+		// ファイル名をリネームする
+		filemap_type::iterator pos = v_.find(src);
+		if (pos != v_.end()) return pos->second;
+		
+		char_type buffer[2048] = {};
+		if (v_.empty()) {
+			_sntprintf(buffer, sizeof(buffer) / sizeof(char_type),
+				_T("%s%d%02d%02d%02d%02d%02d"),
+				prefix_.c_str(), now_.wYear, now_.wMonth, now_.wDay, now_.wHour, now_.wMinute, now_.wSecond
+			);
+		}
+		else {
+			_sntprintf(buffer, sizeof(buffer) / sizeof(char_type),
+				_T("%s%d%02d%02d%02d%02d%02d(%d)"),
+				prefix_.c_str(), now_.wYear, now_.wMonth, now_.wDay, now_.wHour, now_.wMinute, now_.wSecond, v_.size()
+			);
+		}
+
+		string_type::size_type offset = src.find_last_of(_T('.'));
+		string_type ext = (offset != string_type::npos) ? src.substr(offset) : _T("");
+		string_type result = buffer + ext;
+		v_.insert(std::make_pair(src, result));
+		return result;
 	}
 }
 

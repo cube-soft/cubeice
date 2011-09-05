@@ -34,8 +34,9 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
     //if (encoding == cubeice::EncodingDialog::Unknown) {
         if (encoder.ShowDialog(NULL) == IDOK) cubeice::SetEncoding(encoder.Encoding());
     }
-    TCHAR buffer[32] = {};
-    resultString = encoder.Convert().c_str();
+    
+
+    resultString = cubeice::Normalize(encoder.Convert()).c_str();
 #endif
   }
 
