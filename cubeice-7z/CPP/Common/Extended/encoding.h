@@ -481,7 +481,7 @@ namespace cubeice {
 	/* --------------------------------------------------------------------- */
 	inline std::vector<std::basic_string<TCHAR> > GetNormalizationFiles() {
 		std::vector<std::basic_string<TCHAR> > dest;
-		FILE* fin = _wfopen(GetNormalizationFilesPath().c_str(), _T("r"));
+		FILE* fin = _wfopen(GetNormalizationFilesPath().c_str(), _T("rb"));
 		if (fin == NULL) return dest;
 
 		TCHAR buffer[2048] = {};
