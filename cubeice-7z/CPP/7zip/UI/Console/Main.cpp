@@ -605,6 +605,14 @@ int Main2(
 	if (encoding != cubeice::EncodingDialog::Unknown) {
 		stdStream << "Encoding: " << cubeice::EncodingToStringA(encoding).c_str() << endl;
 	}
+
+	std::vector<std::basic_string<TCHAR> > v = cubeice::GetNormalizationFiles();
+	if (!v.empty()) {
+		for (std::vector<std::basic_string<TCHAR> >::iterator pos = v.begin(); pos != v.end(); ++pos) {
+			stdStream << "ERROR: " << pos->c_str() << endl;
+		}
+	}
+	//::DeleteFile(cubeice::GetNormalizationFilesPath().c_str());
 #endif
   return 0;
 }
