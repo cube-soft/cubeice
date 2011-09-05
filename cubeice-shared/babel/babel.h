@@ -68,6 +68,11 @@
 #	define _DEBUG
 #endif
 
+//@Visual C++ ‚Å‚ÌƒGƒ‰[—}§
+#if defined(WIN32) || defined(WIN64)
+#pragma warning(disable:4267)
+#endif
+
 namespace {
 //	int unimplemented;
 };
