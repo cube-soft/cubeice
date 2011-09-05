@@ -9,6 +9,9 @@
 #include <tchar.h>
 #include <shlwapi.h>
 #include <babel/babel.h>
+#define	CLX_USE_WCHAR
+#include "clx/split.h"
+#include "clx/predicate.h"
 
 #pragma comment(lib, "shlwapi.lib")
 #pragma warning(disable:4996)
@@ -519,11 +522,61 @@ namespace cubeice {
 			initialized_ = true;
 		}
 
-		if (PathFileExists(src.c_str()) || PathIsDirectory(src.c_str())) return src;
+		//if (PathFileExists(src.c_str()) || PathIsDirectory(src.c_str())) return src;
 		
+		std::vector<std::basic_string<wchar_t> >	parts;
+		clx::split_if(src, parts, clx::is_any_of(L"\\/"));
+
+		static const wchar_t	*reserved_name[] = {
+			L"CON",
+			L"PRN",
+			L"AUX",
+			L"NUL",
+
+			L"COM0",
+			L"COM1",
+			L"COM2",
+			L"COM3",
+			L"COM4",
+			L"COM5",
+			L"COM6",
+			L"COM7",
+			L"COM8",
+			L"COM9",
+
+			L"LPT0",
+			L"LPT1",
+			L"LPT2",
+			L"LPT3",
+			L"LPT4",
+			L"LPT5",
+			L"LPT6",
+			L"LPT7",
+			L"LPT8",
+			L"LPT9"
+		};
+		for(int i = 0 ; i < parts.size() ; ++i) {
+			std::basic_string<wchar_t>	&s = parts[i];
+			while(!s.empty() && (s[s.size()-1] == L'.' || s[s.size()-1] == L' '))
+				s.pop_back();
+			if(!s.empty()) {
+				for(int j = 0 ; j < sizeof(reserved_name) / sizeof(reserved_name[0]) ; ++j) {
+					const int	len = wcslen(reserved_name[j]);
+					if(s.substr(0, len) == reserved_name[j] && (s.size() == len || s[len] == L'.')) {
+						s = L'_' + s;
+						break;
+					}
+				}
+			}
+		}
+		std::basic_string<wchar_t>		s;
+		std::basic_string<wchar_t>		checkname;
+		clx::join(parts, s, L"\\");
+		clx::join(parts, checkname, L"");
+
 		wchar_t dir[1024] = {};
-		if (::GetTempPath(1024, dir) == 0) return src;
-		string_type path = dir + src;
+		if (::GetTempPath(1024, dir) == 0) return s;
+		string_type path = dir + checkname;
 		HANDLE test = CreateFile(path.c_str(),
 			GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE, NULL);
@@ -531,11 +584,11 @@ namespace cubeice {
 		if (test != INVALID_HANDLE_VALUE) {
 			DWORD type = GetFileType(test);
 			::CloseHandle(test);
-			if (type == FILE_TYPE_DISK) return src;
+			if (type == FILE_TYPE_DISK) return s;
 		}
 
 		// ファイル名をリネームする
-		filemap_type::iterator pos = v_.find(src);
+		filemap_type::iterator pos = v_.find(s);
 		if (pos != v_.end()) return pos->second;
 		
 		char_type buffer[2048] = {};
@@ -552,10 +605,10 @@ namespace cubeice {
 			);
 		}
 
-		string_type::size_type offset = src.find_last_of(_T('.'));
-		string_type ext = (offset != string_type::npos) ? src.substr(offset) : _T("");
+		string_type::size_type offset = s.find_last_of(_T('.'));
+		string_type ext = (offset != string_type::npos) ? s.substr(offset) : _T("");
 		string_type result = buffer + ext;
-		v_.insert(std::make_pair(src, result));
+		v_.insert(std::make_pair(s, result));
 
 		HANDLE log = ::CreateFile(GetNormalizationFilesPath().c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
