@@ -11,6 +11,7 @@
 #include <babel/babel.h>
 
 #pragma comment(lib, "shlwapi.lib")
+#pragma warning(disable:4996)
 
 // Resouces
 #define IDC_ICON_PICTUREBOX         1000
@@ -105,7 +106,7 @@ namespace cubeice {
 		//  RunDialog
 		/* ----------------------------------------------------------------- */
 		virtual bool RunDialog(HWND owner) {
-			int result = ::DialogBoxParam(::GetModuleHandle(NULL), resource_.c_str(), owner, StaticWndProc, reinterpret_cast<LPARAM>(this));
+			INT_PTR result = ::DialogBoxParam(::GetModuleHandle(NULL), resource_.c_str(), owner, StaticWndProc, reinterpret_cast<LPARAM>(this));
 			return result == IDOK;
 		}
 
@@ -177,8 +178,8 @@ namespace cubeice {
 			{
 				HWND handle = GetDlgItem(this->Handle(), IDC_ENCODING_LISTBOX);
 				assert(handle != NULL);
-				int index = ::SendMessage(handle, LB_GETCURSEL, 0, 0);
-				encoding_ = this->IndexToEncoding(index);
+				LRESULT index = ::SendMessage(handle, LB_GETCURSEL, 0, 0);
+				encoding_ = this->IndexToEncoding(static_cast<int>(index));
 				EndDialog(this->Handle(), IDOK);
 				break;
 			}
@@ -211,8 +212,8 @@ namespace cubeice {
 			// 変更されたエンコーディングの取得
 			HWND handle = GetDlgItem(this->Handle(), IDC_ENCODING_LISTBOX);
 			assert(handle != NULL);
-			int index = ::SendMessage(handle, LB_GETCURSEL, 0, 0);
-			int encoding = this->IndexToEncoding(index);
+			LRESULT index = ::SendMessage(handle, LB_GETCURSEL, 0, 0);
+			int encoding = this->IndexToEncoding(static_cast<int>(index));
 			
 			// 変更されたエンコーディングで実際に変換してみる
 			handle = GetDlgItem(this->Handle(), IDC_PREVIEW_TEXTBOX);
@@ -237,7 +238,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		int EncodingToIndex(int encoding) {
 			for (size_type i = 0; i < kinds_.size(); ++i) {
-				if (encoding == kinds_.at(i)) return i;
+				if (encoding == kinds_.at(i)) return static_cast<int>(i);
 			}
 			return -1;
 		}
@@ -387,7 +388,7 @@ namespace cubeice {
 				break;
 			}
 			
-			LONG ptr = ::GetWindowLongPtr(hWnd, GWLP_USERDATA);
+			LONG_PTR ptr = ::GetWindowLongPtr(hWnd, GWLP_USERDATA);
 			if (ptr != 0) {
 				EncodingDialog* instance = reinterpret_cast<EncodingDialog*>(ptr);
 				return instance->WndProc(uMsg, wParam, lParam) ? TRUE : FALSE;
@@ -453,6 +454,46 @@ namespace cubeice {
 	}
 
 	/* --------------------------------------------------------------------- */
+	//  GetNormalizationFilesPath
+	/* --------------------------------------------------------------------- */
+	inline std::basic_string<TCHAR> GetNormalizationFilesPath() {
+		typedef TCHAR char_type;
+		typedef std::basic_string<TCHAR> string_type;
+		
+		char_type path[2048] = {};
+		DWORD result = ::GetEnvironmentVariable(_T("Normalization"), path, sizeof(path) / sizeof(char_type));
+		if (result != 0) return string_type(path);
+		
+		// ノーマライズされた結果を記憶するためのファイルのパスを設定する．
+		char_type dir[1024] = {};
+		if (GetTempPath(1024, dir) == 0) return string_type();
+		ZeroMemory(path, sizeof(path));
+		if (GetTempFileName(dir,_T("cubeice"), 0, path) == 0) return string_type();
+		
+		// 一時ファイルが生成されているので削除する．
+		if (PathFileExists(path)) DeleteFile(path);
+		::SetEnvironmentVariable(_T("Normalization"), path);
+		return string_type(path);
+	}
+
+	/* --------------------------------------------------------------------- */
+	//  GetNormalizationFiles
+	/* --------------------------------------------------------------------- */
+	inline std::vector<std::basic_string<TCHAR> > GetNormalizationFiles() {
+		std::vector<std::basic_string<TCHAR> > dest;
+		FILE* fin = _wfopen(GetNormalizationFilesPath().c_str(), _T("r"));
+		if (fin == NULL) return dest;
+
+		TCHAR buffer[2048] = {};
+		while (fgetws(buffer, sizeof(buffer) / sizeof(TCHAR), fin)) {
+			dest.push_back(std::basic_string<TCHAR>(buffer));
+		}
+		fclose(fin);
+
+		return dest;
+	}
+
+	/* --------------------------------------------------------------------- */
 	/*
 	 *  Normalize
 	 *
@@ -515,6 +556,17 @@ namespace cubeice {
 		string_type ext = (offset != string_type::npos) ? src.substr(offset) : _T("");
 		string_type result = buffer + ext;
 		v_.insert(std::make_pair(src, result));
+
+		HANDLE log = ::CreateFile(GetNormalizationFilesPath().c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (log != INVALID_HANDLE_VALUE) {
+			::SetFilePointer(log, 0, NULL, FILE_END);
+			string_type message = src + _T(" -> ") + result + _T("\r\n");
+			DWORD written = 0;
+			::WriteFile(log, message.c_str(), message.size() * sizeof(char_type), &written, NULL);
+			::CloseHandle(log);
+		}
+
 		return result;
 	}
 }
