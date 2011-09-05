@@ -91,16 +91,29 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		bool Test() {
 			std::basic_string<wchar_t> converted = this->Convert();
-			if (PathFileExists(converted.c_str()) || PathIsDirectory(converted.c_str())) return true;
+			std::vector<std::basic_string<wchar_t> > parts;
+			clx::split_if(converted, parts, clx::is_any_of(L"\\/"));
+			std::basic_string<wchar_t> s;
+			clx::join(parts, s, L"");
+
 			wchar_t dir[1024] = {};
 			if (::GetTempPath(1024, dir) == 0) return false;
-			std::basic_string<wchar_t> path = dir + converted;
+			std::basic_string<wchar_t> path = dir + s;
 			HANDLE test = CreateFile(path.c_str(),
 				GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-			if (test == INVALID_HANDLE_VALUE) return false;
+				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+
+			// TODO: 暫定．もうちょっとまともに判定する．
+			//if (test == INVALID_HANDLE_VALUE) return false;
+			if (test == INVALID_HANDLE_VALUE &&
+				path.find(L"CON") == std::basic_string<wchar_t>::npos &&
+				path.find(L"PRN") == std::basic_string<wchar_t>::npos &&
+				path.find(L"LPT") == std::basic_string<wchar_t>::npos &&
+				path.find(L"COM") == std::basic_string<wchar_t>::npos &&
+				path.find(L"NUL") == std::basic_string<wchar_t>::npos &&
+				path.find(L"AUX") == std::basic_string<wchar_t>::npos) return false;
+
 			::CloseHandle(test);
-			::DeleteFile(path.c_str());
 			return true;
 		}
 		
@@ -497,6 +510,23 @@ namespace cubeice {
 	}
 
 	/* --------------------------------------------------------------------- */
+	//  PutNormalizationLog
+	/* --------------------------------------------------------------------- */
+	inline void PutNormalizationLog(const std::basic_string<wchar_t>& src, const std::basic_string<wchar_t>& dest) {
+		HANDLE handle = ::CreateFile(GetNormalizationFilesPath().c_str(),
+			GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		if (handle != INVALID_HANDLE_VALUE) {
+			::SetFilePointer(handle, 0, NULL, FILE_END);
+			std::basic_string<wchar_t> message = src + L" -> " + dest + L" (リネームしました)\r\n";
+			DWORD written = 0;
+			::WriteFile(handle, message.c_str(), message.size() * sizeof(wchar_t), &written, NULL);
+			::CloseHandle(handle);
+		}
+	}
+
+	/* --------------------------------------------------------------------- */
 	/*
 	 *  Normalize
 	 *
@@ -521,10 +551,8 @@ namespace cubeice {
 			::GetLocalTime(&now_);
 			initialized_ = true;
 		}
-
-		//if (PathFileExists(src.c_str()) || PathIsDirectory(src.c_str())) return src;
 		
-		std::vector<std::basic_string<wchar_t> >	parts;
+		std::vector<std::basic_string<wchar_t> > parts;
 		clx::split_if(src, parts, clx::is_any_of(L"\\/"));
 
 		static const wchar_t	*reserved_name[] = {
@@ -555,6 +583,8 @@ namespace cubeice {
 			L"LPT8",
 			L"LPT9"
 		};
+		
+		bool escaped = false;
 		for(int i = 0 ; i < parts.size() ; ++i) {
 			std::basic_string<wchar_t>	&s = parts[i];
 			while(!s.empty() && (s[s.size()-1] == L'.' || s[s.size()-1] == L' '))
@@ -564,13 +594,14 @@ namespace cubeice {
 					const int	len = wcslen(reserved_name[j]);
 					if(s.substr(0, len) == reserved_name[j] && (s.size() == len || s[len] == L'.')) {
 						s = L'_' + s;
+						escaped = true;
 						break;
 					}
 				}
 			}
 		}
-		std::basic_string<wchar_t>		s;
-		std::basic_string<wchar_t>		checkname;
+		std::basic_string<wchar_t> s;
+		std::basic_string<wchar_t> checkname;
 		clx::join(parts, s, L"\\");
 		clx::join(parts, checkname, L"");
 
@@ -584,7 +615,10 @@ namespace cubeice {
 		if (test != INVALID_HANDLE_VALUE) {
 			DWORD type = GetFileType(test);
 			::CloseHandle(test);
-			if (type == FILE_TYPE_DISK) return s;
+			if (type == FILE_TYPE_DISK) {
+				if (escaped) PutNormalizationLog(src, s);
+				return s;
+			}
 		}
 
 		// ファイル名をリネームする
@@ -609,17 +643,8 @@ namespace cubeice {
 		string_type ext = (offset != string_type::npos) ? s.substr(offset) : _T("");
 		string_type result = buffer + ext;
 		v_.insert(std::make_pair(s, result));
-
-		HANDLE log = ::CreateFile(GetNormalizationFilesPath().c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-		if (log != INVALID_HANDLE_VALUE) {
-			::SetFilePointer(log, 0, NULL, FILE_END);
-			string_type message = src + _T(" -> ") + result + _T("\r\n");
-			DWORD written = 0;
-			::WriteFile(log, message.c_str(), message.size() * sizeof(char_type), &written, NULL);
-			::CloseHandle(log);
-		}
-
+		
+		PutNormalizationLog(src, result);
 		return result;
 	}
 }

@@ -511,7 +511,16 @@ namespace cubeice {
 					assert(status == 1);
 					LOG_TRACE(_T("Message = %s"), line.c_str());
 					
-					string_type::size_type pos = line.find(keyword);
+					string_type::size_type pos = line.find(error);
+					if (pos != string_type::npos) {
+						string_type err = clx::strip_copy(line.substr(pos));
+						if (pos != 0) err += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
+						LOG_ERROR(err.c_str());
+						report += err + _T("\r\n");
+						continue;
+					}
+					
+					pos = line.find(keyword);
 					if (pos == string_type::npos || line.size() <= keyword.size()) {
 						continue;
 					}
@@ -582,15 +591,6 @@ namespace cubeice {
 							}
 							continue;
 						}
-					}
-					
-					pos = line.find(error);
-					if (pos != string_type::npos) {
-						string_type err = clx::strip_copy(line.substr(pos));
-						if (pos != 0) err += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
-						LOG_ERROR(err.c_str());
-						report += err + _T("\r\n");
-						continue;
 					}
 					
 					// プログレスバーの更新
