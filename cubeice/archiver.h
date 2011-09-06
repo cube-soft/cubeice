@@ -512,7 +512,7 @@ namespace cubeice {
 					LOG_TRACE(_T("Message = %s"), line.c_str());
 					
 					string_type::size_type pos = line.find(error);
-					if (pos != string_type::npos) {
+					if (pos != string_type::npos && line.find(password_error) == string_type::npos) {
 						string_type err = clx::strip_copy(line.substr(pos));
 						if (pos != 0) err += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
 						LOG_ERROR(err.c_str());
@@ -592,7 +592,7 @@ namespace cubeice {
 							continue;
 						}
 					}
-					
+
 					// プログレスバーの更新
 					if (this->size_ > 0) {
 						if (this->size_ > 0 && this->files_[index].size > 0) {
