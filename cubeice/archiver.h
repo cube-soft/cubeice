@@ -46,6 +46,7 @@
 #include "user-setting.h"
 #include "dialog.h"
 #include "sendmail.h"
+#include "compression.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
 #define CUBEICE_MAXCOLUMN 45
@@ -123,7 +124,7 @@ namespace cubeice {
 			if (filetype == _T("detail")) {
 				LOG_TRACE(_T("set detail-mode"));
 				cubeice::runtime_setting runtime;
-				ext = this->compress_extension(runtime.type(), first, last, optar);
+				ext = cubeice::compression::extension(first, last, runtime.type(), optar);
 				dest = first->substr(0, first->find_last_of(_T('.'))) + ext;
 				runtime.path() = dest;
 				if (cubeice::dialog::runtime_setting(progress_.handle(), runtime) == IDCANCEL) return;
@@ -135,7 +136,7 @@ namespace cubeice {
 				
 				filetype = runtime.type();
 				update = runtime.update();
-				ext = this->compress_extension(filetype, first, last, optar);
+				ext = cubeice::compression::extension(first, last, filetype, optar);
 				if (filetype == _T("tgz")) filetype = _T("gzip");
 				else if (filetype == _T("tbz")) filetype = _T("bzip2");
 				LOG_INFO(_T("filetype = %s, ext = %s"), filetype.c_str(), ext.c_str());
@@ -153,7 +154,7 @@ namespace cubeice {
 			}
 			else {
 				// •Û‘¶æƒpƒX‚ÌŒˆ’è
-				ext = this->compress_extension(filetype, first, last, optar);
+				ext = cubeice::compression::extension(first, last, filetype, optar);
 				LOG_INFO(_T("filetype = %s, ext = %s"), filetype.c_str(), ext.c_str());
 				
 				dest = this->compress_path(setting_.compression(), *first, ext);
@@ -697,42 +698,6 @@ namespace cubeice {
 		string_type decomp_tmp_dir_;
 		
 	private: // compress_xxx
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  compress_extension
-		 */
-		/* ----------------------------------------------------------------- */
-		template <class InputIterator>
-		string_type compress_extension(const string_type& filetype, InputIterator first, InputIterator last, bool& optar) {
-			string_type ext = _T(".");
-			if (filetype == _T("gzip")) ext += _T("gz");
-			else if (filetype == _T("bzip2")) ext += _T("bz2");
-			else ext += filetype;
-			
-			optar = false;
-			if (filetype == _T("gzip") || filetype == _T("bzip2")) {
-				int n = 0;
-				bool is_tar = false;
-				for (InputIterator iter = first; iter != last; ++iter) {
-					++n;
-					string_type::size_type pos = iter->find_last_of(_T('.'));
-					if (pos != string_type::npos && iter->substr(pos) == _T(".tar")) is_tar = true;
-				}
-				
-				if (n > 1 || PathIsDirectory(first->c_str())) {
-					ext = _T(".tar") + ext;
-					optar = true;
-				}
-				else if (is_tar) ext = _T(".tar") + ext;
-				else if (filetype == _T("bzip2")) {
-					string_type::size_type pos = first->find_last_of('.');
-					if (pos != string_type::npos) ext = first->substr(pos) + ext;
-				}
-			}
-			
-			return ext;
-		}
-
 		/* ----------------------------------------------------------------- */
 		//  compress_path
 		/* ----------------------------------------------------------------- */
