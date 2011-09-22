@@ -602,7 +602,7 @@ namespace cubeice {
 		}
 		std::basic_string<wchar_t> s;
 		std::basic_string<wchar_t> checkname;
-		clx::join(parts, s, L"\\");
+		clx::join(parts, s, L"/");
 		clx::join(parts, checkname, L"");
 
 		wchar_t dir[1024] = {};
@@ -616,8 +616,11 @@ namespace cubeice {
 			DWORD type = GetFileType(test);
 			::CloseHandle(test);
 			if (type == FILE_TYPE_DISK) {
-				if (escaped) PutNormalizationLog(src, s);
-				return s;
+				if (escaped) {
+					PutNormalizationLog(src, s);
+					return s;
+				}
+				else return src;
 			}
 		}
 
