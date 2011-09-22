@@ -25,6 +25,7 @@
 #include <windows.h>
 #include <tchar.h>
 #include <shlwapi.h>
+#include <iterator>
 
 #pragma comment(lib, "shlwapi.lib")
 
@@ -54,7 +55,7 @@ namespace cubeice {
 		template <class InputIterator>
 		inline std::basic_string<TCHAR> extension(InputIterator first, InputIterator last, const std::basic_string<TCHAR>& filetype, bool& need_tar_operation) {
 			std::basic_string<TCHAR> dest = _T(".");
-			if (dest == _T("gzip")) dest += _T("gz");
+			if (filetype == _T("gzip")) dest += _T("gz");
 			else if (filetype == _T("bzip2")) dest += _T("bz2");
 			else dest += filetype;
 			
@@ -76,6 +77,11 @@ namespace cubeice {
 				else if (filetype == _T("bzip2")) {
 					std::basic_string<TCHAR>::size_type pos = first->find_last_of('.');
 					if (pos != std::basic_string<TCHAR>::npos) dest = first->substr(pos) + dest;
+				}
+			} else if (filetype == _T("tbz") || filetype == _T("tgz")) {
+				std::basic_string<TCHAR>::size_type pos = first->find_last_of(_T('.'));
+				if (std::distance(first, last) > 1 || ::PathIsDirectory(first->c_str()) || pos == std::basic_string<TCHAR>::npos || first->substr(pos) != _T(".tar")) {
+					need_tar_operation = true;
 				}
 			}
 			

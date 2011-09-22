@@ -60,30 +60,29 @@ void test_compression_extension() {
 	BOOST_CHECK(optar == false);
 	
 	// TestCase3: 単一ファイルを tgz に圧縮
-	// NOTE: この場合，拡張子は *.gz? *.tgz?
 	filetype = _T("tgz");
 	optar = false;
 	v.clear();
 	v.push_back(_T("テストファイル.txt"));
-	BOOST_CHECK(cubeice::compression::extension(v.begin(), v.end(), filetype, optar) == _T(".gz")); // *.tgz?
-	BOOST_CHECK(optar == false);
+	BOOST_CHECK(cubeice::compression::extension(v.begin(), v.end(), filetype, optar) == _T(".tgz"));
+	BOOST_CHECK(optar == true);
 	
 	// TestCase4: 単一ファイルを bzip2 に圧縮 (*.xxx.bz2 と言う拡張子になる)
-	// NOTE: この場合，拡張子は *.xxx.bz2? *.tbz?
-	filetype = _T("tbz");
-	optar = false;
-	v.clear();
-	v.push_back(_T("テストファイル.txt"));
-	BOOST_CHECK(cubeice::compression::extension(v.begin(), v.end(), filetype, optar) == _T(".txt.bz2")); // *.txt.tbz?
-	BOOST_CHECK(optar == false);
-	
-	// TestCase5: 単一ファイルを tbz に圧縮 (*.xxx.bz2 と言う拡張子になる)
 	filetype = _T("bzip2");
 	optar = false;
 	v.clear();
 	v.push_back(_T("テストファイル.txt"));
 	BOOST_CHECK(cubeice::compression::extension(v.begin(), v.end(), filetype, optar) == _T(".txt.bz2"));
 	BOOST_CHECK(optar == false);
+
+	// TestCase5: 単一ファイルを tbz に圧縮
+	filetype = _T("tbz");
+	optar = false;
+	v.clear();
+	v.push_back(_T("テストファイル.txt"));
+	BOOST_CHECK(cubeice::compression::extension(v.begin(), v.end(), filetype, optar) == _T(".tbz"));
+	BOOST_CHECK(optar == true);
+
 	
 	// TestCase6: 複数ファイル (ディレクトリ含まず) を gzip に圧縮
 	filetype = _T("gzip");
@@ -116,7 +115,7 @@ void test_compression_extension() {
 	BOOST_CHECK(optar == true);
 	
 	// TestCase9: 複数ファイル (ディレクトリ含まず) を tbz に圧縮
-	filetype = _T("bzip2");
+	filetype = _T("tbz");
 	optar = false;
 	v.clear();
 	v.push_back(_T("foo.txt"));
@@ -247,7 +246,7 @@ void test_compression_extension() {
 	BOOST_CHECK(optar == true);
 	
 	// TestCase21: 複数の tar ファイルを tbz に圧縮
-	filetype = _T("bzip2");
+	filetype = _T("tbz");
 	optar = false;
 	v.clear();
 	v.push_back(_T("foo.tar"));
@@ -312,7 +311,7 @@ void test_compression_extension() {
 	BOOST_CHECK(optar == true);
 	
 	// TestCase25: tar ファイルを含む複数のファイルを tbz に圧縮
-	filetype = _T("gzip");
+	filetype = _T("tbz");
 	optar = false;
 	v.clear();
 	v.push_back(_T("hoge.tar"));
