@@ -141,10 +141,10 @@ namespace cubeice {
 				else if (filetype == _T("tbz")) filetype = _T("bzip2");
 				LOG_INFO(_T("filetype = %s, ext = %s"), filetype.c_str(), ext.c_str());
 				
-				options.push_back(_T("-mx=") + boost::lexical_cast<string_type>(runtime.level()));
+				if (runtime.type() != _T("gzip")) options.push_back(_T("-mx=") + boost::lexical_cast<string_type>(runtime.level()));
 				if (runtime.type() == _T("zip")) options.push_back(_T("mm=") + runtime.method());
 				else if (runtime.type() == _T("7z")) options.push_back(_T("m0=") + runtime.method());
-				options.push_back(_T("-mmt=") + boost::lexical_cast<string_type>(runtime.thread_size()));
+				if (runtime.type() != _T("gzip")) options.push_back(_T("-mmt=") + boost::lexical_cast<string_type>(runtime.thread_size()));
 				if (runtime.enable_password()) {
 					pass = true;
 					cubeice::password() = runtime.password();
