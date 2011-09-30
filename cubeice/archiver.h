@@ -46,7 +46,7 @@
 #include "user-setting.h"
 #include "dialog.h"
 #include "sendmail.h"
-#include "compression.h"
+#include "compressor.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
 #define CUBEICE_MAXCOLUMN 45
@@ -124,7 +124,7 @@ namespace cubeice {
 			if (filetype == _T("detail")) {
 				LOG_TRACE(_T("set detail-mode"));
 				cubeice::runtime_setting runtime;
-				ext = cubeice::compression::extension(first, last, runtime.type(), optar);
+				ext = cubeice::compressor::extension(first, last, runtime.type(), optar);
 				dest = first->substr(0, first->find_last_of(_T('.'))) + ext;
 				runtime.path() = dest;
 				if (cubeice::dialog::runtime_setting(progress_.handle(), runtime) == IDCANCEL) return;
@@ -136,7 +136,7 @@ namespace cubeice {
 				
 				filetype = runtime.type();
 				update = runtime.update();
-				ext = cubeice::compression::extension(first, last, filetype, optar);
+				ext = cubeice::compressor::extension(first, last, filetype, optar);
 				if (filetype == _T("tgz")) filetype = _T("gzip");
 				else if (filetype == _T("tbz")) filetype = _T("bzip2");
 				LOG_INFO(_T("filetype = %s, ext = %s"), filetype.c_str(), ext.c_str());
@@ -154,7 +154,7 @@ namespace cubeice {
 			}
 			else {
 				// 保存先パスの決定
-				ext = cubeice::compression::extension(first, last, filetype, optar);
+				ext = cubeice::compressor::extension(first, last, filetype, optar);
 				LOG_INFO(_T("filetype = %s, ext = %s"), filetype.c_str(), ext.c_str());
 				
 				dest = this->compress_path(setting_.compression(), *first, ext);
@@ -521,6 +521,50 @@ namespace cubeice {
 						continue;
 					}
 					
+					// パスワード処理
+					if (this->decompress_is_password(proc, line, tmp)) {
+						LOG_TRACE(_T("Password operations start"));
+						proc.close();
+						
+						string_type remove_file = root + _T("\\") + files_[std::max(static_cast<int>(index - 1), 0)].name;
+						if (PathFileExists(remove_file.c_str()) != FALSE && this->filesize(remove_file) == 0) {
+							DeleteFile(remove_file.c_str());
+						}
+						if (cubeice::dialog::password(progress_.handle(), DECOMPRESS_FLAG) == IDCANCEL) {
+							// キャンセルを押されたときの暫定処理
+							string_type		deldir = root;
+							if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER) &&
+								(setting_.decompression().details() & DETAIL_SINGLE_FOLDER) &&
+								!folder.empty()) {
+									deldir += _T("\\") + folder;
+							}
+							if (PathFileExists(deldir.c_str()))
+								RemoveDirectory(deldir.c_str());
+							return;
+						}
+						LOG_INFO(_T("Password = %s"), cubeice::password().c_str());
+						
+						cmdline = decompress_cmdline(src, tmp, encoding, true);
+						LOG_TRACE(_T("CmdLine-7z = %s"), cmdline.c_str());
+						
+						if (!proc.open(cmdline.c_str(), _T("r"))) {
+							LOG_ERROR(_T("cube::popen::open()"));
+							break;
+						}
+						
+						index = 0;
+						status = 0;
+						to_all = 0;
+						calcpos = 0.0;
+						line.erase();
+						if (this->size_ > 0) {
+							progress_.position(progress_.minimum());
+							progress_.subposition(progress_.minimum());
+							progress_.title(_T("0% - ") + title_message);
+						}
+						continue;
+					}
+					
 					pos = line.find(keyword);
 					if (pos == string_type::npos || line.size() <= keyword.size()) {
 						continue;
@@ -532,68 +576,6 @@ namespace cubeice {
 					if(pos != string_type::npos) filename = filename.substr(0, pos);
 					LOG_DEBUG(_T("Filename = %s"), filename.c_str());
 					
-					// パスワード処理
-					if (this->createinfo(tmp+_T("\\")+filename).size == 0 || line.find(password_error) != string_type::npos) {
-						string_type		nextline;
-						if (this->createinfo(tmp+_T("\\")+filename).size == 0) {
-							int				st;
-							bool			f = false;
-							while( ( st = proc.peek(nextline) ) == 0 ) {
-								if (!this->refresh(proc)) {
-									f = true;
-									break;
-								}
-								Sleep(10);
-							}
-							if(f) break;
-							if( st < 0 || st == 2 ) break;
-							assert(st == 1);
-						}
-						
-						if (line.find(password_error) != string_type::npos || nextline.find(password) != string_type::npos) {
-							LOG_TRACE(_T("Password operations start"));
-							proc.close();
-							
-							string_type remove_file = root + _T("\\") + files_[std::max(static_cast<int>(index - 1), 0)].name;
-							if (PathFileExists(remove_file.c_str()) != FALSE && this->filesize(remove_file) == 0) {
-								DeleteFile(remove_file.c_str());
-							}
-							if (cubeice::dialog::password(progress_.handle(), DECOMPRESS_FLAG) == IDCANCEL) {
-								// キャンセルを押されたときの暫定処理
-								string_type		deldir = root;
-								if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER) &&
-									(setting_.decompression().details() & DETAIL_SINGLE_FOLDER) &&
-									!folder.empty()) {
-										deldir += _T("\\") + folder;
-								}
-								if (PathFileExists(deldir.c_str()))
-									RemoveDirectory(deldir.c_str());
-								return;
-							}
-							LOG_INFO(_T("Password = %s"), cubeice::password().c_str());
-							
-							cmdline = decompress_cmdline(src, tmp, encoding, true);
-							LOG_TRACE(_T("CmdLine-7z = %s"), cmdline.c_str());
-							
-							if (!proc.open(cmdline.c_str(), _T("r"))) {
-								LOG_ERROR(_T("cube::popen::open()"));
-								break;
-							}
-							
-							index = 0;
-							status = 0;
-							to_all = 0;
-							calcpos = 0.0;
-							line.erase();
-							if (this->size_ > 0) {
-								progress_.position(progress_.minimum());
-								progress_.subposition(progress_.minimum());
-								progress_.title(_T("0% - ") + title_message);
-							}
-							continue;
-						}
-					}
-
 					// プログレスバーの更新
 					if (this->size_ > 0) {
 						if (this->size_ > 0 && this->files_[index].size > 0) {
@@ -1244,6 +1226,52 @@ namespace cubeice {
 			LOG_TRACE(_T("function archiver::decompress_tar() end"));
 			
 			return root + _T('\\') + filename;
+		}
+
+		/* ----------------------------------------------------------------- */
+		//  decompress_is_password
+		/* ----------------------------------------------------------------- */
+		bool decompress_is_password(cube::popen& proc, const string_type& message, const string_type& tmpdir) {
+			typedef TCHAR char_type;
+			typedef std::basic_string<TCHAR> string_type;
+			
+			static const string_type keyword = _T("Extracting");
+			static const string_type password_required(_T("Enter password"));
+			static const string_type password_error(_T("Wrong password?"));
+			
+			if (message.find(password_required) != string_type::npos ||
+				message.find(password_error) != string_type::npos) return true;
+			
+
+			string_type::size_type pos = message.find(keyword);
+			if (pos == string_type::npos || message.size() <= keyword.size()) return false;
+
+			string_type filename = clx::strip_copy(message.substr(pos + keyword.size()));
+			pos = filename.find(_T('<'));
+			if (pos != string_type::npos) filename = filename.substr(pos + 1);
+			pos = filename.rfind(_T('>'));
+			if (pos != string_type::npos) filename = filename.substr(0, pos);
+
+			string_type	nextline;
+			if (this->createinfo(tmpdir + _T("\\") + filename).size == 0) {
+				int st = 0;
+				bool f = false;
+				while((st = proc.peek(nextline)) == 0) {
+					if (!this->refresh(proc)) {
+						f = true;
+						break;
+					}
+					Sleep(10);
+				}
+				if(f) return false;
+				if(st < 0 || st == 2) return false;
+			}
+			if (nextline.empty()) return false;
+
+			if (nextline.find(password_required) != string_type::npos ||
+				nextline.find(password_error) != string_type::npos) return true;
+
+			return true;
 		}
 		
 	private: // others

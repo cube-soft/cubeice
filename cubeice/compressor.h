@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------- */
 /*
- *  compression.h
+ *  compressor.h
  *
  *  Copyright (c) 2010 - 2011 CubeSoft Inc.
  *
@@ -18,8 +18,8 @@
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_COMPRESSION_H
-#define CUBEICE_COMPRESSION_H
+#ifndef CUBEICE_COMPRESSOR_H
+#define CUBEICE_COMPRESSOR_H
 
 #include <string>
 #include <windows.h>
@@ -29,16 +29,20 @@
 
 #pragma comment(lib, "shlwapi.lib")
 
-/* ------------------------------------------------------------------------- */
-/*
- *  NOTE: archiver.h の cubeice::archiver クラスのリファクタリングのために
- *  テスト and 分離可能なメンバ関数を cubeice::compression もしくは
- *  cubeice::decompression 名前空間以下に分離し，テストコードを作成して
- *  いく．
- */
-/* ------------------------------------------------------------------------- */
 namespace cubeice {
-	namespace compression {
+	/* ------------------------------------------------------------------------- */
+	/*
+	 *  compressor
+	 *
+	 *  NOTE: archiver.h の cubeice::archiver クラスのリファクタリングのために
+	 *  テスト and 分離可能なメンバ関数を cubeice::compressor もしくは
+	 *  cubeice::decompressor クラス以下に分離し，テストコードを作成して
+	 *  いく．最終的には，圧縮処理に関わるものは全て compressor クラスに
+	 *  移行する．
+	 */
+	/* ------------------------------------------------------------------------- */
+	class compressor {
+	public:
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  extension
@@ -53,7 +57,7 @@ namespace cubeice {
 		 */
 		/* ----------------------------------------------------------------- */
 		template <class InputIterator>
-		inline std::basic_string<TCHAR> extension(InputIterator first, InputIterator last, const std::basic_string<TCHAR>& filetype, bool& need_tar_operation) {
+		static std::basic_string<TCHAR> extension(InputIterator first, InputIterator last, const std::basic_string<TCHAR>& filetype, bool& need_tar_operation) {
 			std::basic_string<TCHAR> dest = _T(".");
 			if (filetype == _T("gzip")) dest += _T("gz");
 			else if (filetype == _T("bzip2")) dest += _T("bz2");
@@ -87,7 +91,7 @@ namespace cubeice {
 			
 			return dest;
 		}
-	}
-}
+	};
+} // namespace cubeice
 
-#endif // CUBEICE_COMPRESSION_H
+#endif // CUBEICE_COMPRESSOR_H
