@@ -47,6 +47,7 @@
 #include "dialog.h"
 #include "sendmail.h"
 #include "compressor.h"
+#include "utility.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
 #define CUBEICE_MAXCOLUMN 45
@@ -342,7 +343,6 @@ namespace cubeice {
 		void decompress(InputIterator first, InputIterator last) {
 			static const string_type keyword = _T("Extracting");
 			static const string_type error = _T("ERROR:");
-			static const string_type password(_T("Enter password"));
 			static const string_type password_error(_T("Wrong password?"));
 			
 			LOG_TRACE(_T("function archiver::decompress() start"));
@@ -607,13 +607,19 @@ namespace cubeice {
 					if ((setting_.decompression().details() & DETAIL_FILTER) && this->is_filter(filename, setting_.filters())) {
 						LOG_INFO(_T("Filtering = %s"), filename.c_str());
 					}
-					else if (!this->move(tmp + _T('\\') + filename, root + _T('\\') + filename, result == IDRENAME)) {
-						// TODO:
-						// - move を実行する前に MAX_PATH のチェック
-						// - false だった場合に GetLastError() に対応するメッセージを出力（改行を抜く）
-						LOG_ERROR(_T("Filename = %s, ErrCode = %d"), filename.c_str(), GetLastError());
-						report += error + _T(" Can not move file.");
-						report += _T(" (") + keyword + _T(' ') + filename + _T(")\r\n");
+					else {
+						SetLastError(NO_ERROR);
+						bool status = this->move(tmp + _T('\\') + filename, root + _T('\\') + filename, result == IDRENAME);
+						if (!status) {
+							// TODO:
+							// - move を実行する前に MAX_PATH のチェック
+							// - false だった場合に GetLastError() に対応するメッセージを出力（改行を抜く）
+							DWORD error_code = GetLastError();
+							LOG_ERROR(_T("Filename = %s, ErrCode = %d (%s)"), filename.c_str(), error_code, error_message(error_code).c_str());
+							if (error_code != NO_ERROR) report += error + _T(" ") + error_message(error_code);
+							else report += error + _T(" 作業領域からのファイル移動に失敗しました。");
+							report += _T(" (") + keyword + _T(' ') + filename + _T(")\r\n");
+						}
 					}
 					
 					if (index < files_.size() - 1) ++index;
@@ -1271,7 +1277,7 @@ namespace cubeice {
 			if (nextline.find(password_required) != string_type::npos ||
 				nextline.find(password_error) != string_type::npos) return true;
 
-			return true;
+			return false;
 		}
 		
 	private: // others
@@ -1453,11 +1459,11 @@ namespace cubeice {
 						if (!PathFileExists(renamed)) break;
 					}
 					status &= SHFileMove(src, renamed);
-					LOG_TRACE(_T("SHFileMove(%s, %s), status = %d"), src.c_str(), renamed, GetLastError());
+					LOG_TRACE(_T("SHFileMove(%s, %s), status = %d: %s"), src.c_str(), renamed, GetLastError(), error_message().c_str());
 					
 				} else {
 					status &= SHFileMove(src, dest);
-					LOG_TRACE(_T("SHFileMove(%s, %s), status = %d"), src.c_str(), dest.c_str(), GetLastError());
+					LOG_TRACE(_T("SHFileMove(%s, %s), status = %d: %s"), src.c_str(), dest.c_str(), GetLastError(), error_message().c_str());
 				}
 			}
 			
