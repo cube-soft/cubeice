@@ -18,7 +18,7 @@
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
-#include "test-compression-extension.h"
+#include "test-compressor-extension.h"
 
 int test_main(int argc, char* argv[]) {
 	test_compression_extension();
