@@ -39,8 +39,8 @@ namespace cubeice {
 		if (buffer != NULL) {
 			dest = reinterpret_cast<TCHAR*>(buffer);
 			LocalFree(buffer);
-			if (dest[dest.size() - 1] == _T('\n')) dest.erase(dest.size() - 1);
-			if (dest[dest.size() - 1] == _T('\r')) dest.erase(dest.size() - 1);
+			if (!dest.empty() && dest[dest.size() - 1] == _T('\n')) dest.erase(dest.size() - 1);
+			if (!dest.empty() && dest[dest.size() - 1] == _T('\r')) dest.erase(dest.size() - 1);
 		}
 		return dest;
 	}

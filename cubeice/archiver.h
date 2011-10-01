@@ -393,7 +393,7 @@ namespace cubeice {
 				progress_.marquee(true);
 				
 				// 一時フォルダの作成
-				string_type tmp = tmpdir(_T("cubeice"));
+				string_type tmp = tmpdir(root, _T("cubeice"));
 				decomp_tmp_dir_ = tmp;
 				if (tmp.empty()) break;
 				
@@ -1294,17 +1294,42 @@ namespace cubeice {
 		 *  ランダムな一時ファイルを生成してパスを返す．
 		 */
 		/* ----------------------------------------------------------------- */
-		string_type tmpfile(const string_type& prefix) {
-			char_type dir[1024] = {};
-			if (GetTempPath(1024, dir) == 0) return string_type();
+		string_type tmpfile(const string_type& dir, const string_type& prefix) {
 			char_type path[2048] = {};
-			if (GetTempFileName(dir, prefix.c_str(), 0, path) == 0) return string_type();
-			
+			if (GetTempFileName(dir.c_str(), prefix.c_str(), 0, path) == 0) return string_type();
+						
 			// 一時ファイルが生成されているので削除する．
 			if (PathFileExists(path)) DeleteFile(path);
 			return string_type(path);
 		}
+
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  tmpfile
+		 *
+		 *  ランダムな一時ファイルを生成してパスを返す．
+		 */
+		/* ----------------------------------------------------------------- */
+		string_type tmpfile(const string_type& prefix) {
+			char_type dir[1024] = {};
+			if (GetTempPath(1024, dir) == 0) return string_type();
+			return tmpfile(string_type(dir), prefix);
+		}
 		
+		/* ----------------------------------------------------------------- */
+		/*
+		 *  tmpdir
+		 *
+		 *  ラインダムな一時ディレクトリを生成してパスを返す．
+		 */
+		/* ----------------------------------------------------------------- */
+		string_type tmpdir(const string_type& dir, const string_type& prefix) {
+			string_type path = tmpfile(dir, prefix);
+			if (path.empty()) return path;
+			if (!createdir(path)) return string_type();
+			return path;
+		}
+
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  tmpdir
