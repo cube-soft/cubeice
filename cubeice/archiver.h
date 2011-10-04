@@ -42,12 +42,13 @@
 #include <psdotnet/appender.h>
 #include <babel/babel.h>
 #include "wpopen.h"
-#include "pathmatch.h"
+#include "io.h"
+#include "error.h"
 #include "user-setting.h"
+#include "pathmatch.h"
 #include "dialog.h"
 #include "sendmail.h"
 #include "compressor.h"
-#include "utility.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
 #define CUBEICE_MAXCOLUMN 45
@@ -75,8 +76,7 @@ namespace cubeice {
 		//  destructor
 		/* ----------------------------------------------------------------- */
 		~archiver() {
-			if(!decomp_tmp_dir_.empty())
-				this->remove(decomp_tmp_dir_.c_str());
+			if(!decomp_tmp_dir_.empty()) cubeice::removedir(decomp_tmp_dir_.c_str());
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -169,7 +169,7 @@ namespace cubeice {
 			}
 			
 			// 一時ファイルのパスを決定
-			string_type tmp = update ? dest : tmpfile(_T("cubeice"));
+			string_type tmp = update ? dest : cubeice::tmpfile(_T("cubeice"), false);
 			if (update) LOG_INFO(_T("update-mode, path = %s"), tmp);
 			if (tmp.empty()) return;
 			
@@ -282,7 +282,7 @@ namespace cubeice {
 			if (status == 2) {
 				if (optar) {
 					string_type prev = tmp;
-					tmp = tmpfile(_T("cubeice"));
+					tmp = cubeice::tmpfile(_T("cubeice"), false);
 					tmp = tmp.substr(0, tmp.find_last_of(_T('\\')) + 1);
 					tmp += PathFindFileName(dest.c_str());
 					this->compress_tar(prev, tmp, filetype, pass);
@@ -393,7 +393,7 @@ namespace cubeice {
 				progress_.marquee(true);
 				
 				// 一時フォルダの作成
-				string_type tmp = tmpdir(root, _T("cubeice"));
+				string_type tmp = cubeice::tmpdir(root, _T("cubeice"));
 				decomp_tmp_dir_ = tmp;
 				if (tmp.empty()) break;
 				
@@ -655,7 +655,7 @@ namespace cubeice {
 					}
 				}
 				
-				this->remove(tmp.c_str());
+				cubeice::removedir(tmp.c_str());
 				decomp_tmp_dir_.clear();
 				
 				if ((setting_.decompression().details() & DETAIL_REMOVE_SRC) && report.empty() && !progress_.is_cancel()) {
@@ -1289,63 +1289,6 @@ namespace cubeice {
 		
 		/* ----------------------------------------------------------------- */
 		/*
-		 *  tmpfile
-		 *
-		 *  ランダムな一時ファイルを生成してパスを返す．
-		 */
-		/* ----------------------------------------------------------------- */
-		string_type tmpfile(const string_type& dir, const string_type& prefix) {
-			char_type path[2048] = {};
-			if (GetTempFileName(dir.c_str(), prefix.c_str(), 0, path) == 0) return string_type();
-						
-			// 一時ファイルが生成されているので削除する．
-			if (PathFileExists(path)) DeleteFile(path);
-			return string_type(path);
-		}
-
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  tmpfile
-		 *
-		 *  ランダムな一時ファイルを生成してパスを返す．
-		 */
-		/* ----------------------------------------------------------------- */
-		string_type tmpfile(const string_type& prefix) {
-			char_type dir[1024] = {};
-			if (GetTempPath(1024, dir) == 0) return string_type();
-			return tmpfile(string_type(dir), prefix);
-		}
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  tmpdir
-		 *
-		 *  ラインダムな一時ディレクトリを生成してパスを返す．
-		 */
-		/* ----------------------------------------------------------------- */
-		string_type tmpdir(const string_type& dir, const string_type& prefix) {
-			string_type path = tmpfile(dir, prefix);
-			if (path.empty()) return path;
-			if (!createdir(path)) return string_type();
-			return path;
-		}
-
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  tmpdir
-		 *
-		 *  ラインダムな一時ディレクトリを生成してパスを返す．
-		 */
-		/* ----------------------------------------------------------------- */
-		string_type tmpdir(const string_type& prefix) {
-			string_type path = tmpfile(prefix);
-			if (path.empty()) return path;
-			if (CreateDirectory(path.c_str(), NULL) == 0) return string_type();
-			return path;
-		}
-		
-		/* ----------------------------------------------------------------- */
-		/*
 		 *  rootdir
 		 *
 		 *  ユーザ設定の値を元に出力先ディレクトリを取得する．特定の
@@ -1387,22 +1330,6 @@ namespace cubeice {
 				else return desktop;
 			}
 			return string_type();
-		}
-		
-		/* ----------------------------------------------------------------- */
-		//  createdir
-		/* ----------------------------------------------------------------- */
-		bool createdir(const string_type& path) {
-			if (PathFileExists(path.c_str())) {
-				if (PathIsDirectory(path.c_str())) return true;
-				else DeleteFile(path.c_str());
-			}
-			
-			string_type::size_type pos = path.find_last_of(_T('\\'));
-			if (pos != string_type::npos) {
-				if (!createdir(path.substr(0, pos))) return false;
-			}
-			return CreateDirectory(path.c_str(), NULL) != FALSE;
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -1448,7 +1375,7 @@ namespace cubeice {
 			if (SHFileOperation(&op)) return false;
 			return true;
 		}
-
+		
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  move
@@ -1464,15 +1391,14 @@ namespace cubeice {
 			LOG_TRACE(_T("rename = %d"), (rename ? 1 : 0));
 			
 			bool status = false;
-			if (PathIsDirectory(src.c_str())) {
-				status = createdir(dest);
-			} else {
+			if (PathIsDirectory(src.c_str())) status = cubeice::createdir(dest);
+			else {
 				// dest からディレクトリ部分を抽出 Path.GetDirectoryName(dest);
 				// TODO: この部分がおかしい場合があるので調査．
 				string_type branch(dest.substr(0, dest.find_last_of(_T('\\'))));
 				LOG_TRACE(_T("DirectoryName = %s"), branch.c_str());
 				
-				status = createdir(branch);
+				status = cubeice::createdir(branch);
 				// TODO: リネーム処理を追加
 				if (rename && PathFileExists(dest.c_str())) {
 					TCHAR drivename[8], dirname[4096], basename[1024], extname[32];
@@ -1495,54 +1421,6 @@ namespace cubeice {
 			LOG_TRACE(_T("function archiver::move() end"));
 			
 			return status;
-		}
-		
-		/* ----------------------------------------------------------------- */
-		//  remove
-		/* ----------------------------------------------------------------- */
-		bool remove(LPCTSTR lpPathName, bool bReadOnly = TRUE) {
-			if (lpPathName == NULL) return false;
-			
-			TCHAR szPathName[_MAX_PATH] = {};
-			_tcscpy(szPathName, lpPathName);
-			_tcscat(szPathName, _T("\\*.*"));
-			
-			WIN32_FIND_DATA wfd;
-			HANDLE handle = FindFirstFile(szPathName, &wfd);
-			if(handle == INVALID_HANDLE_VALUE) return false;
-			
-			do {
-				if (_tcscmp(wfd.cFileName, _T(".")) != 0 && _tcscmp(wfd.cFileName, _T("..")) != 0) {
-					TCHAR szFileName[_MAX_PATH] = {};
-					_tcscpy(szFileName, lpPathName);
-					_tcscat(szFileName, _T("\\") );
-					_tcscat(szFileName, wfd.cFileName);
-					if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-						this->remove(szFileName, bReadOnly);
-					}
-					else {
-						if (bReadOnly == TRUE) {
-							DWORD dwFileAttributes;
-							dwFileAttributes = GetFileAttributes(szFileName);
-							dwFileAttributes &= ~FILE_ATTRIBUTE_READONLY;
-							SetFileAttributes(szFileName, dwFileAttributes);
-						}
-						
-						DeleteFile(szFileName);
-					}
-				}
-			} while (FindNextFile(handle, &wfd));
-			FindClose(handle);
-			
-			if (bReadOnly == TRUE) {
-				DWORD dwFileAttributes;
-				dwFileAttributes = GetFileAttributes(lpPathName);
-				dwFileAttributes &= ~FILE_ATTRIBUTE_READONLY;
-				SetFileAttributes(lpPathName, dwFileAttributes);
-			}
-			BOOL bResult = RemoveDirectory(lpPathName);
-
-			return (bResult == TRUE);
 		}
 		
 		/* ----------------------------------------------------------------- */

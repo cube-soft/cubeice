@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------- */
 /*
- *  test-compressor-extension.h
+ *  test-compressor.h
  *
  *  Copyright (c) 2010 - 2011 CubeSoft Inc.
  *
@@ -18,8 +18,8 @@
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_TEST_COMPRESSOR_EXTENSION_H
-#define CUBEICE_TEST_COMPRESSOR_EXTENSION_H
+#ifndef CUBEICE_TEST_COMPRESSOR_H
+#define CUBEICE_TEST_COMPRESSOR_H
 
 #include <windows.h>
 #include <tchar.h>
@@ -30,13 +30,13 @@
 
 /* ------------------------------------------------------------------------- */
 /*
- *  test_compression_extensio
+ *  test_compressor_extension
  *
  *  ファイル種類と入力ファイル群から拡張子，および TAR 処理が必要かどうか
  *  を判定する関数のテスト．
  */
 /* ------------------------------------------------------------------------- */
-void test_compression_extension() {
+void test_compressor_extension() {
 	std::vector<std::basic_string<TCHAR> > v;
 	std::basic_string<TCHAR> filetype;
 	bool optar;
@@ -329,4 +329,4 @@ void test_compression_extension() {
 	BOOST_CHECK(optar == true);
 }
 
-#endif // CUBEICE_TEST_COMPRESSOR_EXTENSION_H
+#endif // CUBEICE_TEST_COMPRESSOR_H

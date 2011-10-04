@@ -18,10 +18,14 @@
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
-#include "test-compressor-extension.h"
+#include "test-io.h"
+#include "test-compressor.h"
 
 int test_main(int argc, char* argv[]) {
-	test_compression_extension();
+	test_directory();
+	test_tmpfile();
+	test_tmpdir();
+	test_compressor_extension();
 	
 	return 0;
 }
