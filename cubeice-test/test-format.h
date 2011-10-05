@@ -56,6 +56,15 @@ inline void test_punct() {
 	BOOST_CHECK(cubeice::punct(-12345678) == _T("-12,345,678"));
 	BOOST_CHECK(cubeice::punct(-123456789) == _T("-123,456,789"));
 	BOOST_CHECK(cubeice::punct(-1234567890) == _T("-1,234,567,890"));
+
+	__int64 value = 123456789123456789;
+	BOOST_CHECK(cubeice::punct(value) == _T("123,456,789,123,456,789"));
+	value = 1234567891234567890;
+	BOOST_CHECK(cubeice::punct(value) == _T("1,234,567,891,234,567,890"));
+	value = -123456789123456789;
+	BOOST_CHECK(cubeice::punct(value) == _T("-123,456,789,123,456,789"));
+	value = -1234567891234567890;
+	BOOST_CHECK(cubeice::punct(value) == _T("-1,234,567,891,234,567,890"));
 }
 
 #endif // CUBEICE_TEST_FORMAT_H

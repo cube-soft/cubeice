@@ -38,8 +38,9 @@ namespace cubeice {
 	 *  ‚ğæ“¾‚·‚éD
 	 */
 	/* ----------------------------------------------------------------- */
-	inline std::basic_string<TCHAR> punct(int src) {
-		int number = std::abs(src);
+	template <typename IntT>
+	inline std::basic_string<TCHAR> punct(IntT src) {
+		IntT number = (src < 0) ? -src : src;
 		int sign = (src >= 0) ? 1 : -1;
 		
 		std::vector<int> v;
