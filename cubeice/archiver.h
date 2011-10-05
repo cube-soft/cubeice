@@ -43,6 +43,7 @@
 #include <babel/babel.h>
 #include "wpopen.h"
 #include "io.h"
+#include "format.h"
 #include "error.h"
 #include "user-setting.h"
 #include "pathmatch.h"
@@ -355,7 +356,12 @@ namespace cubeice {
 			}
 			
 			// オプションを読み飛ばす．
-			while (first != last && first->at(0) == _T('/')) ++first;
+			for (; first != last && first->at(0) == _T('/'); ++first) {
+				if (first->compare(0, 6, _T("/drop:")) == 0) {
+					this->drop_path_ = first->substr(6);
+					LOG_TRACE(_T("DropPath = %s"), this->drop_path_.c_str());
+				}
+			}
 			
 			// NOTE: ドラッグ&ドロップの際にファイルが指定されなかった
 			// (ショートカットをダブルクリックした）と想定する．
@@ -684,6 +690,7 @@ namespace cubeice {
 		size_type size_; // トータルサイズ
 		cubeice::dialog::progressbar progress_;
 		string_type decomp_tmp_dir_;
+		string_type drop_path_;
 		
 	private: // compress_xxx
 		/* ----------------------------------------------------------------- */
@@ -1010,13 +1017,18 @@ namespace cubeice {
 				}
 			}
 			
-			// NOTE: 7z の場合ファイルタイプが取得できない事がある．
-			// 拡張子が *.7z の場合はスルーする．
+			// NOTE: パスワードが設定されている場合ファイルタイプが取得できない事がある．
+			// 拡張子が *.zip, *.7z, *.rar の場合はスルーする．
 			string_type::size_type pos = path.find_last_of(_T('.'));
-			if (pos != string_type::npos && path.substr(pos) == _T(".7z")) {
-				LOG_DEBUG(_T("get filetype from ext (for *.7z)"));
-				filetype = _T("7z");
-				return true;
+			if (pos != string_type::npos) {
+				if (path.substr(pos) == _T(".zip") ||
+					path.substr(pos) == _T(".7z") ||
+					path.substr(pos) == _T(".rar")) {
+					LOG_DEBUG(_T("get filetype from extension (for password)"));
+					filetype = path.substr(pos);
+					LOG_DEBUG(_T("filetype = %s"), filetype.c_str());
+					return true;
+				}
 			}
 			
 			LOG_DEBUG(_T("filetype = %s"), filetype.c_str());
@@ -1318,6 +1330,8 @@ namespace cubeice {
 			if (force == _T("desktop")) return desktop;
 			if (force == _T("mydocuments")) return mydocuments;
 			else if (force == _T("source") || setting.output_condition() == OUTPUT_SOURCE) {
+				if (!this->drop_path_.empty()) return this->drop_path_;
+
 				string_type folder;
 				ZeroMemory(buffer, CUBE_MAX_PATH);
 				DWORD status = GetFullPathName(src.c_str(), CUBE_MAX_PATH, buffer, NULL);
@@ -1356,6 +1370,9 @@ namespace cubeice {
 			return dest;
 		}
 		
+		/* ----------------------------------------------------------------- */
+		//  SHFileMove
+		/* ----------------------------------------------------------------- */
 		bool SHFileMove(const string_type& src, const string_type& dest) {
 			// NOTE: src/dest に指定する文字列は "\0" が 2連続で終わっていないとならない
 			std::vector<TCHAR> src_buffer(src.begin(), src.end());
@@ -1421,33 +1438,6 @@ namespace cubeice {
 			LOG_TRACE(_T("function archiver::move() end"));
 			
 			return status;
-		}
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  punct
-		 *
-		 *  3桁毎にカンマを挿入する．
-		 */
-		/* ----------------------------------------------------------------- */
-		string_type punct(size_type num) {
-			static const int digit = 1000;
-			
-			string_type dest;
-			while (num / digit > 0) {
-				string_type comma = dest.empty() ? _T("") : _T(",");
-				char_type buffer[8] = {};
-				_stprintf_s(buffer, _T("%03d"), num % 1000);
-				dest = buffer + comma + dest;
-				num /= 1000;
-			}
-			
-			string_type comma = dest.empty() ? _T("") : _T(",");
-			char_type buffer[8] = {};
-			_stprintf_s(buffer, _T("%d"), num % 1000);
-			dest = buffer + comma + dest;
-			
-			return dest;
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -1526,7 +1516,7 @@ namespace cubeice {
 					message += _T("\r\n");
 					message += _T("現在のファイル\r\n");
 					message += target + _T("\r\n");
-					message += _T("サイズ: ") + this->punct(elem.size) + _T(" バイト\r\n");
+					message += _T("サイズ: ") + cubeice::punct(elem.size) + _T(" バイト\r\n");
 					message += _T("更新日時: ") + elem.time.to_string(_T("%Y-%m-%d %H:%M:%S\r\n"));
 					
 					// 新しいファイル
@@ -1535,7 +1525,7 @@ namespace cubeice {
 					message += _T("\r\n");
 					message += _T("新しいファイル\r\n");
 					message += filename + _T("\r\n");
-					message += _T("サイズ: ") + this->punct(elem.size) + _T(" バイト\r\n");
+					message += _T("サイズ: ") + cubeice::punct(elem.size) + _T(" バイト\r\n");
 					message += _T("更新日時: ") + elem.time.to_string(_T("%Y-%m-%d %H:%M:%S"));
 					
 					return cubeice::dialog::overwrite(progress_.handle(), message);

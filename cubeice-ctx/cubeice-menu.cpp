@@ -62,6 +62,7 @@ void MenuSelectedCallback( const LPCTSTR arg, IMenuInfo *info )
 	commandLine += exePath;
 	commandLine += TEXT( "\" " );
 	if (arg != NULL) commandLine += arg;
+	commandLine += info->GetOption();
 	const std::vector<IMenuInfo::tstring>	&fileList = info->GetFileList();
 	for( std::vector<IMenuInfo::tstring>::const_iterator it = fileList.begin(), stop = fileList.end() ; it != stop ; ++it )
 		commandLine += TEXT( " \"" ) + *it + TEXT( "\"" );

@@ -34,7 +34,7 @@
  *  ディレクトリ作成・削除のテスト．
  */
 /* ------------------------------------------------------------------------- */
-void test_directory() {
+inline void test_directory() {
 	TCHAR buffer[MAX_PATH] = {};
 	BOOST_CHECK(GetCurrentDirectory(sizeof(buffer) / sizeof(TCHAR), buffer) > 0);
 	
@@ -65,7 +65,7 @@ void test_directory() {
  *  一時パス取得のテスト．
  */
 /* ------------------------------------------------------------------------- */
-void test_tmpfile() {
+inline void test_tmpfile() {
 	TCHAR buffer[MAX_PATH] = {};
 	BOOST_CHECK(GetCurrentDirectory(sizeof(buffer) / sizeof(TCHAR), buffer) > 0);
 
@@ -105,7 +105,7 @@ void test_tmpfile() {
  *  一時ディレクトリ取得のテスト．
  */
 /* ------------------------------------------------------------------------- */
-void test_tmpdir() {
+inline void test_tmpdir() {
 	TCHAR buffer[MAX_PATH] = {};
 	BOOST_CHECK(GetCurrentDirectory(sizeof(buffer) / sizeof(TCHAR), buffer) > 0);
 

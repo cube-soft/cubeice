@@ -40,6 +40,7 @@
 #include <vector>
 #include <clx/date_time.h>
 #include <clx/tokenizer.h>
+#include "format.h"
 #include "wpopen.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
@@ -307,10 +308,13 @@ namespace cube {
 				GlobalUnlock( hDrop );
 				ReleaseStgMedium( &stgm );
 
-				if( pIDFolder )
+				if( pIDFolder ) {
 					isDragAndDrop = true;
-				else
-					isDragAndDrop = false;
+					TCHAR buffer[MAX_PATH] = {};
+					::SHGetPathFromIDList(pIDFolder, buffer);
+					this->dropPath = buffer;
+				}
+				else isDragAndDrop = false;
 
 				return S_OK;
 			}
@@ -365,7 +369,7 @@ namespace cube {
 				tooltip += _T("\r\n");
 				
 				tooltip += _T( "サイズ: " );
-				tooltip += punct( li.QuadPart );
+				tooltip += cubeice::punct( li.QuadPart );
 				tooltip += _T( " バイト" );
 				
 				if( dwFlags & QITIPF_USESLOWTIP &&
@@ -491,6 +495,27 @@ namespace cube {
 				return fileList.size();
 			}
 			
+			/* ------------------------------------------------------------- */
+			/*
+			 *  GetOption
+			 *
+			 *  NOTE: 拡張する必要が出た場合，保持しているメンバ変数等から
+			 *  cubeice.exe へ送るためのオプション用コマンドライン文字列を
+			 *  生成する．
+			 */
+			/* ------------------------------------------------------------- */
+			tstring GetOption() {
+				tstring dest = _T(" ");
+				if (this->isDragAndDrop && !this->dropPath.empty()) {
+					dest += _T('"');
+					dest += _T("/drop:") + this->dropPath;
+					dest += _T('"');
+				}
+				dest += _T(" ");
+
+				return dest;
+			}
+
 		protected:
 			HINSTANCE	hInstance;
 			virtual void SetMenuIcon( WORD iconID, MENUITEMINFO &miinfo ) = 0;
@@ -707,33 +732,6 @@ namespace cube {
 				}
 				return;
 			}
-			
-			/* ----------------------------------------------------------------- */
-			/*
-			 *  punct
-			 *
-			 *  3桁毎にカンマを挿入する．
-			 */
-			/* ----------------------------------------------------------------- */
-			string_type punct(LONGLONG num) {
-				static const int digit = 1000;
-				
-				string_type dest;
-				while (num / digit > 0) {
-					string_type comma = dest.empty() ? _T("") : _T(",");
-					char_type buffer[8] = {};
-					_stprintf_s(buffer, _T("%03d"), num % 1000);
-					dest = buffer + comma + dest;
-					num /= 1000;
-				}
-				
-				string_type comma = dest.empty() ? _T("") : _T(",");
-				char_type buffer[8] = {};
-				_stprintf_s(buffer, _T("%d"), num % 1000);
-				dest = buffer + comma + dest;
-				
-				return dest;
-			}
 
 			void SerSubMenu( std::vector<const SUB_MENU_ITEM*> &v, const SUB_MENU_ITEM *smi ) {
 				for( int i = 0 ; smi[i].stringA ; ++i ) {
@@ -841,6 +839,7 @@ namespace cube {
 			tstring								cubeiceEnginePath;
 			bool								isDragAndDrop;
 			std::map<UINT, const SUB_MENU_ITEM*>		table;
+			tstring								dropPath;
 		};
 
 	}
