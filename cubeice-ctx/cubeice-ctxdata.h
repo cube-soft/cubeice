@@ -59,6 +59,7 @@ public:
 	virtual const std::vector<tstring> &GetFileList() = 0;
 	virtual const tstring &GetFilePath( const std::size_t &index ) = 0;
 	virtual std::size_t GetSize() = 0;
+	virtual tstring GetOption() = 0;
 };
 
 void MenuSelectedCallback( const LPCTSTR arg, IMenuInfo *info );

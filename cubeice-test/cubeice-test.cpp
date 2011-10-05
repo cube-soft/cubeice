@@ -19,12 +19,14 @@
  */
 /* ------------------------------------------------------------------------- */
 #include "test-io.h"
+#include "test-format.h"
 #include "test-compressor.h"
 
 int test_main(int argc, char* argv[]) {
 	test_directory();
 	test_tmpfile();
 	test_tmpdir();
+	test_punct();
 	test_compressor_extension();
 	
 	return 0;

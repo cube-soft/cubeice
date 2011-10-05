@@ -36,7 +36,7 @@
  *  を判定する関数のテスト．
  */
 /* ------------------------------------------------------------------------- */
-void test_compressor_extension() {
+inline void test_compressor_extension() {
 	std::vector<std::basic_string<TCHAR> > v;
 	std::basic_string<TCHAR> filetype;
 	bool optar;
