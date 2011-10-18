@@ -220,7 +220,11 @@ public:
       if (!ConvertUTF8ToUnicode(s, res))
         res.Empty();
     if (res.IsEmpty())
+#ifdef SEVENZIP_ORIGINAL
       res = MultiByteToUnicodeString(s, GetCodePage());
+#else
+      res = MultiByteToUnicodeComment(s, GetCodePage());
+#endif
     return res;
   }
   
