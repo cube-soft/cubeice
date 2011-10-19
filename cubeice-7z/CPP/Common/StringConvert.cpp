@@ -42,6 +42,14 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
   return resultString;
 }
 
+#ifndef SEVENZIP_ORIGINAL
+UString MultiByteToUnicodeComment(const AString &srcString, UINT /*codePage*/)
+{
+	return static_cast<UString>(static_cast<std::wstring>(babel::auto_translate<std::wstring>(static_cast<const char*>(srcString), babel::base_encoding::utf16le)).c_str());
+}
+#endif
+
+
 AString UnicodeStringToMultiByte(const UString &s, UINT codePage, char defaultChar, bool &defaultCharWasUsed)
 {
   AString dest;
