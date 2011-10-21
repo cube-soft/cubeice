@@ -47,26 +47,26 @@ IDR_CONTEXT_MENU MENU
 // Dialog resources
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDD_COMPRESS DIALOG 0, 0, 230, 270
+IDD_COMPRESS DIALOG 0, 0, 270, 230
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
 CAPTION "圧縮"
 FONT 9, "MS UI Gothic"
 {
-    EDITTEXT        3004, 28, 40, 160, 14, ES_AUTOHSCROLL
-    PUSHBUTTON      "...", 3005, 194, 40, 15, 14
-    AUTOCHECKBOX    "上書きの確認を行う", 3101, 16, 128, 70, 10
-    AUTOCHECKBOX    "ファイルのフィルタリングを行う", 3105, 16, 144, 90, 10
-    AUTOCHECKBOX    "保存先フォルダを開く （省略時は explorer.exe で開く）", 3106, 16, 160, 163, 8
-    EDITTEXT        3116, 28, 174, 160, 13, ES_AUTOHSCROLL
-    PUSHBUTTON      "...", 3117, 194, 174, 15, 14
-    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 192, 94, 10
-    AUTOCHECKBOX    "圧縮してメール送信を選択時にファイルを残さない", 3110, 16, 208, 148, 10
-    AUTOCHECKBOX    "エラーレポートを表示する", 3108, 16, 224, 82, 10
-    GROUPBOX        "出力先フォルダ", 3000, 8, 8, 214, 92
+    EDITTEXT        3004, 28, 38, 200, 14, ES_AUTOHSCROLL
+    PUSHBUTTON      "...", 3005, 234, 38, 15, 14
+    AUTOCHECKBOX    "上書きの確認を行う", 3101, 16, 116, 70, 10
+    AUTOCHECKBOX    "ファイルのフィルタリングを行う", 3105, 16, 130, 90, 10
+    AUTOCHECKBOX    "保存先フォルダを開く （省略時は explorer.exe で開く）", 3106, 16, 144, 163, 8
+    EDITTEXT        3116, 28, 156, 200, 13, ES_AUTOHSCROLL
+    PUSHBUTTON      "...", 3117, 234, 156, 15, 14
+    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 172, 94, 10
+    AUTOCHECKBOX    "圧縮してメール送信を選択時にファイルを残さない", 3110, 16, 186, 148, 10
+    AUTOCHECKBOX    "エラーレポートを表示する", 3108, 16, 200, 82, 10
+    GROUPBOX        "出力先フォルダ", 3000, 8, 8, 254, 84
     AUTORADIOBUTTON "指定したフォルダ （省略時はデスクトップ）", 3001, 16, 24, 125, 10
-    AUTORADIOBUTTON "元のファイルと同じフォルダ", 3002, 16, 64, 85, 10
-    AUTORADIOBUTTON "実行時に指定する", 3003, 16, 80, 66, 10
-    GROUPBOX        "詳細", 3100, 8, 112, 214, 136
+    AUTORADIOBUTTON "元のファイルと同じフォルダ", 3002, 16, 60, 85, 10
+    AUTORADIOBUTTON "実行時に指定する", 3003, 16, 74, 66, 10
+    GROUPBOX        "詳細", 3100, 8, 100, 254, 122
 }
 
 
@@ -95,45 +95,46 @@ FONT 9, "MS UI Gothic"
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDD_DECOMPRESS DIALOG 0, 0, 230, 330
+IDD_DECOMPRESS DIALOG 0, 0, 270, 304
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
 CAPTION "解凍"
 FONT 9, "MS UI Gothic"
 {
-    EDITTEXT        3004, 28, 40, 160, 14, ES_AUTOHSCROLL
-    PUSHBUTTON      "...", 3005, 194, 40, 15, 14
-    AUTOCHECKBOX    "上書きの確認を行う", 3101, 16, 128, 70, 10
-    AUTOCHECKBOX    "更新日時が新しい場合は確認しない", 3102, 28, 144, 117, 10
-    AUTOCHECKBOX    "フォルダを自動生成する", 3103, 16, 160, 79, 10
-    AUTOCHECKBOX    "単一フォルダの場合は生成しない", 3109, 28, 176, 105, 10
-    AUTOCHECKBOX    "ファイルのフィルタリングを行う", 3105, 16, 192, 90, 10
-    AUTOCHECKBOX    "保存先フォルダを開く （省略時は explorer.exe で開く）", 3106, 16, 208, 163, 8
-    EDITTEXT        3116, 28, 222, 160, 14, ES_AUTOHSCROLL
-    PUSHBUTTON      "...", 3117, 194, 222, 15, 14
-    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 242, 94, 10
-    AUTOCHECKBOX    "解凍後に元ファイルを削除する", 3115, 16, 258, 98, 10
-    AUTOCHECKBOX    "ツールチップにファイル一覧を表示する", 3111, 16, 274, 115, 10
-    EDITTEXT        3112, 182, 273, 30, 12, ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "", 3113, UPDOWN_CLASS, UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_SETBUDDYINT, 90, 290, 9, 10
-    AUTOCHECKBOX    "エラーレポートを表示する", 3108, 16, 290, 82, 10
-    GROUPBOX        "出力先フォルダ", 3000, 8, 8, 214, 92
-    GROUPBOX        "詳細", 3100, 8, 112, 214, 202
-    LTEXT           "最大表示件数 :", 3114, 134, 275, 46, 8, SS_LEFT
+    EDITTEXT        3004, 28, 38, 200, 14, ES_AUTOHSCROLL
+    PUSHBUTTON      "...", 3005, 234, 38, 15, 14
+    AUTOCHECKBOX    "上書きの確認を行う", 3101, 16, 116, 70, 10
+    AUTOCHECKBOX    "更新日時が新しい場合は確認しない", 3102, 28, 130, 117, 10
+    AUTOCHECKBOX    "フォルダを自動生成する", 3103, 16, 144, 79, 10
+    AUTOCHECKBOX    "単一ファイルの場合は生成しない", 3118, 28, 158, 105, 10
+    AUTOCHECKBOX    "単一フォルダの場合は生成しない", 3109, 28, 172, 105, 10
+    AUTOCHECKBOX    "ファイルのフィルタリングを行う", 3105, 16, 186, 90, 10
+    AUTOCHECKBOX    "保存先フォルダを開く （省略時は explorer.exe で開く）", 3106, 16, 200, 163, 8
+    EDITTEXT        3116, 28, 212, 200, 14, ES_AUTOHSCROLL
+    PUSHBUTTON      "...", 3117, 234, 212, 15, 14
+    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 230, 94, 10
+    AUTOCHECKBOX    "解凍後に元ファイルを削除する", 3115, 16, 244, 98, 10
+    AUTOCHECKBOX    "ツールチップにファイル一覧を表示する", 3111, 16, 258, 115, 10
+    EDITTEXT        3112, 192, 257, 30, 12, ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "", 3113, UPDOWN_CLASS, UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_SETBUDDYINT, 212, 257, 10, 12
+    AUTOCHECKBOX    "エラーレポートを表示する", 3108, 16, 272, 82, 10
+    GROUPBOX        "出力先フォルダ", 3000, 8, 8, 254, 84
+    GROUPBOX        "詳細", 3100, 8, 100, 254, 194
+    LTEXT           "最大表示件数 :", 3114, 144, 259, 46, 8, SS_LEFT
     AUTORADIOBUTTON "指定したフォルダ （省略時はデスクトップ）", 3001, 16, 24, 125, 10, WS_TABSTOP
-    AUTORADIOBUTTON "元のファイルと同じフォルダ", 3002, 16, 64, 85, 10, WS_TABSTOP
-    AUTORADIOBUTTON "実行時に指定する", 3003, 16, 80, 66, 10, WS_TABSTOP
+    AUTORADIOBUTTON "元のファイルと同じフォルダ", 3002, 16, 60, 85, 10, WS_TABSTOP
+    AUTORADIOBUTTON "実行時に指定する", 3003, 16, 74, 66, 10, WS_TABSTOP
 }
 
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDD_FILTER DIALOG 0, 0, 230, 360
+IDD_FILTER DIALOG 0, 0, 270, 230
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
 CAPTION "フィルタリング"
 FONT 9, "MS UI Gothic"
 {
     LTEXT           "除外するファイル名を記述します。", 4002, 8, 8, 91, 10, SS_LEFT
-    EDITTEXT        4001, 8, 48, 214, 280, WS_VSCROLL | NOT WS_TABSTOP | ES_AUTOVSCROLL | ES_MULTILINE | ES_WANTRETURN
+    EDITTEXT        4001, 8, 48, 254, 160, WS_VSCROLL | NOT WS_TABSTOP | ES_AUTOVSCROLL | ES_MULTILINE | ES_WANTRETURN
     LTEXT           "通常のファイル名と * （ワイルドカード） が使用できます。", 4004, 8, 32, 151, 10, SS_LEFT
     LTEXT           "1 行に 1 つずつ指定して下さい。", 4003, 8, 20, 88, 10, SS_LEFT
 }
@@ -141,70 +142,70 @@ FONT 9, "MS UI Gothic"
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDD_GENERAL DIALOG 0, 0, 230, 360
+IDD_GENERAL DIALOG 0, 0, 270, 312
 STYLE DS_3DLOOK | DS_CENTER | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
 CAPTION "一般"
 FONT 9, "MS UI Gothic"
 {
-    GROUPBOX        "ファイルの関連付け", 2100, 8, 8, 214, 116
+    GROUPBOX        "ファイルの関連付け", 2100, 8, 8, 254, 90
     AUTOCHECKBOX    "*.zip", 2101, 16, 24, 29, 10
-    AUTOCHECKBOX    "*.lzh", 2102, 16, 40, 29, 10
-    AUTOCHECKBOX    "*.rar", 2103, 16, 56, 29, 10
-    AUTOCHECKBOX    "*.tar", 2104, 16, 72, 29, 10
-    AUTOCHECKBOX    "*.gz", 2105, 16, 88, 27, 10
-    AUTOCHECKBOX    "*.7z", 2106, 66, 24, 27, 10
-    AUTOCHECKBOX    "*.arj", 2107, 66, 40, 28, 10
-    AUTOCHECKBOX    "*.bz2", 2108, 66, 56, 30, 10
-    AUTOCHECKBOX    "*.cab", 2109, 66, 72, 31, 10
-    AUTOCHECKBOX    "*.chm", 2110, 66, 88, 33, 10
-    AUTOCHECKBOX    "*.cpio", 2111, 116, 24, 33, 10
-    AUTOCHECKBOX    "*.deb", 2112, 116, 40, 31, 10
-    AUTOCHECKBOX    "*.dmg", 2113, 116, 56, 33, 10
-    AUTOCHECKBOX    "*.iso", 2114, 116, 72, 29, 10
-    AUTOCHECKBOX    "*.rpm", 2115, 116, 88, 31, 10
-    AUTOCHECKBOX    "*.tbz", 2116, 166, 24, 29, 10
-    AUTOCHECKBOX    "*.tgz", 2117, 166, 40, 29, 10
-    AUTOCHECKBOX    "*.wim", 2118, 166, 56, 32, 10
-    AUTOCHECKBOX    "*.xar", 2119, 166, 72, 30, 10
-    AUTOCHECKBOX    "*.xz", 2120, 166, 88, 27, 10
-    AUTOCHECKBOX    "*.jar", 2121, 16, 104, 28, 10
-    PUSHBUTTON      "すべて選択", 2198, 123, 105, 45, 14
-    PUSHBUTTON      "すべて解除", 2199, 172, 105, 45, 14
-    GROUPBOX        "追加するコンテキストメニュー", 2200, 8, 136, 214, 166
-    AUTOCHECKBOX    "圧縮", 2201, 16, 152, 30, 10
-    AUTOCHECKBOX    "解凍", 2202, 76, 152, 30, 10
-    AUTOCHECKBOX    "圧縮してメール送信", 2203, 152, 152, 67, 10
-    AUTOCHECKBOX    "zip", 2204, 28, 168, 24, 10
-    AUTOCHECKBOX    "zip (パスワード)", 2205, 28, 184, 58, 10
-    AUTOCHECKBOX    "7z", 2206, 28, 200, 22, 10
-    AUTOCHECKBOX    "bzip2", 2207, 28, 216, 31, 10
-    AUTOCHECKBOX    "gzip", 2208, 28, 232, 27, 10
-    AUTOCHECKBOX    "exe", 2220, 28, 248, 43, 10
-    AUTOCHECKBOX    "詳細設定", 2209, 28, 264, 43, 10
-    AUTOCHECKBOX    "ここに解凍", 2210, 88, 168, 44, 10
-    AUTOCHECKBOX    "デスクトップに解凍", 2211, 88, 184, 64, 10
-    AUTOCHECKBOX    "マイドキュメントに解凍", 2219, 88, 200, 75, 10
-    AUTOCHECKBOX    "場所を指定して解凍", 2212, 88, 216, 70, 10
-    AUTOCHECKBOX    "zip", 2213, 164, 168, 24, 10
-    AUTOCHECKBOX    "zip (パスワード)", 2214, 164, 184, 54, 10
-    AUTOCHECKBOX    "7z", 2215, 164, 200, 22, 10
-    AUTOCHECKBOX    "bzip2", 2216, 164, 216, 31, 10
-    AUTOCHECKBOX    "gzip", 2217, 164, 232, 27, 10
-    AUTOCHECKBOX    "exe", 2221, 164, 248, 43, 10
-    AUTOCHECKBOX    "詳細設定", 2218, 164, 264, 43, 10
-    PUSHBUTTON      "カスタマイズ", 2250, 123, 282, 45, 14
-    PUSHBUTTON      "リセット", 2251, 172, 282, 45, 14
-    GROUPBOX        "デスクトップに作成するショートカット", 2300, 8, 314, 214, 36
-    AUTOCHECKBOX    "圧縮", 2301, 16, 329, 30, 10
-    AUTOCHECKBOX    "解凍", 2302, 116, 329, 30, 10
-    AUTOCHECKBOX    "設定", 2303, 166, 329, 30, 10
-    COMBOBOX        2304, 45, 327, 60, 39, WS_VSCROLL | CBS_DROPDOWNLIST | CBS_HASSTRINGS
+    AUTOCHECKBOX    "*.lzh", 2102, 16, 38, 29, 10
+    AUTOCHECKBOX    "*.rar", 2103, 16, 52, 29, 10
+    AUTOCHECKBOX    "*.tar", 2104, 136, 66, 29, 10
+    AUTOCHECKBOX    "*.gz", 2105, 96, 66, 27, 10
+    AUTOCHECKBOX    "*.7z", 2106, 16, 66, 27, 10
+    AUTOCHECKBOX    "*.arj", 2107, 56, 24, 28, 10
+    AUTOCHECKBOX    "*.bz2", 2108, 56, 38, 30, 10
+    AUTOCHECKBOX    "*.cab", 2109, 56, 52, 31, 10
+    AUTOCHECKBOX    "*.chm", 2110, 56, 66, 33, 10
+    AUTOCHECKBOX    "*.cpio", 2111, 96, 24, 33, 10
+    AUTOCHECKBOX    "*.deb", 2112, 96, 38, 31, 10
+    AUTOCHECKBOX    "*.dmg", 2113, 96, 52, 33, 10
+    AUTOCHECKBOX    "*.iso", 2114, 136, 24, 29, 10
+    AUTOCHECKBOX    "*.rpm", 2115, 136, 52, 31, 10
+    AUTOCHECKBOX    "*.tbz", 2116, 176, 24, 29, 10
+    AUTOCHECKBOX    "*.tgz", 2117, 176, 38, 29, 10
+    AUTOCHECKBOX    "*.wim", 2118, 176, 52, 32, 10
+    AUTOCHECKBOX    "*.xar", 2119, 176, 66, 30, 10
+    AUTOCHECKBOX    "*.xz", 2120, 216, 24, 27, 10
+    AUTOCHECKBOX    "*.jar", 2121, 136, 38, 28, 10
+    PUSHBUTTON      "すべて選択", 2198, 164, 80, 45, 14
+    PUSHBUTTON      "すべて解除", 2199, 213, 80, 45, 14
+    GROUPBOX        "追加するコンテキストメニュー", 2200, 8, 106, 254, 146
+    AUTOCHECKBOX    "圧縮", 2201, 16, 122, 30, 10
+    AUTOCHECKBOX    "解凍", 2202, 88, 122, 30, 10
+    AUTOCHECKBOX    "圧縮してメール送信", 2203, 176, 122, 67, 10
+    AUTOCHECKBOX    "zip", 2204, 28, 136, 24, 10
+    AUTOCHECKBOX    "zip (パスワード)", 2205, 28, 150, 58, 10
+    AUTOCHECKBOX    "7z", 2206, 28, 164, 22, 10
+    AUTOCHECKBOX    "bzip2", 2207, 28, 178, 31, 10
+    AUTOCHECKBOX    "gzip", 2208, 28, 192, 27, 10
+    AUTOCHECKBOX    "exe", 2220, 28, 206, 43, 10
+    AUTOCHECKBOX    "詳細設定", 2209, 28, 220, 43, 10
+    AUTOCHECKBOX    "ここに解凍", 2210, 100, 136, 44, 10
+    AUTOCHECKBOX    "デスクトップに解凍", 2211, 100, 150, 64, 10
+    AUTOCHECKBOX    "マイドキュメントに解凍", 2219, 100, 164, 75, 10
+    AUTOCHECKBOX    "場所を指定して解凍", 2212, 100, 178, 70, 10
+    AUTOCHECKBOX    "zip", 2213, 188, 136, 24, 10
+    AUTOCHECKBOX    "zip (パスワード)", 2214, 188, 150, 54, 10
+    AUTOCHECKBOX    "7z", 2215, 188, 164, 22, 10
+    AUTOCHECKBOX    "bzip2", 2216, 188, 178, 31, 10
+    AUTOCHECKBOX    "gzip", 2217, 188, 192, 27, 10
+    AUTOCHECKBOX    "exe", 2221, 188, 206, 43, 10
+    AUTOCHECKBOX    "詳細設定", 2218, 188, 220, 43, 10
+    PUSHBUTTON      "カスタマイズ", 2250, 164, 234, 45, 14
+    PUSHBUTTON      "リセット", 2251, 213, 234, 45, 14
+    GROUPBOX        "デスクトップに作成するショートカット", 2300, 8, 260, 254, 34
+    AUTOCHECKBOX    "圧縮", 2301, 16, 275, 30, 10
+    AUTOCHECKBOX    "解凍", 2302, 136, 275, 30, 10
+    AUTOCHECKBOX    "設定", 2303, 196, 275, 30, 10
+    COMBOBOX        2304, 45, 273, 60, 39, WS_VSCROLL | CBS_DROPDOWNLIST | CBS_HASSTRINGS
 }
 
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDD_VERSION DIALOG 0, 0, 230, 120
+IDD_VERSION DIALOG 0, 0, 270, 120
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
 EXSTYLE WS_EX_WINDOWEDGE
 CAPTION "バージョン情報"
@@ -216,7 +217,7 @@ FONT 9, "MS UI Gothic"
     LTEXT           "http://www.cube-soft.jp/cubeice/", 5004, 60, 52, 107, 10, SS_LEFT
     ICON            "", 5000, 16, 30, 18, 21, SS_ICON | SS_REALSIZEIMAGE
     AUTOCHECKBOX    "起動時にアップデートを確認する", 5005, 60, 68, 102, 10
-    AUTOCHECKBOX    "デバッグログを出力する", 5006, 60, 84, 77, 10
+    AUTOCHECKBOX    "デバッグログを出力する", 5006, 60, 82, 77, 10
 }
 
 

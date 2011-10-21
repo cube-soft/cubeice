@@ -430,12 +430,12 @@ namespace cubeice {
 				}
 				
 				// フォルダの作成
-				if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER)) {
-					if ((setting_.decompression().details() & DETAIL_SINGLE_FOLDER) == 0 || folder.empty()) {
-						root = this->decompress_dirname(setting_.decompression(), root, src);
-						clx::rstrip_if(root, clx::is_any_of(_T("\\")));
-						LOG_INFO(_T("RootDir = %s"), root.c_str());
-					}
+				// 単一ファイルかどうかは files_ の数（ファイル数），単一フォルダかどうかは
+				// 変数 folder に文字列が設定されているかどうかで判断する．
+				if (decompress_is_create_folder(setting_, this->files_.size() == 1, !folder.empty())) {
+					root = this->decompress_dirname(setting_.decompression(), root, src);
+					clx::rstrip_if(root, clx::is_any_of(_T("\\")));
+					LOG_INFO(_T("RootDir = %s"), root.c_str());
 				}
 				
 				// コマンドラインの生成
@@ -668,6 +668,7 @@ namespace cubeice {
 					DeleteFile(original.c_str());
 				}
 
+				progress_.quit();
 				LOG_TRACE(_T("function archiver::decompress() end"));
 			}
 		}
@@ -1290,6 +1291,17 @@ namespace cubeice {
 				nextline.find(password_error) != string_type::npos) return true;
 
 			return false;
+		}
+
+		/* ----------------------------------------------------------------- */
+		//  decompress_is_create_folder
+		/* ----------------------------------------------------------------- */
+		bool decompress_is_create_folder(const user_setting& setting, bool single_file, bool single_folder) {
+			if ((setting.decompression().details() & DETAIL_CREATE_FOLDER) == 0) return false;
+			if ((setting.decompression().details() & DETAIL_SINGLE_FILE) != 0 && single_file) return false;
+			if ((setting.decompression().details() & DETAIL_SINGLE_FOLDER) != 0 && single_folder) return false;
+			
+			return true;
 		}
 		
 	private: // others

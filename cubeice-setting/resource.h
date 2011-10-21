@@ -128,6 +128,7 @@
 #define IDC_OVERWRITE_CHECKBOX      3101 // 上書きの確認を行う
 #define IDC_NEWER_CHECKBOX          3102 // 更新日時が新しい場合は確認しない
 #define IDC_CREATE_FOLDER_CHECKBOX  3103 // フォルダを自動生成する
+#define IDC_SINGLE_FILE_CHECKBOX    3118 // 単一ファイルの場合は生成しない
 #define IDC_SINGLE_FOLDER_CHECKBOX  3109 // 単一フォルダの場合は生成しない
 #define IDC_CHARCODE_CHECKBOX       3104 // ファイル名の文字コードを変換する
 #define IDC_FILTER_CHECKBOX         3105 // ファイルのフィルタんリングを行う
