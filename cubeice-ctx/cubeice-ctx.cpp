@@ -37,6 +37,7 @@
 #include <shlguid.h>
 #include <shlobj.h>
 #include "cubeice-ctxfactory.h"
+#include "cubeice-propsheet.h"
 #include "guid.h"
 
 namespace {
@@ -81,11 +82,23 @@ STDAPI DllCanUnloadNow( void )
 STDAPI DllGetClassObject( REFCLSID rclsid, REFIID riid, LPVOID *ppvOut )
 {
 	using cube::shlctxmenu::CShlCtxMenuFactory;
+	using cube::propsheet::CShellPropSheetFactory;
 
 	*ppvOut = NULL;
 
-	if( IsEqualIID( rclsid, CLSID_CubeICE ) ) {
+	if( IsEqualCLSID( rclsid, CLSID_CubeICE_CTX ) ) {
 		CShlCtxMenuFactory	*pscmf = new CShlCtxMenuFactory( dllRefCount );
+		HRESULT				hr;
+
+		if( !pscmf )
+			return E_OUTOFMEMORY;
+
+		hr = pscmf->QueryInterface( riid, ppvOut );
+		pscmf->Release();
+
+		return hr;
+	} else if( IsEqualCLSID( rclsid, CLSID_CubeICE_PROPSHEET ) ) {
+		CShellPropSheetFactory	*pscmf = new CShellPropSheetFactory( dllRefCount );
 		HRESULT				hr;
 
 		if( !pscmf )

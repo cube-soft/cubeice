@@ -88,7 +88,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)cubeicectx.dll</OutputFile>
       <ModuleDefinitionFile>cubeice-ctx.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -135,7 +135,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)cubeicectx.dll</OutputFile>
       <ModuleDefinitionFile>cubeice-ctx.def</ModuleDefinitionFile>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -166,7 +166,7 @@
       </DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>shlwapi.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)cubeicectx-x64.dll</OutputFile>
       <ModuleDefinitionFile>cubeice-ctx.def</ModuleDefinitionFile>
       <GenerateDebugInformation>false</GenerateDebugInformation>
@@ -180,21 +180,28 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\cubeice-7z\CPP\7zip\Common\FileStreams.cpp" />
+    <ClCompile Include="..\cubeice-7z\CPP\Windows\FileIO.cpp" />
+    <ClCompile Include="..\cubeice-7z\CPP\Windows\PropVariant.cpp" />
     <ClCompile Include="..\cubeice-shared\babel\babel.cpp" />
+    <ClCompile Include="cubeice-comment.cpp" />
     <ClCompile Include="cubeice-ctx.cpp" />
     <ClCompile Include="cubeice-menu.cpp" />
+    <ClCompile Include="cubeice-propsheet.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cubeice-ctx.def" />
     <None Include="cubeice.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cubeice-comment.h" />
     <ClInclude Include="cubeice-ctxbase.h" />
     <ClInclude Include="cubeice-ctxdata.h" />
     <ClInclude Include="cubeice-ctxfactory.h" />
     <ClInclude Include="cubeice-ctxvista.h" />
     <ClInclude Include="cubeice-ctxxp.h" />
     <ClInclude Include="..\cubeice-shared\guid.h" />
+    <ClInclude Include="cubeice-propsheet.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="..\cubeice-shared\wpopen.h" />
   </ItemGroup>
