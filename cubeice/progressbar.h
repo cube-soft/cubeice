@@ -67,6 +67,7 @@ namespace cubeice {
 			//  constructor
 			/* ------------------------------------------------------------- */
 			~progressbar() {
+				this->quit();
 				CoUninitialize();
 			}
 			
@@ -93,6 +94,16 @@ namespace cubeice {
 				denominator_timer_.restart();
 			}
 			
+			/* ------------------------------------------------------------- */
+			//  quit
+			/* ------------------------------------------------------------- */
+			void quit() {
+				if (handle_ != NULL) {
+					DestroyWindow(handle_);
+					handle_ = NULL;
+				}
+			}
+
 			/* ------------------------------------------------------------- */
 			/*
 			 *  operator++
@@ -499,6 +510,8 @@ namespace cubeice {
 						break;
 					prog->timer_refresh();
 					return TRUE;
+				case WM_DESTROY:
+					PostQuitMessage(0);
 				default:
 					break;
 				}

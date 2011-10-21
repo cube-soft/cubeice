@@ -668,6 +668,7 @@ namespace cubeice {
 					DeleteFile(original.c_str());
 				}
 
+				progress_.quit();
 				LOG_TRACE(_T("function archiver::decompress() end"));
 			}
 		}
