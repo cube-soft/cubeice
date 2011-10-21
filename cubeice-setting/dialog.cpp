@@ -130,6 +130,11 @@ namespace cubeice {
 				EnableWindow(GetDlgItem(hWnd, IDC_EXPLORER_BUTTON), FALSE);
 			}
 			
+			if ((setting.details() & DETAIL_CREATE_FOLDER) == 0) {
+				EnableWindow(GetDlgItem(hWnd, IDC_SINGLE_FILE_CHECKBOX), FALSE);
+				EnableWindow(GetDlgItem(hWnd, IDC_SINGLE_FOLDER_CHECKBOX), FALSE);
+			}
+
 			if (!setting.explorer().empty()) {
 				SetWindowText(GetDlgItem(hWnd, IDC_EXPLORER_TEXTBOX), setting.explorer().c_str());
 				LOG_INFO(_T("Explorer = %s (initialized)"), setting.explorer().c_str());
@@ -455,6 +460,7 @@ namespace cubeice {
 				
 				if (pos->first == IDC_CREATE_FOLDER_CHECKBOX) {
 					BOOL enabled = (setting.details() & DETAIL_CREATE_FOLDER) ? TRUE : FALSE;
+					EnableWindow(GetDlgItem(hWnd, IDC_SINGLE_FILE_CHECKBOX), enabled);
 					EnableWindow(GetDlgItem(hWnd, IDC_SINGLE_FOLDER_CHECKBOX), enabled);
 				}
 				
