@@ -95,7 +95,7 @@ FONT 9, "MS UI Gothic"
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDD_DECOMPRESS DIALOG 0, 0, 270, 290
+IDD_DECOMPRESS DIALOG 0, 0, 270, 304
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
 CAPTION "解凍"
 FONT 9, "MS UI Gothic"
@@ -105,20 +105,21 @@ FONT 9, "MS UI Gothic"
     AUTOCHECKBOX    "上書きの確認を行う", 3101, 16, 116, 70, 10
     AUTOCHECKBOX    "更新日時が新しい場合は確認しない", 3102, 28, 130, 117, 10
     AUTOCHECKBOX    "フォルダを自動生成する", 3103, 16, 144, 79, 10
-    AUTOCHECKBOX    "単一フォルダの場合は生成しない", 3109, 28, 158, 105, 10
-    AUTOCHECKBOX    "ファイルのフィルタリングを行う", 3105, 16, 172, 90, 10
-    AUTOCHECKBOX    "保存先フォルダを開く （省略時は explorer.exe で開く）", 3106, 16, 186, 163, 8
-    EDITTEXT        3116, 28, 198, 200, 14, ES_AUTOHSCROLL
-    PUSHBUTTON      "...", 3117, 234, 198, 15, 14
-    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 216, 94, 10
-    AUTOCHECKBOX    "解凍後に元ファイルを削除する", 3115, 16, 230, 98, 10
-    AUTOCHECKBOX    "ツールチップにファイル一覧を表示する", 3111, 16, 244, 115, 10
-    EDITTEXT        3112, 192, 243, 30, 12, ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "", 3113, UPDOWN_CLASS, UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_SETBUDDYINT, 212, 243, 10, 12
-    AUTOCHECKBOX    "エラーレポートを表示する", 3108, 16, 258, 82, 10
+    AUTOCHECKBOX    "単一ファイルの場合は生成しない", 3118, 28, 158, 105, 10
+    AUTOCHECKBOX    "単一フォルダの場合は生成しない", 3109, 28, 172, 105, 10
+    AUTOCHECKBOX    "ファイルのフィルタリングを行う", 3105, 16, 186, 90, 10
+    AUTOCHECKBOX    "保存先フォルダを開く （省略時は explorer.exe で開く）", 3106, 16, 200, 163, 8
+    EDITTEXT        3116, 28, 212, 200, 14, ES_AUTOHSCROLL
+    PUSHBUTTON      "...", 3117, 234, 212, 15, 14
+    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 230, 94, 10
+    AUTOCHECKBOX    "解凍後に元ファイルを削除する", 3115, 16, 244, 98, 10
+    AUTOCHECKBOX    "ツールチップにファイル一覧を表示する", 3111, 16, 258, 115, 10
+    EDITTEXT        3112, 192, 257, 30, 12, ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "", 3113, UPDOWN_CLASS, UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_SETBUDDYINT, 212, 257, 10, 12
+    AUTOCHECKBOX    "エラーレポートを表示する", 3108, 16, 272, 82, 10
     GROUPBOX        "出力先フォルダ", 3000, 8, 8, 254, 84
-    GROUPBOX        "詳細", 3100, 8, 100, 254, 180
-    LTEXT           "最大表示件数 :", 3114, 144, 245, 46, 8, SS_LEFT
+    GROUPBOX        "詳細", 3100, 8, 100, 254, 194
+    LTEXT           "最大表示件数 :", 3114, 144, 259, 46, 8, SS_LEFT
     AUTORADIOBUTTON "指定したフォルダ （省略時はデスクトップ）", 3001, 16, 24, 125, 10, WS_TABSTOP
     AUTORADIOBUTTON "元のファイルと同じフォルダ", 3002, 16, 60, 85, 10, WS_TABSTOP
     AUTORADIOBUTTON "実行時に指定する", 3003, 16, 74, 66, 10, WS_TABSTOP
