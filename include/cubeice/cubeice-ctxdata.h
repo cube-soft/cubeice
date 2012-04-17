@@ -40,13 +40,18 @@
 #include <windows.h>
 #include <vector>
 #include <string>
-#include "resource.h"
 
 // ÉçÉOèoóÕÇñ≥å¯Ç…Ç∑ÇÈÅD
 #ifndef PSDOTNET_INVALIDATE_LOG_MACRO
 #define PSDOTNET_INVALIDATE_LOG_MACRO
 #endif
 #include <cubeice/user-setting.h>
+
+#define IDB_LOGO                                101
+#define IDB_COMPRESS                            102
+#define IDB_DECOMPRESS                          103
+#define IDD_PROPSHEET1                          1000
+#define IDC_COMMENT                             1001
 
 const int	ICON_SIZE = 16;
 const int	ICON_Y_SIZE = ICON_SIZE;

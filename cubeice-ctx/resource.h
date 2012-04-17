@@ -35,10 +35,6 @@
 #ifndef CUBEICE_CTX_RESOURCE_H
 #define CUBEICE_CTX_RESOURCE_H
 
-#define IDB_LOGO                                101
-#define IDB_COMPRESS                            102
-#define IDB_DECOMPRESS                          103
-#define IDD_PROPSHEET1                          1000
-#define IDC_COMMENT                             1001
+#include <cubeice/ctxdata.h>
 
 #endif // CUBEICE_RESOURCE_H

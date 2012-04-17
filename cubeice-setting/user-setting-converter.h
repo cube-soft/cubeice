@@ -2,7 +2,7 @@
 #define CUBEICE_USER_SETTING_CONVERTER_H
 
 #include <cubeice/user-setting.h>
-#include "../cubeice-ctx/cubeice-ctxdata.h"
+#include <cubeice/cubeice-ctxdata.h>
 
 namespace cubeice {
 	class user_setting_converter {
