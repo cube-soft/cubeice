@@ -37,7 +37,7 @@
 
 #include <map>
 #include <windows.h>
-#include <user-setting.h>
+#include <cubeice/user-setting.h>
 #include "resource.h"
 
 #ifndef CUBE_MAX_PATH

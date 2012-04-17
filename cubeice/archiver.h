@@ -41,15 +41,15 @@
 #include <psdotnet/logger.h>
 #include <psdotnet/appender.h>
 #include <babel/babel.h>
-#include "wpopen.h"
-#include "io.h"
-#include "format.h"
-#include "error.h"
-#include "user-setting.h"
-#include "pathmatch.h"
-#include "dialog.h"
-#include "sendmail.h"
-#include "compressor.h"
+#include <cubeice/wpopen.h>
+#include <cubeice/io.h>
+#include <cubeice/format.h>
+#include <cubeice/error.h>
+#include <cubeice/user-setting.h>
+#include <cubeice/pathmatch.h>
+#include <cubeice/dialog.h>
+#include <cubeice/sendmail.h>
+#include <cubeice/compressor.h>
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
 #define CUBEICE_MAXCOLUMN 45

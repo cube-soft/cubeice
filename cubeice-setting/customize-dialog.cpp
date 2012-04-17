@@ -20,12 +20,12 @@
  *  Last-modified: Tue 28 Dec 2010 20:42:00 JST
  */
 /* ------------------------------------------------------------------------- */
-#include "dialog.h"
 #include <Windows.h>
 #include <CommCtrl.h>
 #include <imm.h>
 #include <vector>
 #include <map>
+#include "dialog.h"
 #include "../cubeice-ctx/cubeice-ctxdata.h"
 
 #pragma comment(lib, "imm32.lib")

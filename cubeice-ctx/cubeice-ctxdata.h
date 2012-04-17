@@ -46,7 +46,7 @@
 #ifndef PSDOTNET_INVALIDATE_LOG_MACRO
 #define PSDOTNET_INVALIDATE_LOG_MACRO
 #endif
-#include "user-setting.h"
+#include <cubeice/user-setting.h>
 
 const int	ICON_SIZE = 16;
 const int	ICON_Y_SIZE = ICON_SIZE;

@@ -1,8 +1,8 @@
 /* ------------------------------------------------------------------------- */
 /*
- *  cubeice.h
+ *  decompression.h
  *
- *  Copyright (c) 2010 CubeSoft Inc.
+ *  Copyright (c) 2010 - 2011 CubeSoft Inc.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,41 +16,27 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
- *
- *  Last-modified: Tue 28 Dec 2010 20:42:00 JST
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBE_ICE_H
-#define CUBE_ICE_H
+#ifndef CUBEICE_DECOMPRESSION_H
+#define CUBEICE_DECOMPRESSION_H
 
 #include <string>
-#include <vector>
+#include <windows.h>
 #include <tchar.h>
+#include <iterator>
 
 /* ------------------------------------------------------------------------- */
 /*
- *  CLX C++ Libraries can be downloaded from the following URL:
- *  http://clx.cielquis.net/
+ *  NOTE: archiver.h の cubeice::archiver クラスのリファクタリングのために
+ *  テスト and/or 分離可能なメンバ関数を cubeice::compression もしくは
+ *  cubeice::decompression 名前空間以下に分離し，テストコードを作成して
+ *  いく．
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CLX_USE_WCHAR
-#define CLX_USE_WCHAR
-#endif
-#include <clx/config.h>
-#include <clx/tokenizer.h>
-
-#include <cubeice/user-setting.h>
-#include <cubeice/dialog.h>
-#include <cubeice/sendmail.h>
-#include "archiver.h"
-
-extern cubeice::user_setting UserSetting;
-
 namespace cubeice {
-	namespace cmdline {
-		typedef clx::escape_separator<TCHAR> separator;
-		typedef clx::basic_tokenizer<clx::escape_separator<TCHAR>, std::basic_string<TCHAR> > splitter;
-	}
-}
+	namespace decompression {
+	} // namespace decompression
+} // namespace cubeice
 
-#endif // CUBE_ICE_H
+#endif // CUBEICE_DECOMPRESSION_H

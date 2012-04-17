@@ -97,7 +97,9 @@ STDAPI DllGetClassObject( REFCLSID rclsid, REFIID riid, LPVOID *ppvOut )
 		pscmf->Release();
 
 		return hr;
-	} else if( IsEqualCLSID( rclsid, CLSID_CubeICE_PROPSHEET ) ) {
+	}
+#ifdef CUBEICE_USE_PROPSHEET
+	else if( IsEqualCLSID( rclsid, CLSID_CubeICE_PROPSHEET ) ) {
 		CShellPropSheetFactory	*pscmf = new CShellPropSheetFactory( dllRefCount );
 		HRESULT				hr;
 
@@ -109,6 +111,6 @@ STDAPI DllGetClassObject( REFCLSID rclsid, REFIID riid, LPVOID *ppvOut )
 
 		return hr;
 	}
-
+#endif
 	return CLASS_E_CLASSNOTAVAILABLE;
 }

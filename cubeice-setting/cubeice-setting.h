@@ -35,7 +35,7 @@
 #ifndef CUBEICE_SETTING_H
 #define CUBEICE_SETTING_H
 
-#include "user-setting.h"
+#include <cubeice/user-setting.h>
 
 extern cubeice::user_setting Setting;
 

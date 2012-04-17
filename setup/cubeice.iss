@@ -3,7 +3,7 @@
 
 #define SrcDir "D:\project\cubeice"
 #define MyAppName "CubeICE"
-#define MyAppVersion "0.6.4"
+#define MyAppVersion "0.6.5"
 #define MyAppPublisher "CubeSoft"
 #define MyAppURL "http://www.cube-soft.jp/cubeice/"
 #define MyAppExeName "MyProg.exe"
