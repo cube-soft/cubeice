@@ -4,9 +4,9 @@
 #include <string>
 #include <psdotnet/logger.h>
 #include <psdotnet/appender.h>
+#include <cubeice/style.h>
 #include "cubeice-setting.h"
 #include "dialog.h"
-#include "style.h"
 
 cubeice::user_setting Setting(true);
 

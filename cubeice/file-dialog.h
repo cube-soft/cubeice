@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------- */
 /*
- *  file-dialog.cpp
+ *  file-dialog.h
  *
  *  Copyright (c) 2010 CubeSoft Inc.
  *
@@ -23,6 +23,10 @@
 #include <string>
 #include <windows.h>
 #include <tchar.h>
+
+#ifndef CUBE_MAX_PATH
+#define CUBE_MAX_PATH 2048
+#endif
 
 namespace cubeice {
 	namespace dialog {

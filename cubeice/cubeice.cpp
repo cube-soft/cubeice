@@ -21,7 +21,7 @@
  */
 /* ------------------------------------------------------------------------- */
 #include "cubeice.h"
-#include "style.h"
+#include <cubeice/style.h>
 #include <windows.h>
 #include <psdotnet/logger.h>
 #include <psdotnet/appender.h>

@@ -45,9 +45,9 @@
 #include <psdotnet/logger.h>
 #include <clx/split.h>
 #include <clx/replace.h>
+#include <cubeice/file-dialog.h>
 #include "dialog.h"
 #include "user-setting-converter.h"
-#include "file-dialog.h"
 
 namespace cubeice {	
 	namespace detail {
