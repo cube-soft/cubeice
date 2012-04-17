@@ -40,8 +40,8 @@
 #include <vector>
 #include <clx/date_time.h>
 #include <clx/tokenizer.h>
-#include "format.h"
-#include "wpopen.h"
+#include <cubeice/format.h>
+#include <cubeice/wpopen.h>
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
 #define CUBEICE_MAXFILESIZE (1024 * 1024 * 1024)

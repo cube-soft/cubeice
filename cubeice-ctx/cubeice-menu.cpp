@@ -40,7 +40,7 @@
 #include <tchar.h>
 #include <string>
 #include <vector>
-#include "cubeice-ctxdata.h"
+#include <cubeice/cubeice-ctxdata.h>
 
 const LPCTSTR		CUBEICE_FILE_NAME = TEXT( "cubeice.exe" );
 

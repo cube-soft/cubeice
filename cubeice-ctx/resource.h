@@ -35,6 +35,27 @@
 #ifndef CUBEICE_CTX_RESOURCE_H
 #define CUBEICE_CTX_RESOURCE_H
 
-#include <cubeice/ctxdata.h>
+// TODO: IDB_* の値は、cubeice-setting でもされている cubeice-ctxdata.h
+// 内でも定義されている。うまく分離する。
+#ifndef IDB_LOGO
+#define IDB_LOGO                                101
+#endif
+
+#ifndef IDB_COMPRESS
+#define IDB_COMPRESS                            102
+#endif
+
+#ifndef IDB_DECOMPRESS
+#define IDB_DECOMPRESS                          103
+#endif
+
+#ifndef IDD_PROPSHEET1
+#define IDD_PROPSHEET1                          1000
+#endif
+
+#ifndef IDC_COMMENT
+#define IDC_COMMENT                             1001
+#endif
+
 
 #endif // CUBEICE_RESOURCE_H

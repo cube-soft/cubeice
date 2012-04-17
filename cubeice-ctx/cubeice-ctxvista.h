@@ -39,7 +39,7 @@
 #include <Uxtheme.h>
 #include <map>
 #include <clx/shared_ptr.h>
-#include "cubeice-ctxdata.h"
+#include <cubeice/cubeice-ctxdata.h>
 #include "cubeice-ctxbase.h"
 
 namespace cube {

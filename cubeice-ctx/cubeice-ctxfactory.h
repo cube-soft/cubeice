@@ -39,7 +39,7 @@
 #include <string>
 #include <vector>
 #include <set>
-#include "cubeice-ctxdata.h"
+#include <cubeice/cubeice-ctxdata.h>
 #include "cubeice-ctxxp.h"
 #include "cubeice-ctxvista.h"
 
@@ -47,7 +47,7 @@
 #ifndef PSDOTNET_INVALIDATE_LOG_MACRO
 #define PSDOTNET_INVALIDATE_LOG_MACRO
 #endif
-#include "user-setting.h"
+#include <cubeice/user-setting.h>
 
 namespace cube {
 	namespace shlctxmenu {
