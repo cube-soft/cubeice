@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------- */
 /*
- *  dialog.cpp
+ *  setting-dialog.cpp
  *
  *  Copyright (c) 2010 CubeSoft.
  *
@@ -46,7 +46,7 @@
 #include <clx/split.h>
 #include <clx/replace.h>
 #include <cubeice/file-dialog.h>
-#include "dialog.h"
+#include "setting-dialog.h"
 #include "user-setting-converter.h"
 
 namespace cubeice {	

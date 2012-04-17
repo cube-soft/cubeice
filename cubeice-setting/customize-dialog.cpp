@@ -25,8 +25,8 @@
 #include <imm.h>
 #include <vector>
 #include <map>
-#include "dialog.h"
-#include "../cubeice-ctx/cubeice-ctxdata.h"
+#include "setting-dialog.h"
+#include <cubeice/cubeice-ctxdata.h>
 
 #pragma comment(lib, "imm32.lib")
 

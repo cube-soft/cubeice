@@ -49,7 +49,7 @@
 #include <cubeice/pathmatch.h>
 #include <cubeice/dialog.h>
 #include <cubeice/sendmail.h>
-#include <cubeice/compressor.h>
+#include "compressor.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
 #define CUBEICE_MAXCOLUMN 45

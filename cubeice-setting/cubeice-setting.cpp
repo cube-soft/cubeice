@@ -6,7 +6,7 @@
 #include <psdotnet/appender.h>
 #include <cubeice/style.h>
 #include "cubeice-setting.h"
-#include "dialog.h"
+#include "setting-dialog.h"
 
 cubeice::user_setting Setting(true);
 
