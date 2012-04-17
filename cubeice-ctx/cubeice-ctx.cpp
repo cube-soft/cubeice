@@ -36,9 +36,9 @@
 #include <initguid.h>
 #include <shlguid.h>
 #include <shlobj.h>
+#include <cubeice/guid.h>
 #include "cubeice-ctxfactory.h"
 #include "cubeice-propsheet.h"
-#include "guid.h"
 
 namespace {
 	ULONG	dllRefCount = 0;

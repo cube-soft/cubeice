@@ -40,18 +40,28 @@
 #include <windows.h>
 #include <vector>
 #include <string>
-
-// ログ出力を無効にする．
-#ifndef PSDOTNET_INVALIDATE_LOG_MACRO
-#define PSDOTNET_INVALIDATE_LOG_MACRO
-#endif
 #include <cubeice/user-setting.h>
 
+// TODO: IDB_* の値は、cubeice-ctx/resource.h 内でも定義されている。うまく分離する。
+#ifndef IDB_LOGO
 #define IDB_LOGO                                101
+#endif
+
+#ifndef IDB_COMPRESS
 #define IDB_COMPRESS                            102
+#endif
+
+#ifndef IDB_DECOMPRESS
 #define IDB_DECOMPRESS                          103
+#endif
+
+#ifndef IDD_PROPSHEET1
 #define IDD_PROPSHEET1                          1000
+#endif
+
+#ifndef IDC_COMMENT
 #define IDC_COMMENT                             1001
+#endif
 
 const int	ICON_SIZE = 16;
 const int	ICON_Y_SIZE = ICON_SIZE;
