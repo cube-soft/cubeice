@@ -56,6 +56,34 @@ namespace cubeice {
 		}
 		return ss.str();
 	}
+
+	/* ----------------------------------------------------------------- */
+	/*
+	 *  byte_format
+	 *
+	 *  引数に指定された整数に対して、適切な単位 (バイト、KB、MB、...)
+	 *  に揃えて出力する。数値部分は有効数字 3 桁。
+	 */
+	/* ----------------------------------------------------------------- */
+	template <typename IntT>
+	inline std::basic_string<TCHAR> byte_format(IntT src) {
+		static const double digit = 1000.0;
+		static const TCHAR units[][4] = { _T("バイト"), _T("KB"), _T("MB"), _T("GB"), _T("TB"), _T("PB"), _T("EB"), _T("ZB"), _T("YB") };
+
+		double value = static_cast<double>(src);
+		int n = 0;
+		while (value > digit) {
+			value /= digit;
+			++n;
+			if (n > sizeof(units) / sizeof(units[0]) - 1) break;
+		}
+
+		TCHAR dest[64] = {};
+		_stprintf(dest, _T("%.3g %s"), value, units[n]);
+
+		return std::basic_string<TCHAR>(dest);
+	}
+
 } // namespace cubeice
 
 #endif // CUBEICE_FORMAT_H
