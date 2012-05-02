@@ -43,9 +43,11 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
 }
 
 #ifndef SEVENZIP_ORIGINAL
-UString MultiByteToUnicodeComment(const AString &srcString, UINT /*codePage*/)
+UString MultiByteToUnicodeComment(const AString &srcString, UINT codePage)
 {
-	return static_cast<UString>(static_cast<std::wstring>(babel::auto_translate<std::wstring>(static_cast<const char*>(srcString), babel::base_encoding::utf16le)).c_str());
+	// TODO: ファイル名の処理に関しても、MultiByteToUnicodeComment 関数が呼ばれているので、原因の調査と修正を行う。
+	return MultiByteToUnicodeString(srcString, codePage);
+	//return static_cast<UString>(static_cast<std::wstring>(babel::auto_translate<std::wstring>(static_cast<const char*>(srcString), babel::base_encoding::utf16le)).c_str());
 }
 #endif
 
