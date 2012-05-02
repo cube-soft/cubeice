@@ -336,23 +336,20 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			STDMETHODIMP GetInfoTip( DWORD dwFlags, WCHAR **ppwszTip ) {
 				static const size_type maxcolumn = 50; // 1行に出力する最大文字数
-				tstring		tooltip;
-				TCHAR		*ext;
-				TCHAR		tmp[512];
 
-				tooltip = _T( "種類: " );
-				ext = PathFindExtension( compFileName.c_str() );
+				tstring tooltip = _T( "種類: " );
+				TCHAR* ext = PathFindExtension( compFileName.c_str() );
 				if( ext ) {
 					++ext;
 					tooltip += ext;
 				}
 				tooltip += _T( " ファイル\r\n" );
 				
-				HANDLE			hFile = CreateFile( compFileName.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-				LARGE_INTEGER	li = { 0 };
-				SYSTEMTIME		st = { 0 };
+				HANDLE hFile = CreateFile( compFileName.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+				LARGE_INTEGER li = { 0 };
+				SYSTEMTIME st = { 0 };
 				if( hFile != INVALID_HANDLE_VALUE ) {
-					FILETIME		ft, localft;
+					FILETIME ft, localft;
 					
 					GetFileSizeEx( hFile, &li );
 					GetFileTime( hFile, NULL, NULL, &ft );
@@ -363,14 +360,14 @@ namespace cube {
 				}
 				
 				tooltip += _T( "更新日時: " );
-				wsprintf( tmp, _T( "%d/%02d/%02d %d:%02d" ), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute );
+				TCHAR tmp[32] = {};
+				_stprintf( tmp, _T( "%d/%02d/%02d %d:%02d" ), st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute );
 				tooltip += tmp;
 				
 				tooltip += _T("\r\n");
 				
 				tooltip += _T( "サイズ: " );
-				tooltip += cubeice::punct( li.QuadPart );
-				tooltip += _T( " バイト" );
+				tooltip += cubeice::byte_format( li.QuadPart );
 				
 				if( dwFlags & QITIPF_USESLOWTIP &&
 					(ctxSetting.decompression().details() & DETAIL_TOOLTIP) &&
