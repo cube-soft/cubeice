@@ -370,12 +370,9 @@ namespace cubeice {
 				{ "\xE3\x83\x9B\xE3\x82\x9A", "\xE3\x83\x9D" },		// ƒ|
 			};
 			
-			AString tmp = src.c_str();
 			for(unsigned int i = 0 ; i < sizeof(utf_8_mac_mapping) / sizeof(utf_8_mac_mapping[0]); ++i) {
-				tmp.Replace( utf_8_mac_mapping[i][0], utf_8_mac_mapping[i][1] );
-				//this->ReplaceAll(src, utf_8_mac_mapping[i][0], utf_8_mac_mapping[i][1]);
+				this->ReplaceAll(src, utf_8_mac_mapping[i][0], utf_8_mac_mapping[i][1]);
 			}
-			src = (const char*)tmp;
 		}
 
 		/* --------------------------------------------------------------------- */
