@@ -31,7 +31,6 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
     int encoding = cubeice::GetEncoding();
     cubeice::EncodingDialog encoder(_T("IDD_ENCODING"), (const char*)srcString, encoding);
     if (encoding == cubeice::EncodingDialog::Unknown && !encoder.Test()) {
-    //if (encoding == cubeice::EncodingDialog::Unknown) {
         if (encoder.ShowDialog(NULL) == IDOK) cubeice::SetEncoding(encoder.Encoding());
     }
 

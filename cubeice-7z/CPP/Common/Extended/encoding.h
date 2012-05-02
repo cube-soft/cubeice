@@ -530,32 +530,15 @@ namespace cubeice {
 	/*
 	 *  Normalize
 	 *
-	 *  文字エンコードの指定が不正，Windows で許されていない名前の設定等，
-	 *  ファイル名として不適切である名前が指定された場合に，
-	 *  「CubeICEによってリネームされたファイルYYYYMMDDHHMMSS(N).ext」
-	 *  と言うファイル名にリネームする．
+	 *  Windows で許されていない名前が設定された場合、先頭にアンダースコア
+	 *  を挿入してエスケープする。
 	 */
 	/* --------------------------------------------------------------------- */
 	inline std::basic_string<wchar_t> Normalize(const std::basic_string<wchar_t>& src) {
-		typedef wchar_t char_type;
-		typedef std::basic_string<char_type> string_type;
-		typedef std::map<string_type, string_type> filemap_type;
-		
-		static const string_type prefix_ = _T("CubeICEによってリネームされたファイル");
-		static filemap_type v_;
-		static SYSTEMTIME now_;
-		static bool initialized_ = false;
-
-		if (!initialized_) {
-			v_.clear();
-			::GetLocalTime(&now_);
-			initialized_ = true;
-		}
-		
 		std::vector<std::basic_string<wchar_t> > parts;
 		clx::split_if(src, parts, clx::is_any_of(L"\\/"));
 
-		static const wchar_t	*reserved_name[] = {
+		static const wchar_t *reserved_name[] = {
 			L"CON",
 			L"PRN",
 			L"AUX",
@@ -585,13 +568,17 @@ namespace cubeice {
 		};
 		
 		bool escaped = false;
-		for(int i = 0 ; i < parts.size() ; ++i) {
-			std::basic_string<wchar_t>	&s = parts[i];
-			while(!s.empty() && (s[s.size()-1] == L'.' || s[s.size()-1] == L' '))
-				s.pop_back();
+		for(std::size_t i = 0 ; i < parts.size() ; ++i) {
+			std::basic_string<wchar_t>& s = parts[i];
+
+			// Windows は末尾の空白やドット記号を許可していないので、それらの文字を削る。
+			// ※Linux 等の他 OS で作成されたファイル名には、そう言った名前が存在する可能性がある。
+			while(!s.empty() && (s[s.size()-1] == L'.' || s[s.size()-1] == L' ')) s.pop_back();
+
+			// Windows で予約されている文字列が検出された場合は、先頭にアンダースコアを挿入してエスケープする。
 			if(!s.empty()) {
 				for(int j = 0 ; j < sizeof(reserved_name) / sizeof(reserved_name[0]) ; ++j) {
-					const int	len = wcslen(reserved_name[j]);
+					const int len = wcslen(reserved_name[j]);
 					if(s.substr(0, len) == reserved_name[j] && (s.size() == len || s[len] == L'.')) {
 						s = L'_' + s;
 						escaped = true;
@@ -600,55 +587,14 @@ namespace cubeice {
 				}
 			}
 		}
-		std::basic_string<wchar_t> s;
-		std::basic_string<wchar_t> checkname;
-		clx::join(parts, s, L"/");
-		clx::join(parts, checkname, L"");
-
-		wchar_t dir[1024] = {};
-		if (::GetTempPath(1024, dir) == 0) return s;
-		string_type path = dir + checkname;
-		HANDLE test = CreateFile(path.c_str(),
-			GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE, NULL);
 		
-		if (test != INVALID_HANDLE_VALUE) {
-			DWORD type = GetFileType(test);
-			::CloseHandle(test);
-			if (type == FILE_TYPE_DISK) {
-				if (escaped) {
-					PutNormalizationLog(src, s);
-					return s;
-				}
-				else return src;
-			}
+		if (escaped) {
+			std::basic_string<wchar_t> result;
+			clx::join(parts, result, L"/");
+			PutNormalizationLog(src, result);
+			return result;
 		}
-
-		// ファイル名をリネームする
-		filemap_type::iterator pos = v_.find(s);
-		if (pos != v_.end()) return pos->second;
-		
-		char_type buffer[2048] = {};
-		if (v_.empty()) {
-			_sntprintf(buffer, sizeof(buffer) / sizeof(char_type),
-				_T("%s%d%02d%02d%02d%02d%02d"),
-				prefix_.c_str(), now_.wYear, now_.wMonth, now_.wDay, now_.wHour, now_.wMinute, now_.wSecond
-			);
-		}
-		else {
-			_sntprintf(buffer, sizeof(buffer) / sizeof(char_type),
-				_T("%s%d%02d%02d%02d%02d%02d(%d)"),
-				prefix_.c_str(), now_.wYear, now_.wMonth, now_.wDay, now_.wHour, now_.wMinute, now_.wSecond, v_.size()
-			);
-		}
-
-		string_type::size_type offset = s.find_last_of(_T('.'));
-		string_type ext = (offset != string_type::npos) ? s.substr(offset) : _T("");
-		string_type result = buffer + ext;
-		v_.insert(std::make_pair(s, result));
-		
-		PutNormalizationLog(src, result);
-		return result;
+		return src;
 	}
 }
 
