@@ -519,7 +519,7 @@ namespace cubeice {
 
 		if (handle != INVALID_HANDLE_VALUE) {
 			::SetFilePointer(handle, 0, NULL, FILE_END);
-			std::basic_string<wchar_t> message = src + L" -> " + dest + L" (リネームしました)\r\n";
+			std::basic_string<wchar_t> message = L"リネームしました (" + src + L" -> " + dest + L")\r\n";
 			DWORD written = 0;
 			::WriteFile(handle, message.c_str(), message.size() * sizeof(wchar_t), &written, NULL);
 			::CloseHandle(handle);
@@ -577,12 +577,20 @@ namespace cubeice {
 
 			// Windows で予約されている文字列が検出された場合は、先頭にアンダースコアを挿入してエスケープする。
 			if(!s.empty()) {
-				for(int j = 0 ; j < sizeof(reserved_name) / sizeof(reserved_name[0]) ; ++j) {
+				for (int j = 0 ; j < sizeof(reserved_name) / sizeof(reserved_name[0]) ; ++j) {
 					const int len = wcslen(reserved_name[j]);
 					if(s.substr(0, len) == reserved_name[j] && (s.size() == len || s[len] == L'.')) {
 						s = L'_' + s;
 						escaped = true;
 						break;
+					}
+				}
+
+				for (std::basic_string<wchar_t>::iterator pos = s.begin(); pos != s.end(); ++pos) {
+					if (*pos == L'/' || *pos == L'*' || *pos == L'"' || *pos == L'<' ||
+						*pos == L'>' || *pos == L'|' || *pos == L'?' || *pos == L':') {
+						*pos = L'_';
+						escaped = true;
 					}
 				}
 			}

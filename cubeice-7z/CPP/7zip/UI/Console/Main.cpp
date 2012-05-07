@@ -609,7 +609,7 @@ int Main2(
 	std::vector<std::basic_string<TCHAR> > v = cubeice::GetNormalizationFiles();
 	if (!v.empty()) {
 		for (std::vector<std::basic_string<TCHAR> >::iterator pos = v.begin(); pos != v.end(); ++pos) {
-			stdStream << "ERROR: " << pos->c_str() << endl;
+			stdStream << "WARNING: " << pos->c_str() << endl;
 		}
 	}
 	//::DeleteFile(cubeice::GetNormalizationFilesPath().c_str());

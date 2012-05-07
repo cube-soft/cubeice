@@ -28,9 +28,8 @@ UString MultiByteToUnicodeString(const AString &srcString, UINT codePage)
       throw 282228;
     resultString.ReleaseBuffer(numChars);
 #else
-    int encoding = cubeice::GetEncoding();
-    cubeice::EncodingDialog encoder(_T("IDD_ENCODING"), (const char*)srcString, encoding);
-    if (encoding == cubeice::EncodingDialog::Unknown && !encoder.Test()) {
+    cubeice::EncodingDialog encoder(_T("IDD_ENCODING"), (const char*)srcString, cubeice::GetEncoding());
+    if (encoder.Encoding() == cubeice::EncodingDialog::Unknown && !encoder.Test()) {
         if (encoder.ShowDialog(NULL) == IDOK) cubeice::SetEncoding(encoder.Encoding());
     }
 

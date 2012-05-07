@@ -344,6 +344,7 @@ namespace cubeice {
 		void decompress(InputIterator first, InputIterator last) {
 			static const string_type keyword = _T("Extracting");
 			static const string_type error = _T("ERROR:");
+			static const string_type warning = _T("WARNING:");
 			static const string_type password_error(_T("Wrong password?"));
 			
 			LOG_TRACE(_T("function archiver::decompress() start"));
@@ -518,7 +519,16 @@ namespace cubeice {
 					assert(status == 1);
 					LOG_TRACE(_T("Message = %s"), line.c_str());
 					
-					string_type::size_type pos = line.find(error);
+					string_type::size_type pos = line.find(warning);
+					if (pos != string_type::npos) {
+						string_type warning_message = clx::strip_copy(line.substr(pos));
+						if (pos != 0) warning_message += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
+						LOG_WARN(warning_message.c_str());
+						report += warning_message + _T("\r\n");
+						continue;
+					}
+
+					pos = line.find(error);
 					if (pos != string_type::npos && line.find(password_error) == string_type::npos) {
 						string_type err = clx::strip_copy(line.substr(pos));
 						if (pos != 0) err += _T(" (") + clx::strip_copy(line.substr(0, pos)) + _T(")");
