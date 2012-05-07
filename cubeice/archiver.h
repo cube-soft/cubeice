@@ -169,6 +169,9 @@ namespace cubeice {
 				LOG_INFO(_T("password = %s"), cubeice::password().c_str());
 			}
 			
+			TCHAR* ext_check = PathFindExtension(dest.c_str());
+			if (ext_check == NULL || !_tcscmp(ext_check, _T(""))) dest += ext;
+			
 			// 一時ファイルのパスを決定
 			string_type tmp = update ? dest : cubeice::tmpfile(_T("cubeice"), false);
 			if (update) LOG_INFO(_T("update-mode, path = %s"), tmp);

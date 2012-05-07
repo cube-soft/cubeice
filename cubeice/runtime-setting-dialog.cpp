@@ -44,7 +44,7 @@ namespace cubeice {
 					if (handle == NULL) std::basic_string<TCHAR>();
 
 					int length = GetWindowTextLength(handle);
-					LOG_DEBUG(_T("TextLength = %d"), length);
+					LOG_TRACE(_T("TextLength = %d"), length);
 					std::vector<TCHAR> buffer(length + 1, 0);
 					UINT result = GetDlgItemText(hWnd, id, reinterpret_cast<TCHAR*>(&buffer[0]), buffer.size());
 					if (result == 0 && GetLastError() != 0) {
@@ -297,6 +297,12 @@ namespace cubeice {
 					const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
 					std::basic_string<TCHAR> path = cubeice::dialog::savefile(hWnd, filter, setting.path().c_str(), 0);
 					if (!path.empty()) {
+						TCHAR* ext_check = PathFindExtension(path.c_str());
+						if (ext_check == NULL || !_tcscmp(ext_check, _T(""))) {
+							const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
+							std::size_t index = SendMessage(GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
+							path += detail::extension(types.at(index));
+						}
 						setting.path() = path;
 					}
 					SetWindowText(GetDlgItem(hWnd, IDC_OUTPUT_TEXTBOX), setting.path().c_str());
