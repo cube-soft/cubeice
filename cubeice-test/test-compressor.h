@@ -25,7 +25,7 @@
 #include <tchar.h>
 #include <string>
 #include <vector>
-#include "compressor.h"
+#include "../cubeice/compressor.h"
 #include <boost/test/minimal.hpp>
 
 /* ------------------------------------------------------------------------- */
