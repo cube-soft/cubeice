@@ -72,7 +72,7 @@ namespace cube {
 			}
 			
 			/* ------------------------------------------------------------- */
-			//  SendMail
+			// SendMail
 			/* ------------------------------------------------------------- */
 			inline bool SendMail( const char *subject, const char *body, const char *attach, const char *name = NULL ) {
 				MapiFileDesc	mfd;
