@@ -175,7 +175,12 @@ namespace cubeice {
 			// 一時ファイルのパスを決定
 			string_type tmp = update ? dest : cubeice::tmpfile(_T("cubeice"), false);
 			if (update) LOG_INFO(_T("update-mode, path = %s"), tmp);
-			if (tmp.empty()) return;
+			if (tmp.empty()) {
+				DWORD error_code = GetLastError();
+				LOG_ERROR(_T("cubeice::tmpfile() failed, ErrCode = %d (%s)"), error_code, error_message(error_code).c_str());
+				MessageBox(NULL, _T("指定された保存先フォルダにファイルを作成する事ができません。書き込み可能である事を確認してください。"), _T("CubeICE 圧縮"), MB_OK | MB_ICONERROR);
+				return;
+			}
 			
 			progress_.style(cubeice::dialog::progressbar::simple);
 			progress_.show();
@@ -202,7 +207,7 @@ namespace cubeice {
 			for(std::vector<string_type>::const_iterator pos = options.begin(); pos != options.end(); ++pos) cmdline += _T(' ') + *pos;
 			cube::popen proc;
 			if (!proc.open(cmdline.c_str(), _T("r"))) {
-				LOG_ERROR(_T("proccess open"));
+				LOG_ERROR(_T("popen::open() failed"));
 				return;
 			}
 			LOG_TRACE(_T("cmdline-7z = %s"), cmdline.c_str());
@@ -309,12 +314,18 @@ namespace cubeice {
 				if(!update) {
 					LOG_INFO(_T("move, src = %s, dest = %s"), tmp.c_str(), dest.c_str());
 					if (PathFileExists(dest.c_str())) DeleteFile(dest.c_str());
-					MoveFileEx(tmp.c_str(), dest.c_str(), (MOVEFILE_COPY_ALLOWED));
+					SHFileMove(tmp, dest);
 				}
 				
 				// フィルタリング
 				if ((setting_.compression().details() & DETAIL_FILTER) && !setting_.filters().empty()) {
+					TCHAR preserve[MAX_PATH] = {};
+					GetCurrentDirectory(sizeof(preserve) / sizeof(preserve[0]), preserve);
+
+					string_type root = dest.substr(0, dest.find_last_of(_T('\\')));
+					SetCurrentDirectory(root.c_str());
 					this->compress_filter(dest, setting_.filters());
+					SetCurrentDirectory(preserve);
 				}
 				
 				// フォルダを開く
@@ -395,7 +406,10 @@ namespace cubeice {
 				// 保存先パスの取得
 				string_type root = this->decompress_path(setting_.decompression(), src, force);
 				clx::rstrip_if(root, clx::is_any_of(_T("\\")));
-				if (root.empty()) break;
+				if (root.empty()) {
+					LOG_ERROR(_T("decompress_path() failed"));
+					break;
+				}
 				LOG_INFO(_T("RootDir = %s"), root.c_str());
 				
 				progress_.show();
@@ -404,14 +418,22 @@ namespace cubeice {
 				
 				// 一時フォルダの作成
 				string_type tmp = cubeice::tmpdir(root, _T("cubeice"));
+				if (tmp.empty()) {
+					DWORD error_code = GetLastError();
+					LOG_ERROR(_T("cubeice::tmpdir() failed, ErrCode = %d (%s)"), error_code, error_message(error_code).c_str());
+					MessageBox(NULL, _T("指定された保存先フォルダにファイルを作成する事ができません。書き込み可能である事を確認してください。"), _T("CubeICE 解凍"), MB_OK | MB_ICONERROR);
+					break;
+				}
 				decomp_tmp_dir_ = tmp;
-				if (tmp.empty()) break;
-				
+
 				// プログレスバーの進行度の設定
 				string_type encoding;
 				string_type folder = this->decompress_filelist(src, encoding);
 				LOG_INFO(_T("TotalSize = %I64d"), this->size_);
-				if (progress_.is_cancel()) break;
+				if (progress_.is_cancel()) {
+					LOG_INFO(_T("Cancel button is pushed"));
+					break;
+				}
 				if (this->size_ == 0) progress_.marquee(true);
 				else if (progress_.is_marquee()) progress_.marquee(false);
 				
@@ -448,7 +470,7 @@ namespace cubeice {
 				
 				cube::popen proc;
 				if (!proc.open(cmdline.c_str(), _T("r"))) {
-					LOG_ERROR(_T("cube::popen::open()"));
+					LOG_ERROR(_T("cube::popen::open() failed"));
 					return;
 				}
 				
@@ -551,14 +573,14 @@ namespace cubeice {
 						}
 						if (cubeice::dialog::password(progress_.handle(), DECOMPRESS_FLAG) == IDCANCEL) {
 							// キャンセルを押されたときの暫定処理
-							string_type		deldir = root;
+							string_type deldir = root;
 							if ((setting_.decompression().details() & DETAIL_CREATE_FOLDER) &&
 								(setting_.decompression().details() & DETAIL_SINGLE_FOLDER) &&
 								!folder.empty()) {
-									deldir += _T("\\") + folder;
+								deldir += _T("\\") + folder;
 							}
-							if (PathFileExists(deldir.c_str()))
-								RemoveDirectory(deldir.c_str());
+							if (PathFileExists(deldir.c_str())) RemoveDirectory(deldir.c_str());
+							LOG_INFO(_T("Password operations cancel"));
 							return;
 						}
 						LOG_INFO(_T("Password = %s"), cubeice::password().c_str());
@@ -567,7 +589,7 @@ namespace cubeice {
 						LOG_TRACE(_T("CmdLine-7z = %s"), cmdline.c_str());
 						
 						if (!proc.open(cmdline.c_str(), _T("r"))) {
-							LOG_ERROR(_T("cube::popen::open()"));
+							LOG_ERROR(_T("cube::popen::open() failed"));
 							break;
 						}
 						
@@ -619,7 +641,10 @@ namespace cubeice {
 						result &= ~ID_TO_ALL;
 						to_all = result;
 					}
-					if (result == IDCANCEL) break;
+					if (result == IDCANCEL) {
+						LOG_INFO(_T("Overwrite cancel"));
+						break;
+					}
 					else if (result == IDNO) continue;
 					
 					// フィルタリング
@@ -927,6 +952,7 @@ namespace cubeice {
 					continue;
 				}
 				assert(status == 1);
+				LOG_TRACE(_T("Message = %s"), line.c_str());
 			}
 			
 			LOG_TRACE(_T("function archiver::compress_filter() end"));
