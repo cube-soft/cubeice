@@ -441,7 +441,7 @@ namespace cubeice {
 				// TODO: 現在，拡張子が本来の種類と異なるファイルも対象にしているが，
 				// それらの偽装（？）拡張子のファイルが *.tar かどうかをどう判断するか．
 				if ((filetype == _T("gzip") || filetype == _T("bzip2")) && this->is_tar(src)) {
-					src = this->decompress_tar(src, tmp, report);
+					src = this->decompress_tar(src, root, report);
 					progress_.position(progress_.minimum());
 					progress_.subposition(progress_.minimum());
 					progress_.title(_T("0% - ") + title_message);
@@ -701,6 +701,7 @@ namespace cubeice {
 				
 				cubeice::removedir(tmp.c_str());
 				decomp_tmp_dir_.clear();
+				if (src != original) DeleteFile(src.c_str());
 				
 				if ((setting_.decompression().details() & DETAIL_REMOVE_SRC) && report.empty() && !progress_.is_cancel()) {
 					DeleteFile(original.c_str());
