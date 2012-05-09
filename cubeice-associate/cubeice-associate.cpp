@@ -1,7 +1,7 @@
 #include <string>
 #include <windows.h>
 #include <tchar.h>
-#include "user-setting.h"
+#include <cubeice/user-setting.h>
 
 /* ------------------------------------------------------------------------- */
 /*
@@ -53,6 +53,7 @@ inline DWORD RegDeleteKeyNT(HKEY hStartKey , LPCTSTR pKeyName ){
 //  associate
 /* ------------------------------------------------------------------------- */
 void associate(const std::basic_string<TCHAR>& key, const std::basic_string<TCHAR>& value, bool flag) {
+	static const TCHAR* clsid_associate = _T("{F3DB85F4-4731-4e80-BC2E-754A7320D830}");
 	static const TCHAR* clsid_tooltip = _T("{00021500-0000-0000-C000-000000000046}");
 	HKEY subkey;
 	LONG status = RegOpenKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex" ) ).c_str(), 0, KEY_ALL_ACCESS, &subkey );
@@ -77,7 +78,7 @@ void associate(const std::basic_string<TCHAR>& key, const std::basic_string<TCHA
 			disposition = 0;
 			status = RegCreateKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex\\") + clsid_tooltip ).c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
 			if (!status) {
-				RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)CLSID_CubeICE_STR, sizeof( CLSID_CubeICE_STR ));
+				RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)clsid_associate, (_tcslen(clsid_associate) + 1) * sizeof(TCHAR));
 			}
 		}
 	}
