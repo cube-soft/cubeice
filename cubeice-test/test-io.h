@@ -24,7 +24,7 @@
 #include <windows.h>
 #include <tchar.h>
 #include <string>
-#include "io.h"
+#include <cubeice/io.h>
 #include <boost/test/minimal.hpp>
 
 /* ------------------------------------------------------------------------- */
