@@ -40,7 +40,6 @@
 #include <clx/timer.h>
 #include <psdotnet/logger.h>
 #include <psdotnet/appender.h>
-#include <babel/babel.h>
 #include <cubeice/wpopen.h>
 #include <cubeice/io.h>
 #include <cubeice/format.h>
@@ -49,6 +48,7 @@
 #include <cubeice/pathmatch.h>
 #include <cubeice/dialog.h>
 #include <cubeice/sendmail.h>
+#include <cubeice/encode.h>
 #include "compressor.h"
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
@@ -300,8 +300,7 @@ namespace cubeice {
 				
 				if (mail) {
 #ifdef	UNICODE
-					babel::init_babel();
-					cube::utility::sendmail::SendMail( MAIL_SUBJECT, MAIL_BODY, babel::unicode_to_sjis( tmp ).c_str(), babel::unicode_to_sjis( dest.substr( dest.find_last_of( _T( '\\' ) ) + 1 ) ).c_str() );
+					cube::utility::sendmail::SendMail(MAIL_SUBJECT, MAIL_BODY, cubeice::unicode_to_sjis(tmp).c_str(), cubeice::unicode_to_sjis(dest.substr(dest.find_last_of(_T('\\')) + 1)).c_str());
 #else	// UNICODE
 					cube::utility::sendmail::SendMail( MAIL_SUBJECT, MAIL_BODY, tmp.c_str(), dest.substr( dest.find_last_of( _T( '\\' ) ) + 1 ).c_str() );
 #endif	// UNICODE

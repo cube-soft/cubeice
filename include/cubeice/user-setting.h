@@ -47,7 +47,7 @@
 #include <boost/foreach.hpp>
 #include <boost/optional.hpp>
 #include <boost/lexical_cast.hpp>
-#include <babel/babel.h>
+#include <cubeice/encode.h>
 #include <psdotnet/logger.h>
 #include "guid.h"
 
@@ -542,8 +542,6 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		void load() {
 			LOG_TRACE(_T("function user_setting::load() start"));
-			
-			babel::init_babel();
 			
 			comp_.load();
 			decomp_.load();
@@ -1121,9 +1119,9 @@ cleanup:
 					optional<std::string> attr_name = v.second.get_optional<std::string>("<xmlattr>.name");
 					if(attr_id) {
 #ifdef	UNICODE
-						parent.push_back(SUBMENU( *attr_id, attr_name ? babel::utf8_to_unicode(*attr_name) : L"" ));
+						parent.push_back(SUBMENU( *attr_id, attr_name ? cubeice::utf8_to_unicode(*attr_name) : L"" ));
 #else
-						parent.push_back(SUBMENU( *attr_id, attr_name ? babel::utf8_to_sjis(*attr_name) : "" ));
+						parent.push_back(SUBMENU( *attr_id, attr_name ? cubeice::utf8_to_sjis(*attr_name) : "" ));
 #endif
 						if(v.second.size()) context_read(v.second, parent.back().children);
 					}
@@ -1149,9 +1147,9 @@ cleanup:
 				attr.put("id", boost::lexical_cast<std::string>(s.id));
 				if(s.str!=_T("")) {
 #ifdef	UNICODE
-					attr.put("name", babel::unicode_to_utf8(s.str));
+					attr.put("name", cubeice::unicode_to_utf8(s.str));
 #else
-					attr.put("name", babel::sjis_to_utf8(s.str));
+					attr.put("name", cubeice::sjis_to_utf8(s.str));
 #endif
 				}
 				context_write(item, s.children);
