@@ -22,7 +22,9 @@
 #ifndef CUBEICE_SETTING_VERSION_PAGE_H
 #define CUBEICE_SETTING_VERSION_PAGE_H
 
-#include <cubeice/config.h>
+#include "cubeice-setting.h"
+#include <sstream>
+#include <psdotnet/drawing.h>
 #include "setting-page.h"
 #include "resource.h"
 
@@ -52,6 +54,59 @@ namespace CubeICE {
 		/* ----------------------------------------------------------------- */
 		virtual ~VersionPage() {}
 		
+	protected:
+		/* ----------------------------------------------------------------- */
+		///
+		/// OnCreateControl
+		///
+		/// <summary>
+		/// 画面生成直後の初期化処理を行います。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		virtual void OnCreateControl() {
+			UserSetting& data = this->Data();
+			
+			// ロゴの表示
+			PsdotNet::Drawing::Icon::Type type = PsdotNet::Drawing::Icon::Type::Resource;
+			PsdotNet::Drawing::Icon logo(type, _T("IDI_APP"), PsdotNet::Drawing::Size(48, 48));
+			handle_type handle = GetDlgItem(this->Handle(), IDC_LOGO_PICTUREBOX);
+			::SendMessage(handle, STM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(logo.Handle()));
+			
+			// バージョン
+			std::basic_stringstream<char_type> ss;
+			int edition = PsdotNet::Environment::Is64BitProcess() ? 64 : 86;
+			ss << _T("Version: ") << data.Version() << _T(" (x") << edition << _T(")");
+			::SetWindowText(::GetDlgItem(this->Handle(), IDC_VERSION_LABEL), ss.str().c_str());
+			
+			// アップデートの確認
+			if (data.CheckUpdate()) ::CheckDlgButton(this->Handle(), IDC_UPDATE_CHECKBOX, BM_SETCHECK);
+			
+			// デバッグ情報を出力
+			if (data.LogLevel() < PsdotNet::LogLevel::Error) ::CheckDlgButton(this->Handle(), IDC_DEBUG_CHECKBOX, BM_SETCHECK);
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/// OnCommand
+		/* ----------------------------------------------------------------- */
+		virtual void OnCommand(PsdotNet::Forms::Message& m) {
+			UserSetting& data = this->Data();
+			int id = LOWORD(m.WParam());
+			
+			switch (id) {
+			case IDC_UPDATE_CHECKBOX:
+				data.CheckUpdate(::IsDlgButtonChecked(this->Handle(), id) == BST_CHECKED);
+				m.Result(TRUE);
+				break;
+			case IDC_DEBUG_CHECKBOX:
+				data.LogLevel(::IsDlgButtonChecked(this->Handle(), id) == BST_CHECKED ? 10 : 50);
+				m.Result(TRUE);
+				break;
+			default:
+				m.Result(FALSE);
+				break;
+			}
+		}
 	}; // class CompressionPage
 } // namespace CubeICE
 

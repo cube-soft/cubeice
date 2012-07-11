@@ -186,6 +186,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="compression-page.h" />
+    <ClInclude Include="cubeice-setting.h" />
     <ClInclude Include="decompression-page.h" />
     <ClInclude Include="filtering-page.h" />
     <ClInclude Include="general-page.h" />

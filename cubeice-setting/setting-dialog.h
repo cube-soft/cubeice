@@ -22,10 +22,9 @@
 #ifndef CUBEICE_SETTING_SETTING_DIALOG_H
 #define CUBEICE_SETTING_SETTING_DIALOG_H
 
-#include <cubeice/config.h>
+#include "cubeice-setting.h"
 #include <boost/shared_ptr.hpp>
 #include <psdotnet/forms/property-dialog.h>
-#include <cubeice/user-setting.h>
 #include "general-page.h"
 #include "compression-page.h"
 #include "decompression-page.h"
@@ -79,7 +78,7 @@ namespace CubeICE {
 		///
 		/* ----------------------------------------------------------------- */
 		void InitializeComponent() {
-			this->Text(_T("CubeICE Ý’è"));
+			this->Text(_T("CubeICE Ý’è "));
 			this->Icon(PsdotNet::Drawing::Icon(PsdotNet::Drawing::Icon::Type::Resource, _T("IDI_APP")));
 			
 			this->Add(general_);

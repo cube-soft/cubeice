@@ -19,10 +19,8 @@
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
-#include <cubeice/config.h>
+#include "cubeice-setting.h"
 #include <psdotnet/environment.h>
-#include <psdotnet/logger.h>
-#include <psdotnet/logger/file-appender.h>
 #include "setting-dialog.h"
 
 int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int showCmd) {

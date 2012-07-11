@@ -22,10 +22,9 @@
 #ifndef CUBEICE_SETTING_SETTING_PAGE_H
 #define CUBEICE_SETTING_SETTING_PAGE_H
 
-#include <cubeice/config.h>
+#include "cubeice-setting.h"
 #include <boost/shared_ptr.hpp>
 #include <psdotnet/forms/property-page.h>
-#include <cubeice/user-setting.h>
 
 namespace CubeICE {
 	/* --------------------------------------------------------------------- */
