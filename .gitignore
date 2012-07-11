@@ -27,10 +27,15 @@
 *.sdf
 *.filters
 *.zip
+*.sh
 ipch/
 obj/
 [Bb]in
 [Dd]ebug*/
+Release*/
+x86/
+x64/
+Win32/
 [Tt]mp/
 Ankh.NoLoad
 
