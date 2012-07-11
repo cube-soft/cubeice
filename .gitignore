@@ -27,6 +27,7 @@
 *.sdf
 *.zip
 *.sh
+*.opensdf
 ipch/
 obj/
 [Bb]in
