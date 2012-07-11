@@ -35,9 +35,10 @@
 #ifndef CUBEICE_DIALOG_H
 #define CUBEICE_DIALOG_H
 
-#include <map>
-#include <windows.h>
+#include <cubeice/config.h>
 #include <cubeice/user-setting.h>
+#include <map>
+#include "cubeice-setting.h"
 #include "resource.h"
 
 #ifndef CUBE_MAX_PATH

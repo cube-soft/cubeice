@@ -20,13 +20,13 @@
  *  Last-modified: Tue 28 Dec 2010 20:42:00 JST
  */
 /* ------------------------------------------------------------------------- */
-#include <Windows.h>
+#include <cubeice/config.h>
+#include <cubeice/user-setting.h>
 #include <CommCtrl.h>
 #include <imm.h>
 #include <vector>
 #include <map>
 #include "setting-dialog.h"
-#include <cubeice/cubeice-ctxdata.h>
 
 #pragma comment(lib, "imm32.lib")
 

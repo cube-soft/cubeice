@@ -1,33 +1,36 @@
+// -*- coding: shift-jis -*-
 /* ------------------------------------------------------------------------- */
 /*
  *  cubeice-test.cpp
  *
- *  Copyright (c) 2010 - 2011 CubeSoft Inc.
+ *  Copyright (c) 2011, clown.
  *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
+ *  Distributed under the Boost Software License,
+ *  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+ *  http://www.boost.org/LICENSE_1_0.txt)
  */
 /* ------------------------------------------------------------------------- */
-#include "test-io.h"
-#include "test-format.h"
-#include "test-compressor.h"
+#define BOOST_TEST_MAIN
+#include <boost/test/unit_test.hpp>
+#include "cubeice-test.h"
 
-int test_main(int argc, char* argv[]) {
-	test_directory();
-	test_tmpfile();
-	test_tmpdir();
-	test_punct();
-	test_compressor_extension();
-	
-	return 0;
-}
+/* ------------------------------------------------------------------------- */
+/// CubeICETestConfigure
+/* ------------------------------------------------------------------------- */
+class CubeICETestConfigure {
+public:
+	/* --------------------------------------------------------------------- */
+	/// constructor
+	/* --------------------------------------------------------------------- */
+	CubeICETestConfigure() {
+		TestMessageAppender mapp;
+		PsdotNet::Logger::Configure(mapp, PsdotNet::LogLevel::Trace);
+	}
+
+	/* --------------------------------------------------------------------- */
+	/// destructor
+	/* --------------------------------------------------------------------- */
+	~CubeICETestConfigure() {}
+};
+
+BOOST_GLOBAL_FIXTURE(CubeICETestConfigure);

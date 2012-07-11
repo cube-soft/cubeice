@@ -35,8 +35,12 @@
 #ifndef CUBEICE_SETTING_H
 #define CUBEICE_SETTING_H
 
+#include <cubeice/config.h>
 #include <cubeice/user-setting.h>
 
+namespace cubeice {
+	typedef CubeICE::UserSetting::Version1 user_setting;
+}
 extern cubeice::user_setting Setting;
 
 #endif // CUBEICE_SETTING_H

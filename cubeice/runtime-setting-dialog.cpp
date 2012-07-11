@@ -67,7 +67,9 @@ namespace cubeice {
 			 *  WM_INITDIALOG メッセージを受信した際の処理．
 			 */
 			/* ----------------------------------------------------------------- */
-			static INT_PTR runtime_setting_initdialog(HWND hWnd, cubeice::runtime_setting& setting) {
+			static INT_PTR runtime_setting_initdialog(HWND hWnd, CubeICE::RuntimeSetting& setting) {
+				CubeICE::RuntimeCompressionSetting& compression = setting.Compression();
+				
 				// アイコン
 				HICON app = LoadIcon(GetModuleHandle(NULL), _T("IDI_APP"));
 				SendMessage(hWnd, WM_SETICON, 0, LPARAM(app));
@@ -75,11 +77,13 @@ namespace cubeice {
 				// 上書き設定
 				SendDlgItemMessage( hWnd, IDC_OUTPUT_COMBOBOX, CB_ADDSTRING, 0, (LPARAM)_T("上書き") );
 				SendDlgItemMessage( hWnd, IDC_OUTPUT_COMBOBOX, CB_ADDSTRING, 0, (LPARAM)_T("追加") );
-				if( setting.update() )
+				if(compression.Overwrite() == OverwriteKind::Add) {
 					SendDlgItemMessage( hWnd, IDC_OUTPUT_COMBOBOX, CB_SETCURSEL, 1, 0 );
-				else
+				}
+				else {
 					SendDlgItemMessage( hWnd, IDC_OUTPUT_COMBOBOX, CB_SETCURSEL, 0, 0 );
-
+				}
+				
 				// 画面中央に表示
 				RECT rect = {};
 				GetWindowRect(hWnd, (LPRECT)&rect);
@@ -88,18 +92,18 @@ namespace cubeice {
 				SetWindowPos(hWnd, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
 				
 				// 出力先
-				SetWindowText(GetDlgItem(hWnd, IDC_OUTPUT_TEXTBOX), setting.path().c_str());
+				SetWindowText(GetDlgItem(hWnd, IDC_OUTPUT_TEXTBOX), compression.OutputPath().c_str());
 				
 				// 圧縮形式
-				const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
+				const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(compression.Overwrite() == OverwriteKind::Add);
 				HWND combo = GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX);
 				std::size_t index = 0; // 初期値は「zip」
 				for (std::size_t i = 0; i < types.size(); ++i) {
 					SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)types.at(i).c_str());
-					if (setting.type() == types.at(i)) index = i;
+					if (compression.Type() == types.at(i)) index = i;
 				}
 				SendMessage(combo, CB_SETCURSEL, index, 0);
-				setting.type() = types.at(index);
+				compression.Type(types.at(index));
 				
 				// 圧縮レベル
 				const cubeice::dialog_data::param_list& levels = cubeice::dialog_data::compress_levels();
@@ -107,27 +111,27 @@ namespace cubeice {
 				index = 3; // 初期値は「標準」
 				for (std::size_t i = 0; i < levels.size(); ++i) {
 					SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)levels.at(i).c_str());
-					if (setting.level() == 0) {
-						if (setting.level() == i) index = i;
+					if (compression.Level() == 0) {
+						if (compression.Level() == i) index = i;
 					}
-					else if (setting.level() / 2 + 1 == i) index = i;
+					else if (compression.Level() / 2 + 1 == i) index = i;
 				}
 				SendMessage(combo, CB_SETCURSEL, index, 0);
-				setting.level() = (index == 0) ? index : index * 2 - 1;
+				compression.Level((index == 0) ? index : index * 2 - 1);
 				
 				// 圧縮メソッド
 				combo = GetDlgItem(hWnd, IDC_COMPMETHOD_COMBOBOX);
 				index = 0;
-				if (setting.type() != _T("zip") && setting.type() != _T("7z") && setting.type() != _T("exe")) EnableWindow(combo, FALSE);
+				if (compression.Type() != _T("zip") && compression.Type() != _T("7z") && compression.Type() != _T("exe")) EnableWindow(combo, FALSE);
 				else {
-					const cubeice::dialog_data::param_list& methods = (setting.type() == _T("zip")) ?
+					const cubeice::dialog_data::param_list& methods = (compression.Type() == _T("zip")) ?
 						cubeice::dialog_data::zip_methods() : cubeice::dialog_data::sevenzip_methods();
 					for (std::size_t i = 0; i < methods.size(); ++i) {
 						SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)methods.at(i).c_str());
-						if (setting.method() == methods.at(i)) index = i;
+						if (compression.Method() == methods.at(i)) index = i;
 					}
 					SendMessage(combo, CB_SETCURSEL, index, 0);
-					setting.method() = methods.at(index);
+					compression.Method(methods.at(index));
 				}
 				
 				// CPU 数
@@ -135,12 +139,12 @@ namespace cubeice {
 				GetSystemInfo(&info);
 				HWND spin = GetDlgItem(hWnd, IDC_THREAD_UPDOWN);
 				SendMessage(spin, UDM_SETRANGE, 0, MAKELONG(info.dwNumberOfProcessors, 1));
-				SendMessage(spin, UDM_SETPOS, 0, MAKELONG(setting.thread_size(), 0));
+				SendMessage(spin, UDM_SETPOS, 0, compression.ThreadSize());
 				std::basic_string<TCHAR> cpu = _T("/ ") + clx::lexical_cast<std::basic_string<TCHAR> >(info.dwNumberOfProcessors);
 				SetWindowText(GetDlgItem(hWnd, IDC_THREAD_MAX_LABEL), cpu.c_str());
 				
 				// 暗号化するかどうか
-				if (setting.enable_password()) CheckDlgButton(hWnd, IDC_PASSWORD_CHECKBOX, BM_SETCHECK);
+				if (compression.EnablePassword()) CheckDlgButton(hWnd, IDC_PASSWORD_CHECKBOX, BM_SETCHECK);
 				else {
 					EnableWindow(GetDlgItem(hWnd, IDC_PASSWORD_TEXTBOX), FALSE);
 					EnableWindow(GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX), FALSE);
@@ -150,7 +154,7 @@ namespace cubeice {
 				
 				// パスワードを表示するかどうか
 				SendMessage(GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('*'), 0);
-				if (setting.show_password()) {
+				if (compression.ShowPassword()) {
 					CheckDlgButton(hWnd, IDC_SHOWPASS_CHECKBOX, BM_SETCHECK);
 					SendMessage(GetDlgItem(hWnd, IDC_PASSWORD_TEXTBOX), EM_SETPASSWORDCHAR, (WPARAM)_T('\0'), 0);
 					EnableWindow(GetDlgItem(hWnd, IDC_CONFIRM_TEXTBOX), FALSE);
@@ -163,10 +167,10 @@ namespace cubeice {
 				index = 0;
 				for (std::size_t i = 0; i < encodings.size(); ++i) {
 					SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)encodings.at(i).c_str());
-					if (setting.encoding() == encodings.at(i)) index = i;
+					if (compression.EncodingMethod() == encodings.at(i)) index = i;
 				}
 				SendMessage(combo, CB_SETCURSEL, index, 0);
-				if (setting.type() != _T("zip")) EnableWindow(combo, FALSE);
+				if (compression.Type() != _T("zip")) EnableWindow(combo, FALSE);
 				
 				return TRUE;
 			}
@@ -178,22 +182,27 @@ namespace cubeice {
 			 *  ダイアログの状態を setting に保存する．
 			 */
 			/* ----------------------------------------------------------------- */
-			static INT_PTR runtime_setting_termdialog(HWND hWnd, cubeice::runtime_setting& setting) {
+			static INT_PTR runtime_setting_termdialog(HWND hWnd, CubeICE::RuntimeSetting& setting) {
+				CubeICE::RuntimeCompressionSetting& compression = setting.Compression();
+				
 				// 上書き設定
-				setting.update() = SendDlgItemMessage(hWnd, IDC_OUTPUT_COMBOBOX, CB_GETCURSEL, 0, 0) != 0;
-
+				if (SendDlgItemMessage(hWnd, IDC_OUTPUT_COMBOBOX, CB_GETCURSEL, 0, 0)) {
+					compression.Overwrite(OverwriteKind::Confirm);
+				}
+				else compression.Overwrite(OverwriteKind::Add);
+				
 				// 出力先
-				setting.path() = detail::gettext(hWnd, IDC_OUTPUT_TEXTBOX);
+				compression.OutputPath(detail::gettext(hWnd, IDC_OUTPUT_TEXTBOX));
 				
 				// 圧縮形式
-				const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
+				const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(compression.Overwrite() == OverwriteKind::Add);
 				std::size_t index = SendMessage(GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
-				setting.type() = types.at(index);
+				compression.Type(types.at(index));
 				
 				// 圧縮レベル
 				index = SendMessage(GetDlgItem(hWnd, IDC_COMPLEVEL_COMBOBOX), CB_GETCURSEL, 0, 0);
-				if (index == 0) setting.level() = index;
-				else setting.level() = index * 2 - 1;
+				if (index == 0) compression.Level(index);
+				else compression.Level(index * 2 - 1);
 				
 				// 圧縮メソッド
 				HWND combo = GetDlgItem(hWnd, IDC_COMPMETHOD_COMBOBOX);
@@ -201,30 +210,30 @@ namespace cubeice {
 					TCHAR buffer[32] = {};
 					index = SendMessage(combo, CB_GETCURSEL, 0, 0);
 					SendMessage(combo, CB_GETLBTEXT, index, (LPARAM)buffer);
-					setting.method() = buffer;
+					compression.Method(buffer);
 				}
-				else setting.method().erase();
+				else compression.Method(_T(""));
 				
 				// CPU スレッド数
-				setting.thread_size() = SendMessage(GetDlgItem(hWnd, IDC_THREAD_UPDOWN), UDM_GETPOS, 0, 0);
+				compression.ThreadSize(SendMessage(GetDlgItem(hWnd, IDC_THREAD_UPDOWN), UDM_GETPOS, 0, 0));
 				
 				// パスワード
 				if (IsDlgButtonChecked(hWnd, IDC_PASSWORD_CHECKBOX)) {
 					TCHAR pass[128] = {};
 					GetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, pass, 2048);
-					setting.enable_password() = true;
-					setting.password() = pass;
+					compression.EnablePassword(true);
+					compression.Password(pass);
 				}
 				else {
-					setting.enable_password() = false;
-					setting.password().erase();
+					compression.EnablePassword(false);
+					compression.Password(_T(""));
 				}
 				
 				// 設定の保存のために，使用していない場合でも状態を取得する
-				setting.show_password() = (IsDlgButtonChecked(hWnd, IDC_SHOWPASS_CHECKBOX) != FALSE);
+				compression.ShowPassword(IsDlgButtonChecked(hWnd, IDC_SHOWPASS_CHECKBOX) != FALSE);
 				const cubeice::dialog_data::param_list& encodings = cubeice::dialog_data::encode_methods();
 				index = SendMessage(GetDlgItem(hWnd, IDC_ENMETHOD_COMBOBOX), CB_GETCURSEL, 0, 0);
-				setting.encoding() = encodings.at(index);
+				compression.EncodingMethod(encodings.at(index));
 				
 				return TRUE;
 			}
@@ -268,7 +277,9 @@ namespace cubeice {
 			 *  WM_COMMAND メッセージを受信した際の処理．
 			 */
 			/* ----------------------------------------------------------------- */
-			static INT_PTR runtime_setting_command(HWND hWnd, WPARAM wp, LPARAM lp, cubeice::runtime_setting& setting) {
+			static INT_PTR runtime_setting_command(HWND hWnd, WPARAM wp, LPARAM lp, CubeICE::RuntimeSetting& setting) {
+				CubeICE::RuntimeCompressionSetting& compression = setting.Compression();
+				
 				switch (LOWORD(wp)) {
 				case IDCANCEL:
 					EndDialog(hWnd, IDCANCEL);
@@ -279,13 +290,13 @@ namespace cubeice {
 						if (!is_valid_password(hWnd)) break;
 						TCHAR buffer[256] = {};
 						GetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, buffer, 256);
-						setting.password() = buffer;
+						compression.Password(buffer);
 					}
 					
 					runtime_setting_termdialog(hWnd, setting);
 					
-					if (!setting.update() && PathFileExists(setting.path().c_str())) {
-						std::basic_string<TCHAR> message = setting.path() + _T(" は既に存在します。上書きしますか？");
+					if (compression.Overwrite() == OverwriteKind::Confirm && PathFileExists(compression.OutputPath().c_str())) {
+						std::basic_string<TCHAR> message = compression.OutputPath() + _T(" は既に存在します。上書きしますか？");
 						if (MessageBox(hWnd, message.c_str(), _T("上書きの確認"), MB_YESNO | MB_ICONWARNING) == IDNO) break;
 					}
 					
@@ -295,27 +306,29 @@ namespace cubeice {
 				case IDC_OUTPUT_BUTTON: // 出力先を選択
 				{
 					const TCHAR filter[] = _T("All files(*.*)\0*.*\0\0");
-					std::basic_string<TCHAR> path = cubeice::dialog::savefile(hWnd, filter, setting.path().c_str(), 0);
+					std::basic_string<TCHAR> path = cubeice::dialog::savefile(hWnd, filter, compression.OutputPath().c_str(), 0);
 					if (!path.empty()) {
 						TCHAR* ext_check = PathFindExtension(path.c_str());
 						if (ext_check == NULL || !_tcscmp(ext_check, _T(""))) {
-							const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
+							const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(compression.Overwrite() == OverwriteKind::Add);
 							std::size_t index = SendMessage(GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
 							path += detail::extension(types.at(index));
 						}
-						setting.path() = path;
+						compression.OutputPath(path);
 					}
-					SetWindowText(GetDlgItem(hWnd, IDC_OUTPUT_TEXTBOX), setting.path().c_str());
+					SetWindowText(GetDlgItem(hWnd, IDC_OUTPUT_TEXTBOX), compression.OutputPath().c_str());
 					break;
 				}
 				case IDC_OUTPUT_COMBOBOX:
 				{
-					if(HIWORD(wp) != CBN_SELCHANGE)
-						break;
-					setting.update() = SendDlgItemMessage(hWnd, IDC_OUTPUT_COMBOBOX, CB_GETCURSEL, 0, 0) != 0;
-
+					if(HIWORD(wp) != CBN_SELCHANGE) break;
+					if (SendDlgItemMessage(hWnd, IDC_OUTPUT_COMBOBOX, CB_GETCURSEL, 0, 0) == 0) {
+						compression.Overwrite(OverwriteKind::Confirm);
+					}
+					else compression.Overwrite(OverwriteKind::Add);
+					
 					// 圧縮形式
-					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
+					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(compression.Overwrite() == OverwriteKind::Add);
 					HWND combo = GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX);
 					std::size_t index = SendMessage(combo, CB_GETCURSEL, 0, 0);
 					if (index >= types.size()) index = 0;
@@ -324,12 +337,12 @@ namespace cubeice {
 						SendMessage(combo, CB_ADDSTRING, 0, (LPARAM)types.at(i).c_str());
 					}
 					SendMessage(combo, CB_SETCURSEL, index, 0);
-					setting.type() = types.at(index);
+					compression.Type(types.at(index));
 					// fall through
 				}
 				case IDC_COMPTYPE_COMBOBOX:
 				{
-					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
+					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(compression.Overwrite() == OverwriteKind::Add);
 					std::size_t index = SendMessage(GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
 					if (types.at(index) == _T("zip") || types.at(index) == _T("7z") || types.at(index) == _T("exe")) {
 						HWND combo = GetDlgItem(hWnd, IDC_COMPMETHOD_COMBOBOX);
@@ -360,8 +373,8 @@ namespace cubeice {
 					std::basic_string<TCHAR> path = detail::gettext(hWnd, IDC_OUTPUT_TEXTBOX);
 					path = path.substr(0, path.find_last_of(_T('.')));
 					if (path.find(_T(".tar")) != std::basic_string<TCHAR>::npos) path.erase(path.find_last_of(_T('.')));
-					setting.path() = path + detail::extension(types.at(index));
-					SetWindowText(GetDlgItem(hWnd, IDC_OUTPUT_TEXTBOX), setting.path().c_str());
+					compression.OutputPath(path + detail::extension(types.at(index)));
+					SetWindowText(GetDlgItem(hWnd, IDC_OUTPUT_TEXTBOX), compression.OutputPath().c_str());
 					
 					// 暗号化メソッドの有効/無効
 					BOOL enabled = (IsDlgButtonChecked(hWnd, IDC_PASSWORD_CHECKBOX) && types.at(index) == _T("zip")) ? TRUE : FALSE;
@@ -376,7 +389,7 @@ namespace cubeice {
 					EnableWindow(GetDlgItem(hWnd, IDC_SHOWPASS_CHECKBOX), enabled);
 					
 					// 暗号化メソッドは zip 以外は無効
-					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(setting.update());
+					const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(compression.Overwrite() == OverwriteKind::Add);
 					std::size_t index = SendMessage(GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
 					if (types.at(index) != _T("zip")) enabled = FALSE;
 					EnableWindow(GetDlgItem(hWnd, IDC_ENMETHOD_COMBOBOX), enabled);
@@ -405,10 +418,10 @@ namespace cubeice {
 			//  runtime_setting_wndproc
 			/* ----------------------------------------------------------------- */
 			static INT_PTR CALLBACK runtime_setting_wndproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
-				static cubeice::runtime_setting* setting = NULL;
+				static CubeICE::RuntimeSetting* setting = NULL;
 				switch (msg) {
 				case WM_INITDIALOG:
-					setting = reinterpret_cast<cubeice::runtime_setting*>(lp);
+					setting = reinterpret_cast<CubeICE::RuntimeSetting*>(lp);
 					return runtime_setting_initdialog(hWnd, *setting);
 				case WM_COMMAND:
 					return runtime_setting_command(hWnd, wp, lp, *setting);
@@ -423,7 +436,7 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		//  runtime_setting
 		/* ----------------------------------------------------------------- */
-		int runtime_setting(HWND owner, cubeice::runtime_setting& setting) {
+		int runtime_setting(HWND owner, CubeICE::RuntimeSetting& setting) {
 			return DialogBoxParam(GetModuleHandle(NULL), _T("IDD_RUNTIME_COMPRESS"), owner, compress::runtime_setting_wndproc, (LPARAM)(&setting));
 		}
 	}

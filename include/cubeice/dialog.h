@@ -34,8 +34,9 @@
 
 #define CUBE_MAX_PATH 2048
 
+#include <cubeice/config.h>
+#include <cubeice/user-setting.h>
 #include "progressbar.h"
-#include "runtime-setting.h"
 #include "file-dialog.h"
 
 namespace cubeice {
@@ -61,7 +62,7 @@ namespace cubeice {
 		extern int password(HWND owner, int which);
 		extern int overwrite(HWND owner, const std::basic_string<TCHAR>& message);
 		extern int report(HWND owner, const std::basic_string<TCHAR>& message);
-		extern int runtime_setting(HWND owner, cubeice::runtime_setting& setting);
+		extern int runtime_setting(HWND owner, CubeICE::RuntimeSetting& setting);
 	}
 	
 	/* --------------------------------------------------------------------- */

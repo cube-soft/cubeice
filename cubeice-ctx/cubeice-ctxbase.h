@@ -1,64 +1,77 @@
+// -*- coding: shift-jis -*-
 /* ------------------------------------------------------------------------- */
 /*
- *  cubeice-ctxbase.h
+ *  cubeice/cubeice-ctx/cubeice-ctxbase.h
  *
  *  Copyright (c) 2010 CubeSoft Inc.
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *    - Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *    - Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in the
- *      documentation and/or other materials provided with the distribution.
- *    - No names of its contributors may be used to endorse or promote
- *      products derived from this software without specific prior written
- *      permission.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
- *  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *  Last-modified: Wed 12 Jan 2011 14:28:04 JST
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
 #ifndef	CUBEICE_CTXBASE_H
 #define	CUBEICE_CTXBASE_H
 
-#include <tchar.h>
-#include <string>
+#ifndef CLX_USE_WCHAR
+#define CLX_USE_WCHAR
+#endif
+
+#include <cubeice/config.h>
 #include <vector>
 #include <clx/date_time.h>
 #include <clx/tokenizer.h>
 #include <cubeice/format.h>
 #include <cubeice/wpopen.h>
+#include <cubeice/user-setting.h>
+#include <boost/lexical_cast.hpp>
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
 #define CUBEICE_MAXFILESIZE (1024 * 1024 * 1024)
 
-extern HINSTANCE	hDllInstance;
+extern HINSTANCE hDllInstance;
 
-namespace cube {
-	namespace shlctxmenu {
+class IMenuInfo {
+public:
+	typedef CubeICE::char_type char_type;
+	typedef CubeICE::string_type string_type;
+	typedef std::size_t size_type;
+	
+	virtual const std::vector<string_type>& GetFileList() const = 0;
+	virtual const string_type& GetFilePath( const std::size_t &index ) const = 0;
+	virtual size_type GetSize() const = 0;
+	virtual string_type GetOption() const = 0;
+};
+
+void MenuSelectedCallback(const CubeICE::Context& src, IMenuInfo *info);
+
+namespace CubeICE {
 		/* ----------------------------------------------------------------- */
-		//  CShlCtxMenuBase
+		///
+		/// CShlCtxMenuBase
+		///
+		/// <summary>
+		/// コンテキストメニュー、およびファイルにマウスオーバされた際に
+		/// 表示されるツールチップを拡張するためのクラスです。
+		/// </summary>
+		///
 		/* ----------------------------------------------------------------- */
 		class CShlCtxMenuBase : public IContextMenu3, IShellExtInit, IQueryInfo, IPersistFile, IMenuInfo {
-		private:
-			typedef TCHAR char_type;
-			typedef std::basic_string<TCHAR> string_type;
-			typedef std::size_t size_type;
-
+		protected:
+			typedef IMenuInfo::char_type char_type;
+			typedef IMenuInfo::string_type string_type;
+			typedef IMenuInfo::size_type size_type;
+			typedef std::map<UINT, Context> context_map;
+			
 			struct fileinfo {
 			public:
 				string_type name;
@@ -68,209 +81,34 @@ namespace cube {
 				
 				fileinfo() : name(), size(0), time(), directory(false) {}
 			};
-
+			
 		public:
 			/* ------------------------------------------------------------- */
-			//  constructor
+			/// constructor
 			/* ------------------------------------------------------------- */
 			CShlCtxMenuBase( ULONG &dllrc ) :
 				ctxSetting(), refCount( 1UL ), hInstance( hDllInstance ), dllRefCount( dllrc ),
-				fileNum( 0 ), folderNum( 0 ) {
+				fileNum( 0 ), folderNum( 0 ), inserted_() {
+				ctxSetting.Load();
 				InterlockedIncrement( reinterpret_cast<LONG*>(&dllRefCount) );
-				
-				TCHAR	path[4096];
-				
-				GetModuleFileName( hDllInstance, path, sizeof( path ) );
-				PathRemoveFileSpec( path );
-				cubeiceEnginePath = path;
-				cubeiceEnginePath += _T( "\\" ) CUBEICE_ENGINE;
+				cubeiceEnginePath = ctxSetting.InstallDirectory() + _T("\\") + CUBEICE_ENGINE;
 			}
 			
 			/* ------------------------------------------------------------- */
-			//  destructor
+			/// destructor
 			/* ------------------------------------------------------------- */
 			virtual ~CShlCtxMenuBase() {
 				InterlockedDecrement( reinterpret_cast<LONG*>(&dllRefCount) );
 			}
 			
 			/* ------------------------------------------------------------- */
-			/*
-			 *  QueryInterface
-			 *
-			 *  IUnknown members
-			 */
-			/* ------------------------------------------------------------- */
-			STDMETHODIMP QueryInterface( REFIID riid, LPVOID FAR *ppv ) {
-				*ppv = NULL;
-				
-				if( IsEqualIID( riid, IID_IUnknown ) || IsEqualIID( riid, IID_IContextMenu ) )
-					*ppv = static_cast<LPCONTEXTMENU>( this );
-				else if( IsEqualIID( riid, IID_IShellExtInit ) )
-					*ppv = static_cast<LPSHELLEXTINIT>( this );
-				else if( IsEqualIID( riid, IID_IQueryInfo ) )
-					*ppv = static_cast<IQueryInfo*>( this );
-				else if( IsEqualIID( riid, IID_IPersistFile ) )
-					*ppv = static_cast<LPPERSISTFILE>( this );
-				else
-					return E_NOINTERFACE;
-				
-				AddRef();
-				
-				return NOERROR;
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  AddRef
-			/* ------------------------------------------------------------- */
-			STDMETHODIMP_(ULONG) AddRef() {
-				return InterlockedIncrement( reinterpret_cast<LONG*>(&refCount) );
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  Release
-			/* ------------------------------------------------------------- */
-			STDMETHODIMP_(ULONG) Release() {
-				ULONG res = InterlockedDecrement( reinterpret_cast<LONG*>(&refCount) );
-
-				if( res )
-					return res;
-
-				delete this;
-
-				return 0L;
-			}
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  QueryContextMenu
-			 *
-			 *  IContextMenu members
-			 */
-			/* ------------------------------------------------------------- */
-			STDMETHODIMP QueryContextMenu( HMENU hMenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags ) {
-				UINT						idCmd = idCmdFirst;
-				
-				if( uFlags & CMF_DEFAULTONLY )
-					return NO_ERROR;
-				
-				if( ( !ctxSetting.context_customize() && !ctxSetting.context_flags() ) || ( ctxSetting.context_customize() && ctxSetting.context_submenu().size() == 0 ) )
-					return NO_ERROR;
-				
-				// Add separator
-				if( !isDragAndDrop )
-					InsertMenu( hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
-				
-				if( !ctxSetting.context_customize() ) {
-
-					for( unsigned int i = 0 ; MenuItem[i].stringA ; ++i ) {
-						if( MenuItem[i].dispSetting && !this->is_visible( MenuItem[i].dispSetting ) )
-							continue;
-						
-						MENUITEMINFO		miinfo;
-						
-						ZeroMemory( &miinfo, sizeof( miinfo ) );
-						miinfo.cbSize			= sizeof( miinfo );
-						miinfo.fMask			= MIIM_FTYPE | MIIM_STRING | MIIM_ID;
-						miinfo.fType			= MFT_STRING;
-						miinfo.wID				= idCmd++;
-#ifndef	UNICODE
-						miinfo.dwTypeData		= const_cast<LPSTR>( MenuItem[i].stringA );
-#else	// UNICODE
-						miinfo.dwTypeData		= const_cast<LPWSTR>( MenuItem[i].stringW );
-#endif	// UNICODE
-						
-						if( MenuItem[i].submenu ) {
-							miinfo.fMask		|= MIIM_SUBMENU;
-							miinfo.hSubMenu		= CreateSubMenu( MenuItem[i].submenu, idCmd );
-						}
-						
-						if( MenuItem[i].iconID != ICON_NOT_USED )
-							SetMenuIcon( MenuItem[i].iconID, miinfo );
-						
-						InsertMenuItem( hMenu, indexMenu++, TRUE, &miinfo );
-					}
-				} else {
-					std::vector<const SUB_MENU_ITEM*>		v;
-					const std::vector<cubeice::user_setting::SUBMENU>		&submenu = ctxSetting.context_submenu();
-
-					SerSubMenu( v, MenuItem );
-
-					ConstructSubMenu( hMenu, v, submenu, idCmd, idCmdFirst, indexMenu );
-				}
-					
-				// Add separator
-				if( idCmd - idCmdFirst )
-					InsertMenu( hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL );
-				
-				MENUINFO	mi;
-				ZeroMemory( &mi, sizeof( mi ) );
-				mi.cbSize	= sizeof( mi );
-				mi.fMask	= MIM_STYLE;
-				GetMenuInfo( hMenu, &mi );
-				mi.dwStyle	= ( mi.dwStyle & ~MNS_NOCHECK ) | MNS_CHECKORBMP;
-				mi.fMask	= MIM_STYLE | MIM_APPLYTOSUBMENUS;
-				SetMenuInfo( hMenu, &mi );
-				
-				return MAKE_SCODE( SEVERITY_SUCCESS, FACILITY_NULL, idCmd - idCmdFirst );
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  InvokeCommand
-			/* ------------------------------------------------------------- */
-			STDMETHODIMP InvokeCommand( LPCMINVOKECOMMANDINFO lpcmi ) {
-				if( HIWORD( lpcmi->lpVerb ) )
-					return E_INVALIDARG;
-				
-				DWORD	index = 0;
-				
-				if( !ctxSetting.context_customize() )
-					RecursiveInvokeCommand( MenuItem, lpcmi, index );
-				else
-					MenuSelectedCallback( table[LOWORD(lpcmi->lpVerb)]->arg, this );
-				
-				return S_OK;
-			}
-			
-			STDMETHODIMP GetCommandString( UINT_PTR idCmd, UINT uFlags, UINT FAR *reserved, LPSTR pszName, UINT cchMax ) {
-				unsigned int	index = 0;
-				
-				RecursiveGetCommandString( MenuItem, index, idCmd, uFlags, pszName, cchMax );
-				
-				if( index < idCmd ) {
-					if( uFlags == GCS_VALIDATEA || uFlags == GCS_VALIDATEW )
-						return S_FALSE;
-				}
-				return S_OK;
-			}
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  HandleMenuMsg
-			 *
-			 *  IContextMenu2 members
-			 */
-			/* ------------------------------------------------------------- */
-			STDMETHODIMP HandleMenuMsg( UINT uMsg, WPARAM wParam, LPARAM lParam ) {
-				return S_OK;
-			}
-			
-			/* ------------------------------------------------------------- */
-			/* 
-			 *  HandleMenuMsg2
-			 *
-			 *  IContextMenu3 members
-			 */
-			/* ------------------------------------------------------------- */
-			STDMETHODIMP HandleMenuMsg2( UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT *plResult ) {
-				return S_OK;
-			}
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  Initialize
-			 *
-			 *  IShellExtInit methods
-			 */
+			///
+			/// Initialize
+			///
+			/// <summary>
+			/// IShellExtInit から継承されます。拡張シェルの初期化を行います。
+			/// </summary>
+			///
 			/* ------------------------------------------------------------- */
 			STDMETHODIMP Initialize( LPCITEMIDLIST pIDFolder, LPDATAOBJECT pDataObj, HKEY hKeyID ) {
 				HRESULT			hr;
@@ -300,7 +138,7 @@ namespace cube {
 					buffer = new TCHAR[bufsize+5];
 					DragQueryFile( hDrop, i, buffer, bufsize + 3 );
 					
-					fileList.push_back( tstring( buffer ) );
+					fileList.push_back(string_type( buffer ) );
 					
 					delete[] buffer;
 				}
@@ -320,24 +158,204 @@ namespace cube {
 			}
 			
 			/* ------------------------------------------------------------- */
-			/*
-			 *  GetInfoFlags
-			 *
-			 *  IQueryInfo members
-			 */
+			///
+			/// Load
+			///
+			/// <summary>
+			/// IPersistFile クラスから継承されます。コンテキストメニュー
+			/// で何らかのファイルが選択された場合に、そのファイルに関する
+			/// 情報を読み込むために実行されます。
+			/// </summary>
+			///
 			/* ------------------------------------------------------------- */
-			STDMETHODIMP GetInfoFlags( DWORD * )
-			{
-				return E_NOTIMPL;
+			STDMETHODIMP Load(LPCOLESTR pszFileName, DWORD dwMode) {
+				compFileList.clear();
+#ifdef	UNICODE
+				const wchar_t	*fname = pszFileName;
+#else	// UNICODE
+				char	fname[4096];
+				WideCharToMultiByte( CP_OEMCP, 0, pszFileName, -1, fname, sizeof( fname ), NULL, NULL );
+#endif	// UNICODE
+				compFileName = pszFileName;
+				HANDLE hFile = CreateFile( compFileName.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
+				if( hFile != INVALID_HANDLE_VALUE ) {
+					LARGE_INTEGER li = {};
+					GetFileSizeEx( hFile, &li );
+					CloseHandle( hFile );
+					if (li.QuadPart < CUBEICE_MAXFILESIZE) GetArchiveInfo( fname, compFileList );
+				}
+				return S_OK;
 			}
-
+			
 			/* ------------------------------------------------------------- */
-			//  GetInfoTip
+			///
+			/// QueryInterface
+			///
+			/// <summary>
+			/// IUnknown members
+			/// </summary>
+			///
 			/* ------------------------------------------------------------- */
-			STDMETHODIMP GetInfoTip( DWORD dwFlags, WCHAR **ppwszTip ) {
+			STDMETHODIMP QueryInterface( REFIID riid, LPVOID FAR *ppv ) {
+				*ppv = NULL;
+				
+				if (IsEqualIID(riid, IID_IUnknown) || IsEqualIID(riid, IID_IContextMenu)) *ppv = static_cast<LPCONTEXTMENU>(this);
+				else if (IsEqualIID(riid, IID_IShellExtInit)) *ppv = static_cast<LPSHELLEXTINIT>( this );
+				else if ( IsEqualIID( riid, IID_IQueryInfo ) ) *ppv = static_cast<IQueryInfo*>( this );
+				else if ( IsEqualIID( riid, IID_IPersistFile ) ) *ppv = static_cast<LPPERSISTFILE>( this );
+				else return E_NOINTERFACE;
+				
+				AddRef();
+				
+				return NOERROR;
+			}
+			
+			/* ------------------------------------------------------------- */
+			/// AddRef
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP_(ULONG) AddRef() {
+				return InterlockedIncrement( reinterpret_cast<LONG*>(&refCount) );
+			}
+			
+			/* ------------------------------------------------------------- */
+			/// Release
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP_(ULONG) Release() {
+				ULONG res = InterlockedDecrement( reinterpret_cast<LONG*>(&refCount) );
+				if( res ) return res;
+				delete this;
+				return 0L;
+			}
+			
+			/* ------------------------------------------------------------- */
+			///
+			/// QueryContextMenu
+			///
+			/// <summary>
+			/// IContextMenu から継承されます。コンテキストメニューに表示する
+			/// 項目を挿入します。
+			///
+			/// NOTE: 挿入されるメニューの項目 ID は [idCmdFirst, idCmdLast]
+			/// の範囲内でなければいけません。
+			/// </summary>
+			///
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags) {
+				if((uFlags & CMF_DEFAULTONLY) != 0) return NO_ERROR;
+				
+				UINT idCmd = idCmdFirst;
+				
+				if (ctxSetting.Context().IsExtended()) {
+					if (ctxSetting.Context().ExtendedContext().empty()) return NO_ERROR;
+				}
+				else if (ctxSetting.Context().Builtin() == 0) return NO_ERROR;
+				
+				// ドラッグ&ドロップメニューの場合は、最初のセパレータの挿入をスキップします。
+				if(!isDragAndDrop) ::InsertMenu(hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
+				
+				if (isDragAndDrop && ctxSetting.DragDrop().IsExtended()) {
+					this->InsertContextContainer(ctxSetting.DragDrop().ExtendedContext(), hMenu, indexMenu, idCmd, idCmdFirst);
+				}
+				else if (ctxSetting.Context().IsExtended()) {
+					this->InsertContextContainer(ctxSetting.Context().ExtendedContext(), hMenu, indexMenu, idCmd, idCmdFirst);
+				}
+				else {
+					ContextContainer v;
+					ConvertContext(ctxSetting.Context().Builtin(), v, this->GetInstallDirectory(ctxSetting));
+					this->InsertContextContainer(v, hMenu, indexMenu, idCmd, idCmdFirst);
+				}
+				
+				if(idCmd - idCmdFirst > 0) InsertMenu(hMenu, indexMenu++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
+				
+				MENUINFO mi = {};
+				mi.cbSize = sizeof(mi);
+				mi.fMask = MIM_STYLE;
+				GetMenuInfo(hMenu, &mi);
+				mi.dwStyle = (mi.dwStyle & ~MNS_NOCHECK) | MNS_CHECKORBMP;
+				mi.fMask = MIM_STYLE | MIM_APPLYTOSUBMENUS;
+				SetMenuInfo(hMenu, &mi);
+				
+				return MAKE_SCODE(SEVERITY_SUCCESS, FACILITY_NULL, idCmd - idCmdFirst);
+			}
+			
+			/* ------------------------------------------------------------- */
+			///
+			/// InvokeCommand
+			///
+			/// <summary>
+			/// IContextMenu から継承されます。QueryContextMenu により追加
+			/// されたメニュー項目が選択された時に実行されるメンバ関数です。
+			/// LOWORD(lpici->lpVerb) に選択されたメニュー項目のオフセットが
+			/// 格納されています。
+			/// </summary>
+			///
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP InvokeCommand( LPCMINVOKECOMMANDINFO lpcmi) {
+				if(HIWORD(lpcmi->lpVerb)) return E_INVALIDARG;
+				
+				Context& cx = inserted_[LOWORD(lpcmi->lpVerb)];
+				MenuSelectedCallback(cx, this);
+				
+				return S_OK;
+			}
+			
+			/* ------------------------------------------------------------- */
+			///
+			/// GetCommandString
+			///
+			/// <summary>
+			/// IContextMenu から継承されます。コンテキストメニューに対する
+			/// コマンド文字列あるいはヘルプ文字列を返します。ヘルプ文字列は
+			/// エクスプローラのステータスバーに表示されます。
+			/// </summary>
+			///
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP GetCommandString(UINT_PTR idCmd, UINT uFlags, UINT FAR *reserved, LPSTR pszName, UINT cchMax) {
+				context_map::iterator pos = inserted_.find(idCmd);
+				
+				switch (uFlags) {
+				case GCS_VALIDATEA:
+				case GCS_VALIDATEW:
+					return (pos != inserted_.end()) ? S_OK : S_FALSE;
+				case GCS_VERBA: {
+#if defined(UNICODE) || defined(_UNICODE)
+					std::basic_string<char> s = CubeICE::UnicodeToSjis(pos->second.Name());
+					strncpy_s(pszName, cchMax, s.c_str(), _TRUNCATE);
+#else
+					strncpy_s(pszName, cchMax, pos->second.Name().c_str(), _TRUNCATE);
+#endif
+					break;
+				}
+				case GCS_VERBW: {
+#if defined(UNICODE) || defined(_UNICODE)
+					wcsncpy_s(reinterpret_cast<LPWSTR>(pszName), cchMax, pos->second.Name().c_str(), _TRUNCATE);
+#else
+					std::basic_string<wchar_t> s = CubeICE::SjisToUnicode(pos->second.Name());
+					wcsncpy_s(reinterpret_cast<LPWSTR>(pszName), cchMax, s.c_str(), _TRUNCATE);
+#endif
+				}
+				case GCS_HELPTEXTA:
+				case GCS_HELPTEXTW:
+				default:
+					break;
+				}
+				return S_OK;
+			}
+			
+			/* ------------------------------------------------------------- */
+			///
+			/// GetInfoTip
+			///
+			/// <summary>
+			/// IQueryInfo から継承されます。圧縮ファイルにマウスオーバ
+			/// された時にツールチップに表示する情報を取得します。
+			/// </summary>
+			///
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP GetInfoTip(DWORD dwFlags, WCHAR **ppwszTip) {
 				static const size_type maxcolumn = 50; // 1行に出力する最大文字数
 
-				tstring tooltip = _T( "種類: " );
+				string_type tooltip = _T( "種類: " );
 				TCHAR* ext = PathFindExtension( compFileName.c_str() );
 				if( ext ) {
 					++ext;
@@ -369,16 +387,12 @@ namespace cube {
 				tooltip += _T( "サイズ: " );
 				tooltip += cubeice::byte_format( li.QuadPart );
 				
-				if( dwFlags & QITIPF_USESLOWTIP &&
-					(ctxSetting.decompression().details() & DETAIL_TOOLTIP) &&
-					ctxSetting.decompression().max_filelist() > 0 &&
-					compFileList.size() > 0)
-				{
+				if( dwFlags & QITIPF_USESLOWTIP && ctxSetting.Tooltip() && ctxSetting.TooltipCount() > 0 && compFileList.size() > 0) {
 					tooltip += _T( "\r\n" );
 					tooltip += _T( "ファイルリスト" );
 					
-					for( size_t i = 0 ; i < compFileList.size() ; ++i ) {
-						if (i >= ctxSetting.decompression().max_filelist()) break;
+					for(int i = 0 ; i < static_cast<int>(compFileList.size()) ; ++i ) {
+						if (i >= ctxSetting.TooltipCount()) break;
 						tooltip += _T( "\r\n" );
 						string_type name = compFileList[i].name;
 						if (name.size() > maxcolumn) {
@@ -391,9 +405,9 @@ namespace cube {
 					}
 					
 					tooltip += _T("\r\n");
-					if (compFileList.size() > ctxSetting.decompression().max_filelist()) tooltip += _T("ほか、");
-					tooltip += _T("全 ") + clx::lexical_cast<string_type>(fileNum) + _T(" ファイル ");
-					tooltip += clx::lexical_cast<string_type>(folderNum) + _T(" フォルダ");
+					if (static_cast<int>(compFileList.size()) > ctxSetting.TooltipCount()) tooltip += _T("ほか、");
+					tooltip += _T("全 ") + boost::lexical_cast<string_type>(fileNum) + _T(" ファイル ");
+					tooltip += boost::lexical_cast<string_type>(folderNum) + _T(" フォルダ");
 				}
 
 				*ppwszTip = static_cast<wchar_t*>( CoTaskMemAlloc( ( tooltip.size() + 5 ) * sizeof( wchar_t ) ) );
@@ -405,292 +419,173 @@ namespace cube {
 
 				return S_OK;
 			}
-
+			
+		public:
 			/* ------------------------------------------------------------- */
-			/*
-			 *  GetClassID
-			 *
-			 *  IPersistFile members
-			 */
+			///
+			/// GetFileList
+			///
+			/// <summary>
+			/// 選択されたファイルの一覧を取得します。
+			/// </summary>
+			///
 			/* ------------------------------------------------------------- */
-			STDMETHODIMP GetClassID(CLSID *pClassID) {
-				return E_NOTIMPL;
-			}
-
+			const std::vector<string_type>& GetFileList() const { return fileList; }
+			
 			/* ------------------------------------------------------------- */
-			//  IsDirty
+			///
+			/// GetSize
+			///
+			/// <summary>
+			/// 選択された圧縮ファイルに含まれるファイル数を取得します。
+			/// </summary>
+			///
 			/* ------------------------------------------------------------- */
-			STDMETHODIMP IsDirty() {
-				return E_NOTIMPL;
-			}
-
-			/* ------------------------------------------------------------- */
-			//  Load
-			/* ------------------------------------------------------------- */
-			STDMETHODIMP Load(LPCOLESTR pszFileName, DWORD dwMode) {
-				compFileList.clear();
-#ifdef	UNICODE
-				const wchar_t	*fname = pszFileName;
-#else	// UNICODE
-				char	fname[4096];
-				WideCharToMultiByte( CP_OEMCP, 0, pszFileName, -1, fname, sizeof( fname ), NULL, NULL );
-#endif	// UNICODE
-				compFileName = pszFileName;
-				HANDLE hFile = CreateFile( compFileName.c_str(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-				if( hFile != INVALID_HANDLE_VALUE ) {
-					LARGE_INTEGER li = {};
-					GetFileSizeEx( hFile, &li );
-					CloseHandle( hFile );
-					if (li.QuadPart < CUBEICE_MAXFILESIZE) decompress_filelist( fname, compFileList );
-				}
-				return S_OK;
-			}
-
-			/* ------------------------------------------------------------- */
-			//  Save
-			/* ------------------------------------------------------------- */
-			STDMETHODIMP Save(LPCOLESTR pszFileName, BOOL fRemember) {
-				return E_NOTIMPL;
-			}
-
-			/* ------------------------------------------------------------- */
-			//  SaveCompleted
-			/* ------------------------------------------------------------- */
-			STDMETHODIMP SaveCompleted(LPCOLESTR pszFileName) {
-				return E_NOTIMPL;
-			}
-
-			/* ------------------------------------------------------------- */
-			//  GetCurFile
-			/* ------------------------------------------------------------- */
-			STDMETHODIMP GetCurFile(LPOLESTR *ppszFileName) {
-				return E_NOTIMPL;
-			}
-
-			/* ------------------------------------------------------------- */
-			/*
-			 *  GetFileList
-			 *
-			 *  IMenuInfo members
-			*/
-			/* ------------------------------------------------------------- */
-			const std::vector<tstring> &GetFileList() {
-				return fileList;
-			}
+			size_type GetSize() const { return fileList.size(); }
 			
 			/* ------------------------------------------------------------- */
 			//  GetFilePath
 			/* ------------------------------------------------------------- */
-			const tstring &GetFilePath( const std::size_t &index ) {
-				return fileList.at( index );
-			}
+			const string_type& GetFilePath(const std::size_t& index) const { return fileList.at( index ); }
 			
 			/* ------------------------------------------------------------- */
-			//  GetSize
+			///
+			/// GetOption
+			///
+			/// <summary>
+			/// NOTE: 拡張する必要が出た場合、保持しているメンバ変数等から
+			/// cubeice.exe へ送るためのオプション用コマンドライン文字列を
+			/// 生成するためのメンバ関数です。
+			/// </summary>
+			///
 			/* ------------------------------------------------------------- */
-			std::size_t GetSize() {
-				return fileList.size();
-			}
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  GetOption
-			 *
-			 *  NOTE: 拡張する必要が出た場合，保持しているメンバ変数等から
-			 *  cubeice.exe へ送るためのオプション用コマンドライン文字列を
-			 *  生成する．
-			 */
-			/* ------------------------------------------------------------- */
-			tstring GetOption() {
-				tstring dest = _T(" ");
+			string_type GetOption() const {
+				string_type dest = _T(" ");
 				if (this->isDragAndDrop && !this->dropPath.empty()) {
 					dest += _T('"');
 					dest += _T("/drop:") + this->dropPath;
 					dest += _T('"');
 				}
 				dest += _T(" ");
-
+				
 				return dest;
 			}
-
+			
+		public:
+			/* ------------------------------------------------------------- */
+			///
+			/// <summary>
+			/// この拡張シェルクラスでは未実装、または特別な処理を必要としない
+			/// メンバ関数群をここで定義します。
+			/// </summary>
+			///
+			/* ------------------------------------------------------------- */
+			STDMETHODIMP Save(LPCOLESTR pszFileName, BOOL fRemember) { return E_NOTIMPL; }
+			STDMETHODIMP SaveCompleted(LPCOLESTR pszFileName) { return E_NOTIMPL; }
+			STDMETHODIMP GetCurFile(LPOLESTR* ppszFileName) { return E_NOTIMPL; }
+			STDMETHODIMP GetClassID(CLSID* pClassID) { return E_NOTIMPL; }
+			STDMETHODIMP IsDirty() { return E_NOTIMPL; }
+			STDMETHODIMP GetInfoFlags(DWORD*) { return E_NOTIMPL; }
+			
+			STDMETHODIMP HandleMenuMsg( UINT uMsg, WPARAM wParam, LPARAM lParam ) { return S_OK; }
+			STDMETHODIMP HandleMenuMsg2( UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT *plResult ) { return S_OK; }
+			
 		protected:
-			HINSTANCE	hInstance;
-			virtual void SetMenuIcon( WORD iconID, MENUITEMINFO &miinfo ) = 0;
+			/* ------------------------------------------------------------- */
+			///
+			/// SetMenuIcon
+			///
+			/// <summary>
+			/// コンテキストメニューに表示するアイコンの扱い方が
+			/// Windows XP と Windows Vista 以降とで異なっているので、
+			/// OS 毎にアイコンを表示するためのメンバ関数を定義します。
+			/// </summary>
+			///
+			/* ------------------------------------------------------------- */
+			virtual void SetMenuIcon(UINT cmdid, MENUITEMINFO &miinfo) = 0;
+			
+			/* ----------------------------------------------------------------- */
+			///
+			/// InsertedItems
+			///
+			/// コンテキストメニューに表示した項目の一覧を取得します。
+			///
+			/* ----------------------------------------------------------------- */
+			context_map& InsertedItems() { return inserted_; }
 			
 		private:
-			/* ------------------------------------------------------------- */
-			//  CreateSubMenu
-			/* ------------------------------------------------------------- */
-			HMENU CreateSubMenu( const SUB_MENU_ITEM *smi, UINT &idCmd ) {
-				HMENU		hMenu = CreateMenu();
+			/* ----------------------------------------------------------------- */
+			///
+			/// InsertContext
+			///
+			/// <summary>
+			/// 指定されたコンテキストメニューを挿入します。
+			/// </summary>
+			///
+			/* ----------------------------------------------------------------- */
+			bool InsertContext(const Context& src, HMENU handle, UINT& index, UINT& cmdid, UINT cmdid_first) {
+				if (src.Empty()) return false;
 				
-				for( unsigned int i = 0 ; smi[i].stringA ; ++i ) {
-					MENUITEMINFO		miinfo;
-					
-					if( smi[i].dispSetting && !this->is_visible( smi[i].dispSetting ) )
-						continue;
-					
-					ZeroMemory( &miinfo, sizeof( miinfo ) );
-					miinfo.cbSize			= sizeof( miinfo );
-					miinfo.fMask			= MIIM_FTYPE | MIIM_STRING | MIIM_ID;
-					miinfo.fType			= MFT_STRING;
-					miinfo.wID				= idCmd++;
-#ifndef	UNICODE
-					miinfo.dwTypeData		= const_cast<LPSTR>( smi[i].stringA );
-#else	// UNICODE
-					miinfo.dwTypeData		= const_cast<LPWSTR>( smi[i].stringW );
-#endif	// UNICODE
-					
-					if( smi[i].submenu ) {
-						miinfo.fMask		|= MIIM_SUBMENU;
-						miinfo.hSubMenu		= CreateSubMenu( smi[i].submenu, idCmd );
-					}
-					if( smi[i].iconID != ICON_NOT_USED )
-						SetMenuIcon( smi[i].iconID, miinfo );
-					
-					InsertMenuItem( hMenu, i, TRUE, &miinfo );
-				}
+				UINT cmdid_current = cmdid;
+				MENUITEMINFO info = {};
+				info.cbSize = sizeof(info);
+				info.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_ID;
+				info.fType = MFT_STRING;
+				info.wID = cmdid;
+				info.dwTypeData = const_cast<char_type*>(src.Name().c_str());
 				
-				return hMenu;
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  RecursiveInvokeCommand
-			/* ------------------------------------------------------------- */
-			void RecursiveInvokeCommand( const SUB_MENU_ITEM *smi, LPCMINVOKECOMMANDINFO lpcmi, DWORD &index ) {
-				for( unsigned int i = 0 ; smi[i].stringA && index <= LOWORD( lpcmi->lpVerb ) ; ++i ) {
-					if( smi[i].dispSetting && !this->is_visible( smi[i].dispSetting ) )
-						continue;
-					
-					if( index == LOWORD( lpcmi->lpVerb ) ) {
-						MenuSelectedCallback( smi[i].arg, this );
-						++index;
-						break;
-					}
-					++index;
-					if( smi[i].submenu )
-						RecursiveInvokeCommand( smi[i].submenu, lpcmi, index );
+				if (!src.Children().empty()) {
+					UINT tmp = cmdid + 1;
+					UINT subindex = 0;
+					HMENU hsub = ::CreateMenu();
+					if (!this->InsertContextContainer(src.Children(), hsub, subindex, tmp, cmdid_first)) return false;
+					cmdid = tmp;
+					info.fMask |= MIIM_SUBMENU;
+					info.hSubMenu = hsub;
 				}
+				else ++cmdid;
 				
-				return;
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  RecursiveGetCommandString
-			/* ------------------------------------------------------------- */
-			void RecursiveGetCommandString( const SUB_MENU_ITEM *smi, unsigned int &index, UINT_PTR idCmd, UINT uFlags, LPSTR pszName, UINT cchMax ) {
-				for( unsigned int i = 0 ; smi[i].stringA && index <= idCmd ; ++i ) {
-					if( smi[i].dispSetting && !this->is_visible( smi[i].dispSetting ) )
-						continue;
-					
-					if( index == idCmd ) {
-						switch( uFlags ) {
-							case GCS_HELPTEXTA:
-								strncpy_s( pszName, cchMax, smi[i].explanationA, _TRUNCATE );
-								break;
-							case GCS_HELPTEXTW:
-								wcsncpy_s( reinterpret_cast<LPWSTR>( pszName ), cchMax, smi[i].explanationW, _TRUNCATE );
-								break;
-//							case GCS_VALIDATEA:
-//							case GCS_VALIDATEW:
-							case GCS_VERBA:
-								strncpy_s( pszName, cchMax, smi[i].stringA, _TRUNCATE );
-								break;
-							case GCS_VERBW:
-								wcsncpy_s( reinterpret_cast<LPWSTR>( pszName ), cchMax, smi[i].stringW, _TRUNCATE );
-								break;
-						}
-						++index;
-						break;
-					}
-					++index;
-					if( smi[i].submenu )
-						RecursiveGetCommandString( smi[i].submenu, index, idCmd, uFlags, pszName, cchMax );
-				}
+				UINT offset = cmdid_current - cmdid_first;
+				inserted_[offset] = src;
+				if (!src.IconLocation().empty()) this->SetMenuIcon(offset, info);
 				
-				return;
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  is_visible
-			/* ------------------------------------------------------------- */
-			bool is_visible(std::size_t flag) {
-				bool dest = (ctxSetting.context_flags() & flag) != 0;
-				switch (flag) {
-				case COMPRESS_FLAG:
-					dest &= (ctxSetting.context_flags() & COMP_ALL_FLAG) != 0;
-					break;
-				case DECOMPRESS_FLAG:
-					dest &= (ctxSetting.context_flags() & DECOMP_ALL_FLAG) != 0;
-					break;
-				case MAIL_FLAG:
-					dest &= (ctxSetting.context_flags() & MAIL_ALL_FLAG) != 0;
-					break;
-				default:
-					break;
-				}
-				return dest;
-			}
-			
-			/* ------------------------------------------------------------- */
-			/*
-			 *  is_decompress
-			 *
-			 *  NOTE: 7zip はフォルダを指定すると中身を再帰的にチェックして
-			 *  しまう模様．そのため，フォルダかどうかを最初にチェックして
-			 *  フォルダの場合は false を返す．
-			 */
-			/* ------------------------------------------------------------- */
-			bool is_decompress(const string_type& path) {
-				if (PathIsDirectory(path.c_str())) return false;
-				
-				string_type cmdline = cubeiceEnginePath;
-				cmdline += _T(" l ");
-				cmdline += _T("\"") + path + _T("\"");
-				
-				cube::popen proc;
-				if (!proc.open(cmdline.c_str(), _T("r"))) return false;
-				string_type buffer;
-				int status = 0;
-				while ((status = proc.gets(buffer)) >= 0) {
-					if (status == 2) break; // pipe closed
-					else if (status == 0 || buffer.empty()) continue;
-					
-					clx::escape_separator<TCHAR> sep(_T(" \t"), _T("\""), _T(""));
-					clx::basic_tokenizer<clx::escape_separator<TCHAR>, std::basic_string<TCHAR> > v(buffer, sep);
-					
-					buffer.clear();
-					if (v.size() >= 3 && v.at(0) == _T("Type") && v.at(1) == _T("=")) {
-						// 対象外のファイルタイプを記述する．
-						if (v.at(2) == _T("Compound")) continue;
-						
-						proc.close();
-						return true;
-					}
-				}
-				return false;
-			}
-			
-			/* ------------------------------------------------------------- */
-			//  is_decompress
-			/* ------------------------------------------------------------- */
-			template <class InputIterator>
-			bool is_decompress(InputIterator first, InputIterator last) {
-				for (; first != last; ++first) {
-					if (is_decompress(*first)) return true;
-				}
-				return false;
+				::InsertMenuItem(handle, index++, TRUE, &info);
+				return true;
 			}
 			
 			/* ----------------------------------------------------------------- */
-			//  decompress_filelist
+			///
+			/// InsertContextContainer
+			///
+			/// <summary>
+			/// 指定されたコンテキストメニューを挿入します。
+			/// </summary>
+			///
 			/* ----------------------------------------------------------------- */
-			void decompress_filelist(const string_type& path, std::vector<fileinfo> &flist) {
+			bool InsertContextContainer(const ContextContainer& src, HMENU handle, UINT& index, UINT& cmdid, UINT cmdid_first) {
+				UINT first = cmdid;
+				BOOST_FOREACH(const Context& cx, src) {
+					this->InsertContext(cx, handle, index, cmdid, cmdid_first);
+				}
+				return cmdid > first;
+			}
+			
+			/* ----------------------------------------------------------------- */
+			///
+			/// GetArchiveInfo
+			///
+			/// <summary>
+			/// 引数に指定された圧縮ファイルに格納されているファイル・フォルダ
+			/// の各種情報を取得します。
+			/// </summary>
+			///
+			/* ----------------------------------------------------------------- */
+			void GetArchiveInfo(const string_type& path, std::vector<fileinfo>& dest) {
 				string_type cmdline = cubeiceEnginePath;
 				cmdline += _T(" l -scsIGNORE ");
 				cmdline += _T("\"") + path + _T("\"");
 				
-				flist.clear();
+				dest.clear();
 				
 				cube::popen proc;
 				if (!proc.open(cmdline.c_str(), _T("r"))) return;
@@ -705,10 +600,10 @@ namespace cube {
 					
 					if (buffer.find(_T("files")) != string_type::npos && buffer.find(_T("folders")) != string_type::npos && v.size() == 6) {
 						try {
-							fileNum = clx::lexical_cast<size_type>(v.at(2));
-							folderNum = clx::lexical_cast<size_type>(v.at(4));
+							fileNum = boost::lexical_cast<size_type>(v.at(2));
+							folderNum = boost::lexical_cast<size_type>(v.at(4));
 						}
-						catch (clx::bad_lexical_cast&) {}
+						catch (boost::bad_lexical_cast&) {}
 					}
 					
 					if (v.empty() || v.at(0) != _T("<>")) {
@@ -720,126 +615,53 @@ namespace cube {
 						// ファイルリストの更新
 						fileinfo elem;
 						elem.name = v.at(5);
-						elem.size = v.at(3) != _T("-") ? clx::lexical_cast<std::size_t>(v.at(3)) : 0;
+						elem.size = v.at(3) != _T("-") ? boost::lexical_cast<std::size_t>(v.at(3)) : 0;
 						if (v.at(1) != _T("-")) elem.time.from_string(v.at(1), string_type(_T("%Y-%m-d %H:%M:%S")));
 						elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
-						flist.push_back( elem );
+						dest.push_back( elem );
 					}
 					buffer.clear();
 				}
 				return;
 			}
-
-			void SerSubMenu( std::vector<const SUB_MENU_ITEM*> &v, const SUB_MENU_ITEM *smi ) {
-				for( int i = 0 ; smi[i].stringA ; ++i ) {
-					v.push_back( &smi[i] );
-					if( smi[i].submenu )
-						SerSubMenu( v, smi[i].submenu );
-				}
-			}
-
-			const SUB_MENU_ITEM *GetSubMenuItem( const std::vector<const SUB_MENU_ITEM*> &v, const cubeice::user_setting::size_type &id ) {
-				BOOST_FOREACH(const SUB_MENU_ITEM *smi, v) {
-					if( smi->dispSetting == id )
-						return smi;
-				}
-				return NULL;
-			}
-
+			
 			/* ----------------------------------------------------------------- */
-			//  IsLeaf
+			///
+			/// GetInstallDirectory
+			///
+			/// <summary>
+			/// CubeICE がインストールされたディレクトリを取得します。64bit 版
+			/// Windows で 32bit 版の dll を使用する場合、InstallDirectory()
+			/// メンバ関数が空になるので、その際には dll が存在している
+			/// ディレクトリを返します。
+			/// </summary>
+			///
 			/* ----------------------------------------------------------------- */
-			bool IsLeaf(int id) {
-				for (int i = 0; SubMenuCompress[i].stringA; ++i) {
-					if (id == SubMenuCompress[i].dispSetting) return true;
-				}
+			string_type GetInstallDirectory(const UserSetting& setting) {
+				if (!setting.InstallDirectory().empty()) return setting.InstallDirectory();
 				
-				for (int i = 0; SubMenuCompAndMail[i].stringA; ++i) {
-					if (id == SubMenuCompAndMail[i].dispSetting) return true;
-				}
-
-				for (int i = 0; SubMenuDecompress[i].stringA; ++i) {
-					if (id == SubMenuDecompress[i].dispSetting) return true;
-				}
-				return false;
-			}
-
-			/* ----------------------------------------------------------------- */
-			//  CheckValidation
-			/* ----------------------------------------------------------------- */
-			bool CheckValidation(const std::vector<cubeice::user_setting::SUBMENU> &v)
-			{
-				if(!v.size())
-					return false;
-				BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, v) {
-					bool	f = false;
-					if(s.id == 0) {
-						f = true;
-					} else {
-						for(int i = 0 ; MenuItem[i].stringA ; ++i) {
-							if(MenuItem[i].dispSetting == s.id) {
-								f = true;
-								break;
-							}
-						}
-					}
-					if(f && !CheckValidation(s.children))
-						return false;
-				}
-				return true;
+				char_type path[2048] = {};
+				::GetModuleFileName(static_cast<HMODULE>(hInstance), path, sizeof(path) / sizeof(path[0]));
+				::PathRemoveFileSpec(path);
+				return string_type(path);
 			}
 			
-			HMENU ConstructSubMenu( HMENU hMenu, const std::vector<const SUB_MENU_ITEM*> &v, const std::vector<cubeice::user_setting::SUBMENU> &submenu, UINT &idCmd, const UINT &idCmdFirst, UINT &indexMenu ) {
-				BOOST_FOREACH(const cubeice::user_setting::SUBMENU &s, submenu) {
-					MENUITEMINFO			miinfo;
-					const SUB_MENU_ITEM		*smi = GetSubMenuItem( v, s.id );
-
-					//if( !smi && ( s.id != 0 || !s.children.size() ) ) continue;
-					if (!IsLeaf(s.id) && !CheckValidation(s.children)) continue;
-
-					table[idCmd-idCmdFirst] = smi;
-
-					ZeroMemory( &miinfo, sizeof( miinfo ) );
-					miinfo.cbSize			= sizeof( miinfo );
-					miinfo.fMask			= MIIM_FTYPE | MIIM_STRING | MIIM_ID;
-					miinfo.fType			= MFT_STRING;
-					miinfo.wID				= idCmd++;
-#ifndef	UNICODE
-					miinfo.dwTypeData		= const_cast<LPSTR>( s.str.c_str() );
-#else	// UNICODE
-					miinfo.dwTypeData		= const_cast<LPWSTR>( s.str.c_str() );
-#endif	// UNICODE
-					
-					if( s.children.size() ) {
-						UINT		tmp = 0;
-
-						miinfo.fMask		|= MIIM_SUBMENU;
-						miinfo.hSubMenu		= ConstructSubMenu( CreateMenu(), v, s.children, idCmd, idCmdFirst, tmp );
-					}
-					
-					if( s.id != 0 && smi->iconID != ICON_NOT_USED )
-						SetMenuIcon( smi->iconID, miinfo );
-					
-					InsertMenuItem( hMenu, indexMenu++, TRUE, &miinfo );
-				}
-				return hMenu;
-			}
-
-			std::vector<tstring>				fileList;
-			cubeice::user_setting				ctxSetting;
+		protected:
+			HINSTANCE hInstance;
+		private:
+			std::vector<string_type> fileList;
+			UserSetting ctxSetting;
 			ULONG								refCount;
 			ULONG								&dllRefCount;
-			tstring								compFileName;
+			string_type							compFileName;
 			std::vector<fileinfo>				compFileList;
 			size_type							fileNum;
 			size_type							folderNum;
-			tstring								cubeiceEnginePath;
+			string_type							cubeiceEnginePath;
 			bool								isDragAndDrop;
-			std::map<UINT, const SUB_MENU_ITEM*>		table;
-			tstring								dropPath;
+			string_type							dropPath;
+			context_map inserted_;
 		};
-
-	}
-}
+} // namespace CubeICE
 
 #endif	// CUBEICE_CTXBASE_H

@@ -35,39 +35,42 @@
 #ifndef	CUBEICE_CTXVISTA_H
 #define	CUBEICE_CTXVISTA_H
 
-#include <windows.h>
+#include <cubeice/config.h>
 #include <Uxtheme.h>
 #include <map>
-#include <clx/shared_ptr.h>
-#include <cubeice/cubeice-ctxdata.h>
+#include <boost/shared_ptr.hpp>
 #include "cubeice-ctxbase.h"
 
-namespace cube {
-	namespace shlctxmenu {
-		namespace icon {
+namespace CubeICE {
 			/* ------------------------------------------------------------- */
-			//  Icon
+			//  ContextIconVista
 			/* ------------------------------------------------------------- */
-			class Icon {
+			class ContextIconVista {
 			public:
 				/* --------------------------------------------------------- */
 				//  constructor
 				/* --------------------------------------------------------- */
-				Icon( HINSTANCE hInstance, WORD iconID ) : hBitmap( NULL ) {
+				explicit ContextIconVista(const string_type& location) : hBitmap( NULL ) {
 					
 					hUxTheme = LoadLibrary( TEXT( "UXTHEME.DLL" ) );
-					if( !hUxTheme )
-						return;
-					pfnGetBufferedPaintBits	= reinterpret_cast<FN_GetBufferedPaintBits>( GetProcAddress( hUxTheme, "GetBufferedPaintBits" ) );
-					pfnBeginBufferedPaint	= reinterpret_cast<FN_BeginBufferedPaint>( GetProcAddress( hUxTheme, "BeginBufferedPaint" ) );
-					pfnEndBufferedPaint		= reinterpret_cast<FN_EndBufferedPaint>( GetProcAddress( hUxTheme, "EndBufferedPaint" ) );
+					if(!hUxTheme) return;
 					
-					if( !pfnGetBufferedPaintBits || !pfnBeginBufferedPaint || !pfnEndBufferedPaint )
-						return;
+					pfnGetBufferedPaintBits = reinterpret_cast<FN_GetBufferedPaintBits>( GetProcAddress( hUxTheme, "GetBufferedPaintBits" ) );
+					pfnBeginBufferedPaint = reinterpret_cast<FN_BeginBufferedPaint>( GetProcAddress( hUxTheme, "BeginBufferedPaint" ) );
+					pfnEndBufferedPaint = reinterpret_cast<FN_EndBufferedPaint>( GetProcAddress( hUxTheme, "EndBufferedPaint" ) );
 					
-					HICON	hIcon = static_cast<HICON>( LoadImage( hInstance, MAKEINTRESOURCE( iconID ), IMAGE_ICON, ICON_X_SIZE, ICON_Y_SIZE, LR_DEFAULTCOLOR ) );
-					if( !hIcon )
-						return;
+					if( !pfnGetBufferedPaintBits || !pfnBeginBufferedPaint || !pfnEndBufferedPaint ) return;
+					
+					string_type path = location.substr(0, location.find(_T(",")));
+					int index = 0;
+					try {
+						string_type::size_type pos = location.find(_T(","));
+						if (pos != string_type::npos) index = boost::lexical_cast<int>(location.substr(pos + 1));
+					}
+					catch (boost::bad_lexical_cast& /* err */) {}
+					
+					HICON hIcon = static_cast<HICON>(::ExtractIcon(NULL, path.c_str(), index));
+					if (!hIcon) return;
 					
 					HDC		hdc = CreateCompatibleDC( NULL );
 					if( !hdc ) {
@@ -80,8 +83,8 @@ namespace cube {
 					bmi.bmiHeader.biSize		= sizeof( bmi );
 					bmi.bmiHeader.biPlanes		= 1;
 					bmi.bmiHeader.biCompression	= BI_RGB;
-					bmi.bmiHeader.biWidth		= ICON_X_SIZE;
-					bmi.bmiHeader.biHeight		= ICON_Y_SIZE;
+					bmi.bmiHeader.biWidth		= 16;
+					bmi.bmiHeader.biHeight		= 16;
 					bmi.bmiHeader.biBitCount	= 32;
 					
 					hBitmap = CreateDIBSection( hdc, &bmi, DIB_RGB_COLORS, NULL, NULL, 0 );
@@ -119,7 +122,7 @@ namespace cube {
 				/* --------------------------------------------------------- */
 				//  destructor
 				/* --------------------------------------------------------- */
-				~Icon() {
+				~ContextIconVista() {
 					if( hBitmap )
 						DeleteObject( hBitmap );
 					FreeLibrary( hUxTheme );
@@ -229,7 +232,6 @@ namespace cube {
 					return hr;
 				}
 			};
-		}
 		
 		/* ----------------------------------------------------------------- */
 		//  CShlCtxMenuVista
@@ -239,42 +241,36 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			//  constructor
 			/* ------------------------------------------------------------- */
-			CShlCtxMenuVista( ULONG &dllrc ) : CShlCtxMenuBase( dllrc ) {
-				InitIcon( MenuItem );
-			}
+			CShlCtxMenuVista( ULONG &dllrc ) :
+				CShlCtxMenuBase( dllrc ) {}
 			
 			/* ------------------------------------------------------------- */
 			//  destructor
 			/* ------------------------------------------------------------- */
-			virtual ~CShlCtxMenuVista() {
-			}
+			virtual ~CShlCtxMenuVista() {}
 			
 		protected:
 			/* ------------------------------------------------------------- */
 			//  SetMenuIcon
 			/* ------------------------------------------------------------- */
-			void SetMenuIcon( WORD iconID, MENUITEMINFO &miinfo )
+			void SetMenuIcon(UINT cmdid, MENUITEMINFO &miinfo)
 			{
-				miinfo.fMask		|= MIIM_BITMAP;
-				miinfo.hbmpItem		= bitmaps[iconID]->GetBitmap();
+				icon_map::iterator pos = icons_.find(cmdid);
+				if (pos == icons_.end()) {
+					context_map::iterator src = this->InsertedItems().find(cmdid);
+					if (src == this->InsertedItems().end()) return;
+					icons_[cmdid] = icon_ptr(new ContextIconVista(src->second.IconLocation()));
+					pos = icons_.find(cmdid);
+				}
+				miinfo.fMask |= MIIM_BITMAP;
+				miinfo.hbmpItem = pos->second->GetBitmap();
 			}
 			
 		private:
-			std::map<WORD,clx::shared_ptr<icon::Icon> >		bitmaps;
-			
-			/* ------------------------------------------------------------- */
-			//  InitIcon
-			/* ------------------------------------------------------------- */
-			void InitIcon( const SUB_MENU_ITEM *smi ) {
-				for( unsigned int i = 0 ; smi[i].stringA ; ++i ) {
-					if( smi[i].iconID != ICON_NOT_USED )
-						bitmaps[smi[i].iconID] = clx::shared_ptr<icon::Icon>( new icon::Icon( hInstance, smi[i].iconID ) );
-					if( smi[i].submenu )
-						InitIcon( smi[i].submenu );
-				}
-			}
+			typedef boost::shared_ptr<ContextIconVista> icon_ptr;
+			typedef std::map<UINT, icon_ptr> icon_map;
+			icon_map icons_;
 		};
-	}
 }
 
 #endif	// CUBEICE_CTXVISTA_H

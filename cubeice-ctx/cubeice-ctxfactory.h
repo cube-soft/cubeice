@@ -35,11 +35,9 @@
 #ifndef		CUBEICE_CTXFACTORY_H
 #define		CUBEICE_CTXFACTORY_H
 
-#include <windows.h>
-#include <string>
+#include <cubeice/config.h>
 #include <vector>
 #include <set>
-#include <cubeice/cubeice-ctxdata.h>
 #include "cubeice-ctxxp.h"
 #include "cubeice-ctxvista.h"
 
@@ -49,8 +47,7 @@
 #endif
 #include <cubeice/user-setting.h>
 
-namespace cube {
-	namespace shlctxmenu {
+namespace CubeICE {
 		/* ----------------------------------------------------------------- */
 		//  CShlCtxMenuFactory
 		/* ----------------------------------------------------------------- */
@@ -158,7 +155,6 @@ namespace cube {
 			ULONG		refCount;
 			ULONG		&dllRefCount;
 		};
-	}
 }
 
 #endif	// CUBEICE_CTXFACTORY_H

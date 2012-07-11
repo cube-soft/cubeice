@@ -37,10 +37,10 @@
 #include <shlobj.h>
 #endif // NO_WIN32_LEAN_AND_MEAN
 
+#include <cubeice/config.h>
+#include <cubeice/user-setting.h>
 #include <cstdlib>
 #include <algorithm>
-#include <tchar.h>
-#include <windows.h>
 #include <commctrl.h>
 #include <psdotnet/logger.h>
 #include <clx/split.h>
@@ -51,6 +51,8 @@
 
 namespace cubeice {	
 	namespace detail {
+		using namespace CubeICE::v1::detail;
+		
 		/* ----------------------------------------------------------------- */
 		/*
 		 *  change_flag
@@ -290,18 +292,19 @@ namespace cubeice {
 		/* ----------------------------------------------------------------- */
 		static BOOL CALLBACK common_dialogproc(HWND hWnd, UINT msg, WPARAM wp, LPARAM lp) {
 			switch (msg) {
-			case WM_DESTROY:
-			case WM_CLOSE:
-				PostQuitMessage(0);
-				break;
+			//case WM_DESTROY:
+			//case WM_CLOSE:
+			//	PostQuitMessage(0);
+			//	break;
 			case WM_NOTIFY:
 			{
 				NMHDR* nmhdr = (NMHDR *)lp;
 				if (nmhdr->code == PSN_APPLY) {
 					filter_gettext(hWnd);
-					Setting.save();
+					//Setting.save();
+					Setting.changed();
 				}
-				break;
+				return TRUE;
 			}
 			default:
 				break;
@@ -729,6 +732,22 @@ namespace cubeice {
 			psh.pfnCallback = (PFNPROPSHEETCALLBACK)psh_proc;
 		}
 		
-		return PropertySheet(&psh);
+		INT_PTR result = PropertySheet(&psh);
+		if (Setting.is_changed()) {
+			CubeICE::UserSetting setting;
+			setting.Upgrade(Setting);
+			setting.Save();
+			
+			if (Setting.require_admin()) { // 関連付けは管理者権限が必要なので、別プログラムで実行
+				::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+				string_type associate = setting.InstallDirectory() + _T("\\") + CUBEICE_ASSOCIATE_NAME;
+				SHELLEXECUTEINFO info = {};
+				info.cbSize = sizeof(SHELLEXECUTEINFO);
+				info.lpFile = associate.c_str();
+				::ShellExecuteEx(&info);
+				::CoUninitialize();
+			}
+		}
+		return result;
 	}
 }

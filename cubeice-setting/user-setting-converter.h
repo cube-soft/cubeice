@@ -1,8 +1,9 @@
 #ifndef CUBEICE_USER_SETTING_CONVERTER_H
 #define CUBEICE_USER_SETTING_CONVERTER_H
 
+#include <cubeice/config.h>
 #include <cubeice/user-setting.h>
-#include <cubeice/cubeice-ctxdata.h>
+#include "cubeice-setting.h"
 
 namespace cubeice {
 	class user_setting_converter {

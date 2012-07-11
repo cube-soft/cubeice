@@ -35,38 +35,29 @@
 // for C4996 warning (_tcscpy)
 #define _CRT_SECURE_NO_WARNINGS
 
-#include <windows.h>
+#include <cubeice/config.h>
 #include <shlwapi.h>
-#include <tchar.h>
-#include <string>
 #include <vector>
-#include <cubeice/cubeice-ctxdata.h>
-
-const LPCTSTR		CUBEICE_FILE_NAME = TEXT( "cubeice.exe" );
-
-extern HINSTANCE	hDllInstance;
+#include "cubeice-ctxbase.h"
 
 /* ------------------------------------------------------------------------- */
 //  MenuSelectedCallback
 /* ------------------------------------------------------------------------- */
-void MenuSelectedCallback( const LPCTSTR arg, IMenuInfo *info )
+void MenuSelectedCallback(const CubeICE::Context& src, IMenuInfo *info)
 {
-	TCHAR						exePath[2048];
-	std::basic_string<TCHAR>	commandLine;
-
-	GetModuleFileName( static_cast<HMODULE>( hDllInstance ), exePath, sizeof( exePath ) / sizeof( exePath[0] ) );
-	PathRemoveFileSpec( exePath );
-	PathAppend( exePath, CUBEICE_FILE_NAME );
-
+	CubeICE::string_type commandLine;
+	
 	commandLine = TEXT( "\"" );
-	commandLine += exePath;
+	commandLine += src.TargetPath();
 	commandLine += TEXT( "\" " );
-	if (arg != NULL) commandLine += arg;
+	if (!src.Arguments().empty()) commandLine += src.Arguments();
 	commandLine += info->GetOption();
-	const std::vector<IMenuInfo::tstring>	&fileList = info->GetFileList();
-	for( std::vector<IMenuInfo::tstring>::const_iterator it = fileList.begin(), stop = fileList.end() ; it != stop ; ++it )
+	
+	const std::vector<IMenuInfo::string_type>& fileList = info->GetFileList();
+	for( std::vector<IMenuInfo::string_type>::const_iterator it = fileList.begin(), stop = fileList.end() ; it != stop ; ++it ) {
 		commandLine += TEXT( " \"" ) + *it + TEXT( "\"" );
-
+	}
+	
 	STARTUPINFO				si;
 	PROCESS_INFORMATION		pi;
 	LPTSTR	comline = new TCHAR[commandLine.size()+5];

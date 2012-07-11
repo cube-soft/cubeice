@@ -1,10 +1,7 @@
-#include <tchar.h>
-#include <windows.h>
+#include <cubeice/config.h>
 #include <commctrl.h>
-#include <string>
 #include <psdotnet/logger.h>
-#include <psdotnet/appender.h>
-#include <cubeice/style.h>
+#include <psdotnet/logger/file-appender.h>
 #include "cubeice-setting.h"
 #include "setting-dialog.h"
 
@@ -14,7 +11,7 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 	Setting.load();
 	
 #ifndef PSDOTNET_INVALIDATE_LOG_MACRO
-	std::basic_string<TCHAR> path(Setting.install_path() + _T("\\cubeice-setting.log"));
+	std::basic_string<TCHAR> path = Setting.install_path() + _T("\\cubeice-setting.log");
 	PsdotNet::FileAppender writer(path, PsdotNet::FileAppender::CloseOnWrite | PsdotNet::FileAppender::WriteAll);
 	PsdotNet::Logger::Configure(writer, PsdotNet::Utility::ToLogLevel(Setting.loglevel()));
 #endif
@@ -54,12 +51,6 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 	}
 	
 	cubeice::create_propsheet(NULL, args == _T("install"));
-	
-	MSG  msg;
-	while (GetMessage(&msg, NULL, 0, 0)) {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
-	
+
 	return 0;
 }

@@ -32,11 +32,10 @@
  *  Last-modified: Wed 12 Jan 2011 14:28:04 JST
  */
 /* ------------------------------------------------------------------------- */
-#include <windows.h>
 #include <initguid.h>
+#include <cubeice/config.h>
 #include <shlguid.h>
 #include <shlobj.h>
-#include <cubeice/guid.h>
 #include "cubeice-ctxfactory.h"
 #include "cubeice-propsheet.h"
 
@@ -81,8 +80,8 @@ STDAPI DllCanUnloadNow( void )
 /* ------------------------------------------------------------------------- */
 STDAPI DllGetClassObject( REFCLSID rclsid, REFIID riid, LPVOID *ppvOut )
 {
-	using cube::shlctxmenu::CShlCtxMenuFactory;
-	using cube::propsheet::CShellPropSheetFactory;
+	using CubeICE::CShlCtxMenuFactory;
+	using CubeICE::CShellPropSheetFactory;
 
 	*ppvOut = NULL;
 

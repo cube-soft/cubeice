@@ -2,8 +2,7 @@
 #include "cubeice-comment.h"
 #include "resource.h"
 
-namespace cube {
-namespace propsheet {
+namespace CubeICE {
 
 namespace {
 
@@ -64,7 +63,7 @@ STDMETHODIMP CShellPropSheetExt::AddPages(LPFNADDPROPSHEETPAGE pfnAddPage, LPARA
 	psp.dwSize        = sizeof(PROPSHEETPAGE);
 	psp.dwFlags       = PSP_USEREFPARENT | PSP_USETITLE | PSP_USECALLBACK;
 	psp.hInstance     = hDllInstance;
-	psp.pszTemplate   = MAKEINTRESOURCE(IDD_PROPSHEET1);
+	psp.pszTemplate   = _T("IDD_PROPSHEET1");
 	psp.hIcon         = 0;
 	psp.pszTitle      = TEXT("CubeICE");
 	psp.pfnDlgProc    = (DLGPROC)DialogProc;
@@ -117,5 +116,4 @@ STDMETHODIMP CShellPropSheetExt::Initialize(PCIDLIST_ABSOLUTE pidlFolder, IDataO
 	return S_OK;
 }
 
-}
 }

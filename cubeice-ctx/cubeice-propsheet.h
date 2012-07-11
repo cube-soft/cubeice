@@ -6,8 +6,7 @@
 
 extern HINSTANCE	hDllInstance;
 
-namespace cube {
-	namespace propsheet {
+namespace CubeICE {
 		/* ----------------------------------------------------------------- */
 		//  CShellPropSheetExt
 		/* ----------------------------------------------------------------- */
@@ -181,6 +180,4 @@ namespace cube {
 			ULONG		refCount;
 			ULONG		&dllRefCount;
 		};
-
-	}
 }

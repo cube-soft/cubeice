@@ -37,8 +37,7 @@
 
 #include "cubeice-ctxbase.h"
 
-namespace cube {
-	namespace shlctxmenu {
+namespace CubeICE {
 		/* ----------------------------------------------------------------- */
 		//  CShlCtxMenuXP
 		/* ----------------------------------------------------------------- */
@@ -109,22 +108,30 @@ namespace cube {
 						
 						if( !lpmis )
 							return S_OK;
-						lpmis->itemWidth	= ICON_X_SIZE;
-						lpmis->itemHeight	= ICON_Y_SIZE;
+						lpmis->itemWidth	= 16;
+						lpmis->itemHeight	= 16;
 						*plResult = TRUE;
 						break;
 					}
 					case WM_DRAWITEM:
 					{
-						DRAWITEMSTRUCT		*lpdis = reinterpret_cast<DRAWITEMSTRUCT*>( lParam );
+						DRAWITEMSTRUCT *lpdis = reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
+						if(!lpdis || lpdis->CtlType != ODT_MENU) return S_OK;
 						
-						if( !lpdis || lpdis->CtlType != ODT_MENU )
-							return S_OK;
+						context_map::iterator pos = this->InsertedItems().find(lpdis->itemData);
+						if (pos == this->InsertedItems().end()) return S_OK;
 						
-						HICON	hIcon = static_cast<HICON>( LoadImage( hInstance, MAKEINTRESOURCE( lpdis->itemData ), IMAGE_ICON, ICON_X_SIZE, ICON_Y_SIZE, LR_DEFAULTCOLOR ) );
+						string_type location = pos->second.IconLocation();
+						string_type path = location.substr(0, location.find(_T(",")));
+						int index = 0;
+						try {
+							string_type::size_type pos = location.find(_T(","));
+							if (pos != string_type::npos) index = boost::lexical_cast<int>(location.substr(pos + 1));
+						}
+						catch (boost::bad_lexical_cast& /* err */) {}
 						
-						if( !hIcon )
-							return S_OK;
+						HICON hIcon = static_cast<HICON>(::ExtractIcon(NULL, path.c_str(), index));
+						if( !hIcon ) return S_OK;
 						
 						DrawIconEx( lpdis->hDC, lpdis->rcItem.left, lpdis->rcItem.top, hIcon, 16, 16, 0, NULL, DI_NORMAL );
 						
@@ -142,17 +149,15 @@ namespace cube {
 			/* ------------------------------------------------------------- */
 			//  SetMenuIcon
 			/* ------------------------------------------------------------- */
-			void SetMenuIcon( WORD iconID, MENUITEMINFO &miinfo )
+			void SetMenuIcon(UINT cmdid, MENUITEMINFO &miinfo)
 			{
 				miinfo.fMask		|= MIIM_BITMAP | MIIM_DATA;
 				miinfo.hbmpItem		= HBMMENU_CALLBACK;
-				miinfo.dwItemData	= iconID;
-
+				miinfo.dwItemData	= static_cast<DWORD>(cmdid);
+				
 				return;
 			}
 		};
-
-	}
 }
 
 #endif	// CUBEICE_CTXXP_H
