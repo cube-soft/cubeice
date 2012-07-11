@@ -1,29 +1,43 @@
+// -*- coding: shift-jis -*-
+/* ------------------------------------------------------------------------- */
+/*
+ *  cubeice-setting/cubeice-setting.cpp
+ *
+ *  Copyright (c) 2010 CubeSoft Inc.
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
+ */
+/* ------------------------------------------------------------------------- */
 #include <cubeice/config.h>
-#include <commctrl.h>
+#include <psdotnet/environment.h>
 #include <psdotnet/logger.h>
 #include <psdotnet/logger/file-appender.h>
-#include "cubeice-setting.h"
 #include "setting-dialog.h"
 
-cubeice::user_setting Setting(true);
-
 int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int showCmd) {
-	Setting.load();
+	CubeICE::UserSetting setting;
+	setting.Load();
 	
 #ifndef PSDOTNET_INVALIDATE_LOG_MACRO
-	std::basic_string<TCHAR> path = Setting.install_path() + _T("\\cubeice-setting.log");
+	CubeICE::string_type path = setting.InstallDirectory() + _T("\\cubeice-setting.log");
 	PsdotNet::FileAppender writer(path, PsdotNet::FileAppender::CloseOnWrite | PsdotNet::FileAppender::WriteAll);
-	PsdotNet::Logger::Configure(writer, PsdotNet::Utility::ToLogLevel(Setting.loglevel()));
+	PsdotNet::Logger::Configure(writer, PsdotNet::Utility::ToLogLevel(setting.LogLevel()));
 #endif
 	
-	LOG_INFO(_T("CubeICE version %s"), Setting.version().c_str());
-	
-	OSVERSIONINFO osinfo;
-	osinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-	GetVersionEx(&osinfo);
-	std::basic_string<TCHAR> edition = sizeof(INT_PTR) == 4 ? _T("x86") : _T("x64");
-	LOG_INFO(_T("Windows version %d.%d.%d (%s)"), osinfo.dwMajorVersion, osinfo.dwMinorVersion, osinfo.dwBuildNumber, edition.c_str());
-	LOG_INFO(_T("InstallPath = %s"), Setting.install_path().c_str());
+	LOG_INFO(_T("CubeICE version %s (x%d)"), setting.Version().c_str(), (PsdotNet::Environment::Is64BitProcess() ? 64 : 86));
+	LOG_INFO(PsdotNet::Environment::OSVersion().VersionString().c_str());
+	LOG_INFO(_T("InstallDirectory: %s"), setting.InstallDirectory());
 	
 	std::basic_string<TCHAR> args(pCmdLine);
 	if (args == _T("install")) {
@@ -36,21 +50,10 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 		 *   3. 以下のショートカットを作成:
 		 *      圧縮/解凍
 		 */
-		Setting.decompression().flags() |= (
-			ZIP_FLAG | LZH_FLAG | RAR_FLAG | TAR_FLAG | GZ_FLAG | SEVENZIP_FLAG |
-			BZ2_FLAG | CAB_FLAG | TBZ_FLAG | TGZ_FLAG | XZ_FLAG
-		);
-		
-		Setting.context_flags() |= (
-			COMPRESS_FLAG | COMP_ALL_FLAG |
-			DECOMPRESS_FLAG | DECOMP_ALL_FLAG
-		);
-		
-		Setting.shortcut_flags() |= (COMPRESS_FLAG | DECOMPRESS_FLAG);
-		Setting.associate_changed();
 	}
 	
-	cubeice::create_propsheet(NULL, args == _T("install"));
-
+	CubeICE::SettingDialog dialog(setting);
+	dialog.ShowDialog();
+	
 	return 0;
 }

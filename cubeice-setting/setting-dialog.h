@@ -1,256 +1,103 @@
+// -*- coding: shift-jis -*-
 /* ------------------------------------------------------------------------- */
 /*
- *  setting-dialog.h
+ *  cubeice-setting/setting-dialog.h
  *
- *  Copyright (c) 2010 CubeSoft.
+ *  Copyright (c) 2010 CubeSoft Inc.
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
  *
- *    - Redistributions of source code must retain the above copyright
- *      notice, this list of conditions and the following disclaimer.
- *    - Redistributions in binary form must reproduce the above copyright
- *      notice, this list of conditions and the following disclaimer in the
- *      documentation and/or other materials provided with the distribution.
- *    - No names of its contributors may be used to endorse or promote
- *      products derived from this software without specific prior written
- *      permission.
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
- *  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
- *  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- *  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
- *  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *  Last-modified: Wed 17 Nov 2010 17:39:00 JST
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_DIALOG_H
-#define CUBEICE_DIALOG_H
+#ifndef CUBEICE_SETTING_SETTING_DIALOG_H
+#define CUBEICE_SETTING_SETTING_DIALOG_H
 
 #include <cubeice/config.h>
+#include <boost/shared_ptr.hpp>
+#include <psdotnet/forms/property-dialog.h>
 #include <cubeice/user-setting.h>
-#include <map>
-#include "cubeice-setting.h"
-#include "resource.h"
+#include "general-page.h"
+#include "compression-page.h"
+#include "decompression-page.h"
+#include "filtering-page.h"
+#include "version-page.h"
 
-#ifndef CUBE_MAX_PATH
-#define CUBE_MAX_PATH 2048
-#endif
-
-extern cubeice::user_setting Setting;
-
-namespace cubeice {
-	namespace dialog {
-		extern int customize(HWND owner, cubeice::user_setting& setting);
-	}
-
-	extern INT_PTR create_propsheet(HWND parent, bool install);
-	
-	typedef std::map<std::size_t, std::size_t> flag_map;
-	typedef std::map<std::size_t, std::basic_string<TCHAR> > sctype_map;
-	
-	/* ----------------------------------------------------------------- */
-	//  decompress_map
-	/* ----------------------------------------------------------------- */
-	inline flag_map& decompress_map() {
-		static bool initialized = false;
-		static flag_map dest;
-		if (!initialized) {
-			dest[IDC_ZIP_CHECKBOX] = ZIP_FLAG;
-			dest[IDC_LZH_CHECKBOX] = LZH_FLAG;
-			dest[IDC_RAR_CHECKBOX] = RAR_FLAG;
-			dest[IDC_TAR_CHECKBOX] = TAR_FLAG;
-			dest[IDC_GZ_CHECKBOX] = GZ_FLAG;
-			dest[IDC_SEVENZIP_CHECKBOX] = SEVENZIP_FLAG;
-			dest[IDC_ARJ_CHCKBOX] = ARJ_FLAG;
-			dest[IDC_BZ2_CHECKBOX] = BZ2_FLAG;
-			dest[IDC_CAB_CHECKBOX] = CAB_FLAG;
-			dest[IDC_CHM_CHECKBOX] = CHM_FLAG;
-			dest[IDC_CPIO_CHECKBOX] = CPIO_FLAG;
-			dest[IDC_DEB_CHECKBOX] = DEB_FLAG;
-			dest[IDC_DMG_CHECKBOX] = DMG_FLAG;
-			dest[IDC_ISO_CHECKBOX] = ISO_FLAG;
-			dest[IDC_RPM_CHECKBOX] = RPM_FLAG;
-			dest[IDC_TBZ_CHECKBOX] = TBZ_FLAG;
-			dest[IDC_TGZ_CHECKBOX] = TGZ_FLAG;
-			dest[IDC_WIM_CHECKBOX] = WIM_FLAG;
-			dest[IDC_XAR_CHECKBOX] = XAR_FLAG;
-			dest[IDC_XZ_CHECKBOX] = XZ_FLAG;
-			dest[IDC_JAR_CHECKBOX] = JAR_FLAG;
-			initialized = true;
+namespace CubeICE {
+	/* --------------------------------------------------------------------- */
+	///
+	/// SettingDialog
+	///
+	/// <summary>
+	/// CubeICE の設定画面を表すクラスです。
+	/// </summary>
+	///
+	/* --------------------------------------------------------------------- */
+	class SettingDialog : public PsdotNet::Forms::PropertyDialog {
+	private:
+		typedef PsdotNet::Forms::PropertyDialog super;
+		
+	public:
+		typedef boost::shared_ptr<bool> bool_ptr;
+		
+	public:
+		/* ----------------------------------------------------------------- */
+		/// constructor
+		/* ----------------------------------------------------------------- */
+		explicit SettingDialog(UserSetting& data) :
+			data_(data), changed_(new bool(false)),
+			general_(data_, changed_),
+			compression_(data_, changed_),
+			decompression_(data_, changed_),
+			filtering_(data_, changed_),
+			version_(data_, changed_) {
+			this->InitializeComponent();
 		}
-		return dest;
-	}
-	
-	/* ----------------------------------------------------------------- */
-	//  context_map
-	/* ----------------------------------------------------------------- */
-	inline flag_map& context_map() {
-		static bool initialized = false;
-		static flag_map dest;
-		if (!initialized) {
-			dest[IDC_CT_COMPRESS_CHECKBOX] = COMPRESS_FLAG;
-			dest[IDC_CT_DECOMPRESS_CHECKBOX] = DECOMPRESS_FLAG;
-			dest[IDC_CT_MAIL_CHECKBOX] = MAIL_FLAG;
+		
+		/* ----------------------------------------------------------------- */
+		/// destructor
+		/* ----------------------------------------------------------------- */
+		virtual ~SettingDialog() {}
+		
+	private:
+		/* ----------------------------------------------------------------- */
+		///
+		/// InitializeComponent
+		///
+		/// <summary>
+		/// 初期設定を行います。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void InitializeComponent() {
+			this->Text(_T("CubeICE 設定"));
+			this->Icon(PsdotNet::Drawing::Icon(PsdotNet::Drawing::Icon::Type::Resource, _T("IDI_APP")));
 			
-			// 圧縮メニューのサブメニュー
-			dest[IDC_COMP_ZIP_CHECKBOX] = COMP_ZIP_FLAG;
-			dest[IDC_COMP_ZIP_PASS_CHECKBOX] = COMP_ZIP_PASS_FLAG;
-			dest[IDC_COMP_SEVENZIP_CHECKBOX] = COMP_SEVENZIP_FLAG;
-			dest[IDC_COMP_BZIP2_CHECKBOX] = COMP_BZIP2_FLAG;
-			dest[IDC_COMP_GZIP_CHECKBOX] = COMP_GZIP_FLAG;
-			dest[IDC_COMP_EXE_CHECKBOX] = COMP_EXE_FLAG;
-			dest[IDC_COMP_DETAIL_CHECKBOX] = COMP_DETAIL_FLAG;
-			
-			// 解凍メニューのサブメニュー
-			dest[IDC_DECOMP_HERE_CHECKBOX] = DECOMP_HERE_FLAG;
-			dest[IDC_DECOMP_DESKTOP_CHECKBOX] = DECOMP_DESKTOP_FLAG;
-			dest[IDC_DECOMP_RUNTIME_CHECKBOX] = DECOMP_RUNTIME_FLAG;
-			dest[IDC_DECOMP_MYDOCUMENTS_CHECKBOX] = DECOMP_MYDOCUMENTS_FLAG;
-			
-			// 圧縮してメール送信のサブメニュー
-			dest[IDC_MAIL_ZIP_CHECKBOX] = MAIL_ZIP_FLAG;
-			dest[IDC_MAIL_ZIP_PASS_CHECKBOX] = MAIL_ZIP_PASS_FLAG;
-			dest[IDC_MAIL_SEVENZIP_CHECKBOX] = MAIL_SEVENZIP_FLAG;
-			dest[IDC_MAIL_BZIP2_CHECKBOX] = MAIL_BZIP2_FLAG;
-			dest[IDC_MAIL_GZIP_CHECKBOX] = MAIL_GZIP_FLAG;
-			dest[IDC_MAIL_EXE_CHECKBOX] = MAIL_EXE_FLAG;
-			dest[IDC_MAIL_DETAIL_CHECKBOX] = MAIL_DETAIL_FLAG;
-			
-			initialized = true;
+			this->Add(general_);
+			this->Add(compression_);
+			this->Add(decompression_);
+			this->Add(filtering_);
+			this->Add(version_);
 		}
-		return dest;
-	}
-	
-	/* ----------------------------------------------------------------- */
-	//  context_root_map
-	/* ----------------------------------------------------------------- */
-	inline flag_map& context_root_map() {
-		static bool initialized = false;
-		static flag_map dest;
-		if (!initialized) {
-			dest[IDC_CT_COMPRESS_CHECKBOX] = COMPRESS_FLAG;
-			dest[IDC_CT_DECOMPRESS_CHECKBOX] = DECOMPRESS_FLAG;
-			dest[IDC_CT_MAIL_CHECKBOX] = MAIL_FLAG;
-			
-			initialized = true;
-		}
-		return dest;
-	}
+		
+	private:
+		UserSetting& data_;
+		bool_ptr changed_;
+		GeneralPage general_;
+		CompressionPage compression_;
+		DecompressionPage decompression_;
+		FilteringPage filtering_;
+		VersionPage version_;
+	};
+} // namespace CubeICE
 
-	/* ----------------------------------------------------------------- */
-	//  context_compress_map
-	/* ----------------------------------------------------------------- */
-	inline flag_map& context_compress_map() {
-		static bool initialized = false;
-		static flag_map dest;
-		if (!initialized) {
-			dest[IDC_COMP_ZIP_CHECKBOX] = COMP_ZIP_FLAG;
-			dest[IDC_COMP_ZIP_PASS_CHECKBOX] = COMP_ZIP_PASS_FLAG;
-			dest[IDC_COMP_SEVENZIP_CHECKBOX] = COMP_SEVENZIP_FLAG;
-			dest[IDC_COMP_BZIP2_CHECKBOX] = COMP_BZIP2_FLAG;
-			dest[IDC_COMP_GZIP_CHECKBOX] = COMP_GZIP_FLAG;
-			dest[IDC_COMP_EXE_CHECKBOX] = COMP_EXE_FLAG;
-			dest[IDC_COMP_DETAIL_CHECKBOX] = COMP_DETAIL_FLAG;
-		}
-		return dest;
-	}
-	
-	/* ----------------------------------------------------------------- */
-	//  context_decompress_map
-	/* ----------------------------------------------------------------- */
-	inline flag_map& context_decompress_map() {
-		static bool initialized = false;
-		static flag_map dest;
-		if (!initialized) {
-			dest[IDC_DECOMP_HERE_CHECKBOX] = DECOMP_HERE_FLAG;
-			dest[IDC_DECOMP_DESKTOP_CHECKBOX] = DECOMP_DESKTOP_FLAG;
-			dest[IDC_DECOMP_RUNTIME_CHECKBOX] = DECOMP_RUNTIME_FLAG;
-			dest[IDC_DECOMP_MYDOCUMENTS_CHECKBOX] = DECOMP_MYDOCUMENTS_FLAG;
-		}
-		return dest;
-	}
-	
-	/* ----------------------------------------------------------------- */
-	//  context_mail_map
-	/* ----------------------------------------------------------------- */
-	inline flag_map& context_mail_map() {
-		static bool initialized = false;
-		static flag_map dest;
-		if (!initialized) {
-			dest[IDC_MAIL_ZIP_CHECKBOX] = MAIL_ZIP_FLAG;
-			dest[IDC_MAIL_ZIP_PASS_CHECKBOX] = MAIL_ZIP_PASS_FLAG;
-			dest[IDC_MAIL_SEVENZIP_CHECKBOX] = MAIL_SEVENZIP_FLAG;
-			dest[IDC_MAIL_BZIP2_CHECKBOX] = MAIL_BZIP2_FLAG;
-			dest[IDC_MAIL_GZIP_CHECKBOX] = MAIL_GZIP_FLAG;
-			dest[IDC_MAIL_EXE_CHECKBOX] = MAIL_EXE_FLAG;
-			dest[IDC_MAIL_DETAIL_CHECKBOX] = MAIL_DETAIL_FLAG;
-		}
-		return dest;
-	}
-	
-	/* ----------------------------------------------------------------- */
-	//  shortcut_map
-	/* ----------------------------------------------------------------- */
-	inline flag_map& shortcut_map() {
-		static bool initialized = false;
-		static flag_map dest;
-		if (!initialized) {
-			dest[IDC_SC_COMPRESS_CHECKBOX] = COMPRESS_FLAG;
-			dest[IDC_SC_DECOMPRESS_CHECKBOX] = DECOMPRESS_FLAG;
-			dest[IDC_SC_SETTING_CHECKBOX] = SETTING_FLAG;
-			initialized = true;
-		}
-		return dest;
-	}
-	
-	/* ----------------------------------------------------------------- */
-	//  detail_map
-	/* ----------------------------------------------------------------- */
-	inline flag_map& detail_map() {
-		static bool initialized = false;
-		static flag_map dest;
-		if (!initialized) {
-			dest[IDC_OVERWRITE_CHECKBOX] = DETAIL_OVERWRITE;
-			dest[IDC_NEWER_CHECKBOX] = DETAIL_IGNORE_NEWER;
-			dest[IDC_POSTOPEN_CHECKBOX] = DETAIL_OPEN;
-			dest[IDC_CREATE_FOLDER_CHECKBOX] = DETAIL_CREATE_FOLDER;
-			dest[IDC_SINGLE_FILE_CHECKBOX] = DETAIL_SINGLE_FILE;
-			dest[IDC_SINGLE_FOLDER_CHECKBOX] = DETAIL_SINGLE_FOLDER;
-			dest[IDC_SKIP_DESKTOP_CHECKBOX] = DETAIL_SKIP_DESKTOP;
-			dest[IDC_CHARCODE_CHECKBOX] = DETAIL_CHARCODE;
-			dest[IDC_FILTER_CHECKBOX] = DETAIL_FILTER;
-			dest[IDC_REPORT_CHECKBOX] = DETAIL_REPORT;
-			dest[IDC_MAIL_REMOVE_CHECKBOX] = DETAIL_MAIL_REMOVE;
-			dest[IDC_TOOLTIP_CHECKBOX] = DETAIL_TOOLTIP;
-			dest[IDC_REMOVE_SRC_CHECKBOX] = DETAIL_REMOVE_SRC;
-			initialized = true;
-		}
-		return dest;
-	}
-	
-	/* ----------------------------------------------------------------- */
-	//  output_map
-	/* ----------------------------------------------------------------- */
-	inline flag_map& output_map() {
-		static bool initialized = false;
-		static flag_map dest;
-		if (!initialized) {
-			dest[IDC_SPECIFIC_RADIO] = OUTPUT_SPECIFIC;
-			dest[IDC_SOURCE_RADIO] = OUTPUT_SOURCE;
-			dest[IDC_RUNTIME_RADIO] = OUTPUT_RUNTIME;
-			initialized = true;
-		}
-		return dest;
-	}
-}
-
-#endif // CUBEICE_DIALOG_H
+#endif // CUBEICE_SETTING_SETTING_DIALOG_H

@@ -25,7 +25,6 @@
 *.lib
 *.sbr
 *.sdf
-*.filters
 *.zip
 *.sh
 ipch/

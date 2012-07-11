@@ -185,17 +185,20 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cubeice-setting.cpp" />
-    <ClCompile Include="customize-dialog.cpp" />
-    <ClCompile Include="setting-dialog.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="cubeice-setting.h" />
+    <ClInclude Include="compression-page.h" />
+    <ClInclude Include="decompression-page.h" />
+    <ClInclude Include="filtering-page.h" />
+    <ClInclude Include="general-page.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="user-setting-converter.h" />
+    <ClInclude Include="setting-dialog.h" />
+    <ClInclude Include="setting-page.h" />
+    <ClInclude Include="version-page.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="cubeice-setting.rc" />
+    <ResourceCompile Include="resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="cubeice-setting.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
