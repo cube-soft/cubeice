@@ -22,9 +22,8 @@
 #ifndef CUBEICE_SETTING_COMPRESSION_PAGE_H
 #define CUBEICE_SETTING_COMPRESSION_PAGE_H
 
-#include <cubeice/config.h>
-#include "setting-page.h"
-#include "resource.h"
+#include "cubeice-setting.h"
+#include "archive-page.h"
 
 namespace CubeICE {
 	/* --------------------------------------------------------------------- */
@@ -36,9 +35,9 @@ namespace CubeICE {
 	/// </summary>
 	///
 	/* --------------------------------------------------------------------- */
-	class CompressionPage : public SettingPage {
+	class CompressionPage : public ArchivePage {
 	private:
-		typedef SettingPage super;
+		typedef ArchivePage super;
 		
 	public:
 		/* ----------------------------------------------------------------- */
@@ -63,9 +62,9 @@ namespace CubeICE {
 		///
 		/* ----------------------------------------------------------------- */
 		virtual void OnCreateControl() {
-			
+			LOG_DEBUG(_T("CompressionPage::OnCreateControl"));
+			this->LoadOutput(this->Data().Compression());
 		}
-		
 	}; // class CompressionPage
 } // namespace CubeICE
 

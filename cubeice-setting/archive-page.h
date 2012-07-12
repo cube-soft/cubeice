@@ -1,7 +1,7 @@
 // -*- coding: shift-jis -*-
 /* ------------------------------------------------------------------------- */
 /*
- *  cubeice-setting/decompression-page.h
+ *  cubeice-setting/archive-page.h
  *
  *  Copyright (c) 2010 CubeSoft Inc.
  *
@@ -19,53 +19,80 @@
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_SETTING_DECOMPRESSION_PAGE_H
-#define CUBEICE_SETTING_DECOMPRESSION_PAGE_H
+#ifndef CUBEICE_SETTING_ARCHIVE_PAGE_H
+#define CUBEICE_SETTING_ARCHIVE_PAGE_H
 
 #include "cubeice-setting.h"
-#include "archive-page.h"
+#include "setting-page.h"
 
 namespace CubeICE {
 	/* --------------------------------------------------------------------- */
 	///
-	/// CompressionPage
+	/// ArchivePage
 	///
 	/// <summary>
-	/// SettingDialog に表示させる「解凍」ページです。
+	/// 圧縮、解凍ページの基底となるプロパティシートページを表示する
+	/// クラスです。共通の処理をここで定義します。
 	/// </summary>
 	///
 	/* --------------------------------------------------------------------- */
-	class DecompressionPage : public ArchivePage {
+	class ArchivePage : public SettingPage {
 	private:
-		typedef ArchivePage super;
+		typedef SettingPage super;
 		
 	public:
 		/* ----------------------------------------------------------------- */
 		/// constructor
 		/* ----------------------------------------------------------------- */
-		DecompressionPage(UserSetting& data, int_ptr changed) :
-			super(_T("IDD_DECOMPRESSION"), data, changed) {}
+		ArchivePage(const string_type& resource_name, UserSetting& data, int_ptr changed) :
+			super(resource_name, data, changed) {}
 		
 		/* ----------------------------------------------------------------- */
 		/// destructor
 		/* ----------------------------------------------------------------- */
-		virtual ~DecompressionPage() {}
+		virtual ~ArchivePage() {}
 		
 	protected:
 		/* ----------------------------------------------------------------- */
 		///
-		/// OnCreateControl
+		/// LoadOutput
 		///
 		/// <summary>
-		/// 画面生成直後の初期化処理を行います。
+		/// 出力先に関する設定を読み込みます。
 		/// </summary>
 		///
 		/* ----------------------------------------------------------------- */
-		virtual void OnCreateControl() {
-			LOG_DEBUG(_T("DecompressionPage::OnCreateControl"));
-			this->LoadOutput(this->Data().Decompression());
+		template <class SettingType>
+		result_type LoadOutput(SettingType& data) {
+			LOG_DEBUG(_T("ArchivePage::LoadOutput"));
+			
+			int id = IDC_OUTPUT_SPECIFIC;
+			switch (data.OutputCondition()) {
+			case OutputKind::Specific:
+				id = IDC_OUTPUT_SPECIFIC;
+				break;
+			case OutputKind::SameAsSource:
+				id = IDC_OUTPUT_SOURCE;
+				break;
+			case OutputKind::Runtime:
+				id = IDC_OUTPUT_RUNTIME;
+				break;
+			default:
+				break;
+			}
+			LOG_TRACE(_T("OutputCondition: %d"), id);
+			
+			BOOL enabled = (id == IDC_OUTPUT_SPECIFIC) ? TRUE : FALSE;
+			::CheckDlgButton(this->Handle(), id, BST_CHECKED);
+			::EnableWindow(::GetDlgItem(this->Handle(), IDC_OUTPUT_PATH), enabled);
+			::EnableWindow(::GetDlgItem(this->Handle(), IDC_OUTPUT_PATH_BUTTON), enabled);
+			
+			if (!data.OutputPath().empty()) ::SetWindowText(::GetDlgItem(this->Handle(), IDC_OUTPUT_PATH), data.OutputPath().c_str());
+			LOG_TRACE(_T("OutputPath: %s"), data.OutputPath().c_str());
+			
+			return TRUE;
 		}
-	}; // class CompressionPage
+	}; // class ArchivePage
 } // namespace CubeICE
 
-#endif // CUBEICE_SETTING_DECOMPRESSION_PAGE_H
+#endif // CUBEICE_SETTING_ARCHIVE_PAGE_H
