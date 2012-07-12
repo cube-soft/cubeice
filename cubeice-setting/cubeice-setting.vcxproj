@@ -185,6 +185,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="archive-page.h" />
     <ClInclude Include="compression-page.h" />
     <ClInclude Include="cubeice-setting.h" />
     <ClInclude Include="decompression-page.h" />

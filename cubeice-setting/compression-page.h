@@ -64,6 +64,78 @@ namespace CubeICE {
 		virtual void OnCreateControl() {
 			LOG_DEBUG(_T("CompressionPage::OnCreateControl"));
 			this->LoadOutput(this->Data().Compression());
+			this->LoadOverwrite(this->Data().Compression());
+			this->LoadFiltering(this->Data().Compression());
+			this->LoadOpen(this->Data().Compression());
+			this->LoadDeleteOnMail();
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/// OnCommand
+		/* ----------------------------------------------------------------- */
+		virtual void OnCommand(PsdotNet::Forms::Message& m) {
+			int id = LOWORD(m.WParam());
+			
+			switch (id) {
+			case IDC_OUTPUT_SPECIFIC:
+			case IDC_OUTPUT_SOURCE:
+			case IDC_OUTPUT_RUNTIME:
+				m.Result(this->SaveOutputCondition(this->Data().Compression(), id));
+				break;
+			case IDC_OUTPUT_PATH_BUTTON:
+				m.Result(this->SaveOutputPath(this->Data().Compression()));
+				break;
+			case IDC_DETAIL_CONFIRM:
+			case IDC_DETAIL_CONFIRMOLDER:
+				m.Result(this->SaveOverwrite(this->Data().Compression(), id));
+				break;
+			case IDC_DETAIL_FILTERING:
+				m.Result(this->SaveFiltering(this->Data().Compression(), id));
+				break;
+			case IDC_DETAIL_OPEN:
+			case IDC_DETAIL_SKIPDESKTOP:
+				m.Result(this->SaveOpen(this->Data().Compression(), id));
+				break;
+			case IDC_DETAIL_DELETEONMAIL:
+				m.Result(this->SaveDeleteOnMail());
+				break;
+			default:
+				super::OnCommand(m);
+				break;
+			}
+		}
+		
+	private:
+		/* ----------------------------------------------------------------- */
+		///
+		/// LoadDeleteOnMail
+		///
+		/// <summary>
+		/// メール送信後に削除する機能に関する設定を読み込みます。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		result_type LoadDeleteOnMail() {
+			UserCompressionSetting& data = this->Data().Compression();
+			LOG_DEBUG(_T("ArchivePage::LoadDeleteOnMail (%s)"), (data.DeleteOnMail() ? _T("Checked") : _T("Unchecked")));
+			::CheckDlgButton(this->Handle(), IDC_DETAIL_DELETEONMAIL, data.DeleteOnMail() ? TRUE : FALSE);
+			return TRUE;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// SaveDeleteOnMail
+		///
+		/// <summary>
+		/// メール送信後に削除する機能に関する設定を保存します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		result_type SaveDeleteOnMail() {
+			UserCompressionSetting& data = this->Data().Compression();
+			data.DeleteOnMail(::IsDlgButtonChecked(this->Handle(), IDC_DETAIL_DELETEONMAIL) == BST_CHECKED);
+			LOG_DEBUG(_T("ArchivePage::SaveDeleteOnMail (%s)"), (data.DeleteOnMail() ? _T("Checked") : _T("Unchecked")));
+			return TRUE;
 		}
 	}; // class CompressionPage
 } // namespace CubeICE
