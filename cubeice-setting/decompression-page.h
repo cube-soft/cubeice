@@ -44,7 +44,7 @@ namespace CubeICE {
 		/* ----------------------------------------------------------------- */
 		/// constructor
 		/* ----------------------------------------------------------------- */
-		DecompressionPage(UserSetting& data, bool_ptr changed) :
+		DecompressionPage(UserSetting& data, int_ptr changed) :
 			super(_T("IDD_DECOMPRESSION"), data, changed) {}
 		
 		/* ----------------------------------------------------------------- */

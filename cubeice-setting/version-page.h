@@ -26,7 +26,6 @@
 #include <sstream>
 #include <psdotnet/drawing.h>
 #include "setting-page.h"
-#include "resource.h"
 
 namespace CubeICE {
 	/* --------------------------------------------------------------------- */
@@ -34,7 +33,7 @@ namespace CubeICE {
 	/// CompressionPage
 	///
 	/// <summary>
-	/// SettingDialog に表示させる「解凍」ページです。
+	/// SettingDialog に表示させる「バージョン情報」ページです。
 	/// </summary>
 	///
 	/* --------------------------------------------------------------------- */
@@ -46,7 +45,7 @@ namespace CubeICE {
 		/* ----------------------------------------------------------------- */
 		/// constructor
 		/* ----------------------------------------------------------------- */
-		VersionPage(UserSetting& data, bool_ptr changed) :
+		VersionPage(UserSetting& data, int_ptr changed) :
 			super(_T("IDD_VERSION"), data, changed) {}
 		
 		/* ----------------------------------------------------------------- */
@@ -65,25 +64,29 @@ namespace CubeICE {
 		///
 		/* ----------------------------------------------------------------- */
 		virtual void OnCreateControl() {
+			LOG_DEBUG(_T("VersionPage::OnCreateControl"));
 			UserSetting& data = this->Data();
 			
 			// ロゴの表示
 			PsdotNet::Drawing::Icon::Type type = PsdotNet::Drawing::Icon::Type::Resource;
 			PsdotNet::Drawing::Icon logo(type, _T("IDI_APP"), PsdotNet::Drawing::Size(48, 48));
-			handle_type handle = GetDlgItem(this->Handle(), IDC_LOGO_PICTUREBOX);
+			handle_type handle = GetDlgItem(this->Handle(), IDC_VERSION_LOGO);
 			::SendMessage(handle, STM_SETIMAGE, IMAGE_ICON, reinterpret_cast<LPARAM>(logo.Handle()));
 			
 			// バージョン
 			std::basic_stringstream<char_type> ss;
 			int edition = PsdotNet::Environment::Is64BitProcess() ? 64 : 86;
 			ss << _T("Version: ") << data.Version() << _T(" (x") << edition << _T(")");
-			::SetWindowText(::GetDlgItem(this->Handle(), IDC_VERSION_LABEL), ss.str().c_str());
+			::SetWindowText(::GetDlgItem(this->Handle(), IDC_VERSION_VERSION), ss.str().c_str());
 			
 			// アップデートの確認
-			if (data.CheckUpdate()) ::CheckDlgButton(this->Handle(), IDC_UPDATE_CHECKBOX, BM_SETCHECK);
+			if (data.CheckUpdate()) ::CheckDlgButton(this->Handle(), IDC_VERSION_UPDATE, BST_CHECKED);
+			
+			// エラーレポートを表示
+			if (data.ErrorReport()) ::CheckDlgButton(this->Handle(), IDC_VERSION_ERRORREPORT, BST_CHECKED);
 			
 			// デバッグ情報を出力
-			if (data.LogLevel() < PsdotNet::LogLevel::Error) ::CheckDlgButton(this->Handle(), IDC_DEBUG_CHECKBOX, BM_SETCHECK);
+			if (data.LogLevel() < PsdotNet::LogLevel::Error) ::CheckDlgButton(this->Handle(), IDC_VERSION_DEBUG, BST_CHECKED);
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -92,14 +95,19 @@ namespace CubeICE {
 		virtual void OnCommand(PsdotNet::Forms::Message& m) {
 			UserSetting& data = this->Data();
 			int id = LOWORD(m.WParam());
+			bool checked = ::IsDlgButtonChecked(this->Handle(), id) == BST_CHECKED;
 			
 			switch (id) {
-			case IDC_UPDATE_CHECKBOX:
-				data.CheckUpdate(::IsDlgButtonChecked(this->Handle(), id) == BST_CHECKED);
+			case IDC_VERSION_UPDATE:
+				data.CheckUpdate(checked);
 				m.Result(TRUE);
 				break;
-			case IDC_DEBUG_CHECKBOX:
-				data.LogLevel(::IsDlgButtonChecked(this->Handle(), id) == BST_CHECKED ? 10 : 50);
+			case IDC_VERSION_ERRORREPORT:
+				data.ErrorReport(checked);
+				m.Result(TRUE);
+				break;
+			case IDC_VERSION_DEBUG:
+				data.LogLevel(checked ? PsdotNet::LogLevel::Trace : PsdotNet::LogLevel::Error);
 				m.Result(TRUE);
 				break;
 			default:

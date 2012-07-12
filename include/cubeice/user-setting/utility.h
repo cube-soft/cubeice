@@ -158,14 +158,14 @@ namespace CubeICE {
 			DecompressionMyDocuments    = 0x00000080, // マイドキュメントに解凍
 			CompressionZip              = 0x00000100, // zip
 			CompressionZipPassword      = 0x00000200, // zip (パスワード)
-			CompressionSevenZip         = 0x00000400, // 7z
+			Compression7z               = 0x00000400, // 7z
 			CompressionBzip2            = 0x00000800, // bzip2
 			CompressionGzip             = 0x00001000, // gzip
 			CompressionDetail           = 0x00002000, // 詳細設定
 			CompressionSelfExecutable   = 0x00004000, // exe
 			MailZip                     = 0x00010000, // zip
 			MailZipPassword             = 0x00020000, // zip (パスワード) 
-			MailSevenZip                = 0x00040000, // 7z
+			Mail7z                      = 0x00040000, // 7z
 			MailBzip2                   = 0x00080000, // bzip2
 			MailGzip                    = 0x00100000, // gzip
 			MailDetail                  = 0x00200000, // 詳細設定
@@ -186,7 +186,7 @@ namespace CubeICE {
 		string_type program = install + _T("\\") + CUBEICE_NAME;
 		dest[ContextKind::CompressionZip] = Context(_T("zip"), program, _T("/c:zip"), _T(""));
 		dest[ContextKind::CompressionZipPassword] = Context(_T("zip (パスワード)"), program, _T("/c:zip /p"), _T(""));
-		dest[ContextKind::CompressionSevenZip] = Context(_T("7z"), program, _T("/c:7z"), _T(""));
+		dest[ContextKind::Compression7z] = Context(_T("7z"), program, _T("/c:7z"), _T(""));
 		dest[ContextKind::CompressionBzip2] = Context(_T("bzip2"), program, _T("/c:bzip2"), _T(""));
 		dest[ContextKind::CompressionGzip] = Context(_T("gzip"), program, _T("/c:gzip"), _T(""));
 		dest[ContextKind::CompressionSelfExecutable] = Context(_T("exe"), program, _T("/c:exe"), _T(""));
@@ -224,7 +224,7 @@ namespace CubeICE {
 		string_type program = install + _T("\\") + CUBEICE_NAME;
 		dest[ContextKind::MailZip] = Context(_T("zip"), program, _T("/c:zip /m"), _T(""));
 		dest[ContextKind::MailZipPassword] = Context(_T("zip (パスワード)"), program, _T("/c:zip /p /m"), _T(""));
-		dest[ContextKind::MailSevenZip] = Context(_T("7z"), program, _T("/c:7z /m"), _T(""));
+		dest[ContextKind::Mail7z] = Context(_T("7z"), program, _T("/c:7z /m"), _T(""));
 		dest[ContextKind::MailBzip2] = Context(_T("bzip2"), program, _T("/c:bzip2 /m"), _T(""));
 		dest[ContextKind::MailGzip] = Context(_T("gzip"), program, _T("/c:gzip /m"), _T(""));
 		dest[ContextKind::MailSelfExecutable] = Context(_T("exe"), program, _T("/c:exe /m"), _T(""));
@@ -274,7 +274,7 @@ namespace CubeICE {
 		}
 		
 		if ((src & ContextKind::Setting) != 0) {
-			dest.push_back(Context(_T("設定"), install + CUBEICE_SETTING_NAME, _T(""), program + _T(",0")));
+			dest.push_back(Context(_T("設定"), install + _T("\\") + CUBEICE_SETTING_NAME, _T(""), program + _T(",0")));
 		}
 	}
 } // namespace CubeICE

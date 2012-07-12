@@ -33,6 +33,8 @@ IDR_MENUBAR MENU
             MENUITEM "ショートカット(&S)...", 10101
         }
         MENUITEM "すべてリセット(&R)", 10110
+		MENUITEM SEPARATOR
+		MENUITEM "最新の情報に更新(&X)", 10120
     }
     POPUP "ヘルプ(&H)"
     {

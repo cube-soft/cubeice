@@ -110,11 +110,11 @@ namespace CubeICE {
 		/// OnOK
 		/* ----------------------------------------------------------------- */
 		virtual void OnOK() {
-			name_ = PsdotNet::Forms::Utility::GetWindowText(hname_);
-			directory_ = PsdotNet::Forms::Utility::GetWindowText(hdirectory_);
-			target_ = PsdotNet::Forms::Utility::GetWindowText(htarget_);
-			arguments_ = PsdotNet::Forms::Utility::GetWindowText(harguments_);
-			icon_ = PsdotNet::Forms::Utility::GetWindowText(hicon_);
+			name_ = PsdotNet::Forms::Utility::GetText(hname_);
+			directory_ = PsdotNet::Forms::Utility::GetText(hdirectory_);
+			target_ = PsdotNet::Forms::Utility::GetText(htarget_);
+			arguments_ = PsdotNet::Forms::Utility::GetText(harguments_);
+			icon_ = PsdotNet::Forms::Utility::GetText(hicon_);
 		}
 		
 	private:

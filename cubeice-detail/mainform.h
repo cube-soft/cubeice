@@ -152,6 +152,11 @@ namespace CubeICE {
 			case IDM_FILE_EXPORT:
 				m.Result(this->Export());
 				break;
+			case IDM_EDIT_UPDATE:
+				setting_.Load();
+				this->ResetListView();
+				m.Result(TRUE);
+				break;
 			case IDM_HELP_ABOUT:
 				m.Result(this->About());
 				break;

@@ -92,15 +92,7 @@ namespace CubeICE {
 		/// OnKillFocus
 		/* ----------------------------------------------------------------- */
 		void OnKillFocus() {
-			value_.erase();
-			
-			int size = ::GetWindowTextLength(hvalue_);
-			if (size <= 0) return;
-			std::vector<char_type> buffer(size + 1, 0);
-			int copied = ::GetWindowText(hvalue_, reinterpret_cast<char_type*>(&buffer[0]), size + 1);
-			if (copied == 0) return;
-			
-			value_ = string_type(reinterpret_cast<char_type*>(&buffer[0]));
+			value_ = PsdotNet::Forms::Utility::GetText(hvalue_);
 		}
 		
 		/* ----------------------------------------------------------------- */

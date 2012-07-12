@@ -1,7 +1,7 @@
 // -*- coding: shift-jis -*-
 /* ------------------------------------------------------------------------- */
 /*
- *  cubeice-setting/compression-page.h
+ *  cubeice-setting/customize-dialog.h
  *
  *  Copyright (c) 2010 CubeSoft Inc.
  *
@@ -19,54 +19,41 @@
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_SETTING_COMPRESSION_PAGE_H
-#define CUBEICE_SETTING_COMPRESSION_PAGE_H
+#ifndef CUBEICE_SETTING_CUSTOMIZE_DIALOG_H
+#define CUBEICE_SETTING_CUSTOMIZE_DIALOG_H
 
-#include <cubeice/config.h>
-#include "setting-page.h"
-#include "resource.h"
+#include "cubeice-setting.h"
+#include <psdotnet/forms/modal-form.h>
 
 namespace CubeICE {
 	/* --------------------------------------------------------------------- */
 	///
-	/// CompressionPage
+	/// CustomizeDialog
 	///
 	/// <summary>
-	/// SettingDialog に表示させる「圧縮」ページです。
+	/// コンテキストメニューのカスタマイズのためのダイアログです。
 	/// </summary>
 	///
 	/* --------------------------------------------------------------------- */
-	class CompressionPage : public SettingPage {
+	class CustomizeDialog : public PsdotNet::Forms::ModalForm {
 	private:
-		typedef SettingPage super;
+		typedef PsdotNet::Forms::ModalForm super;
 		
 	public:
 		/* ----------------------------------------------------------------- */
 		/// constructor
 		/* ----------------------------------------------------------------- */
-		CompressionPage(UserSetting& data, int_ptr changed) :
-			super(_T("IDD_COMPRESSION"), data, changed) {}
+		CustomizeDialog(UserSetting& data) :
+			super(_T("IDD_CUSTOMIZE")), data_(data) {}
 		
 		/* ----------------------------------------------------------------- */
 		/// destructor
 		/* ----------------------------------------------------------------- */
-		virtual ~CompressionPage() {}
+		virtual ~CustomizeDialog() {}
 		
-	protected:
-		/* ----------------------------------------------------------------- */
-		///
-		/// OnCreateControl
-		///
-		/// <summary>
-		/// 画面生成直後の初期化処理を行います。
-		/// </summary>
-		///
-		/* ----------------------------------------------------------------- */
-		virtual void OnCreateControl() {
-			
-		}
-		
-	}; // class CompressionPage
+	private:
+		UserSetting& data_;
+	};
 } // namespace CubeICE
 
-#endif // CUBEICE_SETTING_COMPRESSION_PAGE_H
+#endif // CUBEICE_SETTING_CUSTOMIZE_DIALOG_H

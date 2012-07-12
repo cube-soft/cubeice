@@ -38,13 +38,6 @@ namespace CubeICE {
 		/* ----------------------------------------------------------------- */
 		//  constructor
 		/* ----------------------------------------------------------------- */
-		Shortcut(const Shortcut& cp) :
-			name_(cp.name_), directory_(cp.directory_),
-			target_(cp.target_), arguments_(cp.arguments_), icon_(cp.icon_) {}
-		
-		/* ----------------------------------------------------------------- */
-		//  constructor
-		/* ----------------------------------------------------------------- */
 		Shortcut(const string_type& name, const string_type& directory, const string_type& target) :
 			name_(name), directory_(directory), target_(target),
 			arguments_(), icon_() {}
@@ -61,17 +54,6 @@ namespace CubeICE {
 		//  destructor
 		/* ----------------------------------------------------------------- */
 		virtual ~Shortcut() {}
-		
-		/* ----------------------------------------------------------------- */
-		//  operator=
-		/* ----------------------------------------------------------------- */
-		Shortcut& operator=(const Shortcut& cp) {
-			name_ = cp.name_;
-			directory_ = cp.directory_;
-			arguments_ = cp.arguments_;
-			icon_ = cp.icon_;
-			return *this;
-		}
 		
 		/* ----------------------------------------------------------------- */
 		//  Name

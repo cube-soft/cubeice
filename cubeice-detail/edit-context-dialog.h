@@ -136,10 +136,10 @@ namespace CubeICE {
 		virtual void OnOK() {
 			kind_ = static_cast<int>(::SendMessage(hkind_, CB_GETCURSEL, 0, 0));
 			index_ = (::SendMessage(hindex_, UDM_GETPOS, 0, 0) & 0xffff);
-			name_ = PsdotNet::Forms::Utility::GetWindowText(hname_);
-			target_ = PsdotNet::Forms::Utility::GetWindowText(htarget_);
-			arguments_ = PsdotNet::Forms::Utility::GetWindowText(harguments_);
-			icon_ = PsdotNet::Forms::Utility::GetWindowText(hicon_);
+			name_ = PsdotNet::Forms::Utility::GetText(hname_);
+			target_ = PsdotNet::Forms::Utility::GetText(htarget_);
+			arguments_ = PsdotNet::Forms::Utility::GetText(harguments_);
+			icon_ = PsdotNet::Forms::Utility::GetText(hicon_);
 			
 			super::OnOK();
 		}

@@ -28,11 +28,21 @@
 
 namespace CubeICE {
 	/* --------------------------------------------------------------------- */
+	/// ChangeKind
+	/* --------------------------------------------------------------------- */
+	namespace ChangeKind {
+		enum { None, Normal, RequireAdmin };
+	}
+	
+	/* --------------------------------------------------------------------- */
 	///
 	/// SettingPage
 	///
 	/// <summary>
 	/// SettingDialog に表示させる各ページの基底クラスです。
+	/// プロパティシートでは、OK ボタンや適用ボタンののイベントがシート内に
+	/// 表示されている全てのページに通知されるため、changed と言う共有
+	/// 変数を用いて、保存処理が複数回行われないようにします。
 	/// </summary>
 	///
 	/* --------------------------------------------------------------------- */
@@ -41,16 +51,14 @@ namespace CubeICE {
 		typedef PsdotNet::Forms::PropertyPage super;
 		
 	public:
-		typedef boost::shared_ptr<bool> bool_ptr;
+		typedef boost::shared_ptr<int> int_ptr;
 		
 	public:
 		/* ----------------------------------------------------------------- */
 		/// constructor
 		/* ----------------------------------------------------------------- */
-		SettingPage(const string_type& resource_name, UserSetting& data, bool_ptr changed) :
-			super(resource_name), data_(data), changed_(changed) {
-			this->InitializeComponent();
-		}
+		SettingPage(const string_type& resource_name, UserSetting& data, int_ptr changed) :
+			super(resource_name), data_(data), changed_(changed) {}
 		
 		/* ----------------------------------------------------------------- */
 		/// destructor
@@ -78,31 +86,25 @@ namespace CubeICE {
 		/// </summary>
 		///
 		/* ----------------------------------------------------------------- */
-		bool Changed() const { return *changed_; }
+		int Changed() const { return *changed_; }
 		
 		/* ----------------------------------------------------------------- */
 		///
 		/// Changed
 		///
 		/// <summary>
-		/// データに対して、何らかの修正が行われたかどうかを設定します。
+		/// データに対して、何らかの変更が行われたかどうかを設定します。
+		/// 設定する値は、以下の通りです。
+		///
+		///   0: 保存が必要な変更なし
+		///   1: ユーザ権限で保存が必要な変更が発生
+		///   2: 管理者権限で保存が必要な変更が発生
 		/// </summary>
 		///
 		/* ----------------------------------------------------------------- */
-		void Changed(bool x) { *changed_ = x; }
+		void Changed(int level) { *changed_ = level; }
 		
 	protected:
-		/* ----------------------------------------------------------------- */
-		///
-		/// InitializeComponent
-		///
-		/// <summary>
-		/// ウィンドウ生成直後（ハンドルの取得済み）の初期処理を行います。
-		/// </summary>
-		///
-		/* ----------------------------------------------------------------- */
-		virtual void OnCreateControl() {}
-		
 		/* ----------------------------------------------------------------- */
 		///
 		/// OnNotify
@@ -114,9 +116,10 @@ namespace CubeICE {
 		/* ----------------------------------------------------------------- */
 		virtual void OnNotify(PsdotNet::Forms::Message& m) {
 			NMHDR* nmhdr = reinterpret_cast<NMHDR*>(m.LParam());
-			if (nmhdr->code == PSN_APPLY && this->Changed()) {
+			if (nmhdr->code == PSN_APPLY && this->Changed() >= ChangeKind::Normal) {
 				data_.Save();
-				this->Changed(false);
+				if (this->Changed() >= ChangeKind::RequireAdmin) this->SaveAsAdministrator();
+				this->Changed(ChangeKind::None);
 			}
 			m.Result(TRUE);
 		}
@@ -130,7 +133,7 @@ namespace CubeICE {
 				this->OnCommand(m);
 				if (m.Result()) {
 					PropSheet_Changed(::GetParent(this->Handle()) , this->Handle());
-					this->Changed(true);
+					if (this->Changed() == 0) this->Changed(ChangeKind::Normal);
 				}
 				break;
 			default:
@@ -142,19 +145,27 @@ namespace CubeICE {
 	private:
 		/* ----------------------------------------------------------------- */
 		///
-		/// InitializeComponent
+		/// SaveAsAdministrator
 		///
 		/// <summary>
-		/// 初期設定を行います。ウィンドウ生成直後（ハンドルの取得済み）
-		/// の初期処理については OnCreateControl() に記述します。
+		/// 管理者権限で変更されたユーザ設定を保存します。現在、管理者権限
+		/// の必要な変更は、関連付けの変更のみです。
 		/// </summary>
 		///
 		/* ----------------------------------------------------------------- */
-		void InitializeComponent() {}
+		void SaveAsAdministrator() {
+			::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+			string_type associate = data_.InstallDirectory() + _T("\\") + CUBEICE_ASSOCIATE_NAME;
+			SHELLEXECUTEINFO info = {};
+			info.cbSize = sizeof(SHELLEXECUTEINFO);
+			info.lpFile = associate.c_str();
+			::ShellExecuteEx(&info);
+			::CoUninitialize();
+		}
 		
 	private:
 		UserSetting& data_;
-		bool_ptr changed_;
+		int_ptr changed_;
 	}; // class SettingPage
 } // namespace CubeICE
 

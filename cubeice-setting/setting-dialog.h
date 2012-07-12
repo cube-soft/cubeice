@@ -46,14 +46,14 @@ namespace CubeICE {
 		typedef PsdotNet::Forms::PropertyDialog super;
 		
 	public:
-		typedef boost::shared_ptr<bool> bool_ptr;
+		typedef boost::shared_ptr<int> int_ptr;
 		
 	public:
 		/* ----------------------------------------------------------------- */
 		/// constructor
 		/* ----------------------------------------------------------------- */
 		explicit SettingDialog(UserSetting& data) :
-			data_(data), changed_(new bool(false)),
+			data_(data), changed_(new int(0)),
 			general_(data_, changed_),
 			compression_(data_, changed_),
 			decompression_(data_, changed_),
@@ -90,7 +90,7 @@ namespace CubeICE {
 		
 	private:
 		UserSetting& data_;
-		bool_ptr changed_;
+		int_ptr changed_;
 		GeneralPage general_;
 		CompressionPage compression_;
 		DecompressionPage decompression_;

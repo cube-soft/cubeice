@@ -26,5 +26,6 @@
 #include <psdotnet/logger.h>
 #include <psdotnet/logger/file-appender.h>
 #include <cubeice/user-setting.h>
+#include "resource.h"
 
 #endif // CUBEICE_SETTING_H

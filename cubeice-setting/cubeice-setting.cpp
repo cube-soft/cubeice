@@ -29,13 +29,13 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 	
 #ifndef PSDOTNET_INVALIDATE_LOG_MACRO
 	CubeICE::string_type path = setting.InstallDirectory() + _T("\\cubeice-setting.log");
-	PsdotNet::FileAppender writer(path, PsdotNet::FileAppender::CloseOnWrite | PsdotNet::FileAppender::WriteAll);
+	PsdotNet::FileAppender writer(path, PsdotNet::FileAppender::CloseOnWrite | PsdotNet::FileAppender::WriteDateTime | PsdotNet::FileAppender::WriteLevel);
 	PsdotNet::Logger::Configure(writer, PsdotNet::Utility::ToLogLevel(setting.LogLevel()));
 #endif
 	
 	LOG_INFO(_T("CubeICE version %s (x%d)"), setting.Version().c_str(), (PsdotNet::Environment::Is64BitProcess() ? 64 : 86));
 	LOG_INFO(PsdotNet::Environment::OSVersion().VersionString().c_str());
-	LOG_INFO(_T("InstallDirectory: %s"), setting.InstallDirectory());
+	LOG_INFO(_T("InstallDirectory: %s"), setting.InstallDirectory().c_str());
 	
 	std::basic_string<TCHAR> args(pCmdLine);
 	if (args == _T("install")) {

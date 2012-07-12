@@ -69,6 +69,7 @@
 #define IDM_EDIT_CREATECONTEXT          10100
 #define IDM_EDIT_CREATESHORTCUT         10101
 #define IDM_EDIT_RESETALL               10110
+#define IDM_EDIT_UPDATE                 10120
 #define IDM_HELP_ABOUT                  10200
 
 /* ------------------------------------------------------------------------- */
