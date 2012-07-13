@@ -183,21 +183,24 @@ namespace cubeice {
 			 */
 			/* ----------------------------------------------------------------- */
 			static INT_PTR runtime_setting_termdialog(HWND hWnd, CubeICE::RuntimeSetting& setting) {
+				LOG_DEBUG(_T("runtime_setting_termdialog"));
 				CubeICE::RuntimeCompressionSetting& compression = setting.Compression();
 				
 				// è„èëÇ´ê›íË
-				if (SendDlgItemMessage(hWnd, IDC_OUTPUT_COMBOBOX, CB_GETCURSEL, 0, 0)) {
+				if (SendDlgItemMessage(hWnd, IDC_OUTPUT_COMBOBOX, CB_GETCURSEL, 0, 0) == 0) {
 					compression.Overwrite(OverwriteKind::Confirm);
 				}
 				else compression.Overwrite(OverwriteKind::Add);
 				
 				// èoóÕêÊ
 				compression.OutputPath(detail::gettext(hWnd, IDC_OUTPUT_TEXTBOX));
+				LOG_TRACE(_T("OutputPath: %s"), compression.OutputPath().c_str());
 				
 				// à≥èkå`éÆ
 				const cubeice::dialog_data::param_list& types = cubeice::dialog_data::compress_types(compression.Overwrite() == OverwriteKind::Add);
 				std::size_t index = SendMessage(GetDlgItem(hWnd, IDC_COMPTYPE_COMBOBOX), CB_GETCURSEL, 0, 0);
 				compression.Type(types.at(index));
+				LOG_TRACE(_T("Method: %s"), compression.Type().c_str());
 				
 				// à≥èkÉåÉxÉã
 				index = SendMessage(GetDlgItem(hWnd, IDC_COMPLEVEL_COMBOBOX), CB_GETCURSEL, 0, 0);
