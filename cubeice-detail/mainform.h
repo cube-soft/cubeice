@@ -56,7 +56,7 @@ namespace CubeICE {
 		/// constructor
 		/* ----------------------------------------------------------------- */
 		explicit MainForm(UserSetting& setting) :
-			super(_T("IDD_MAINFORM")), setting_(setting), listview_(), associate_(false) {
+			super(_T("IDD_MAINFORM")), setting_(setting), listview_(), menu_(NULL), associate_(false) {
 			this->Icon(PsdotNet::Drawing::Icon(PsdotNet::Drawing::Icon::Type::Resource, _T("IDI_APP")));
 		}
 		
@@ -86,7 +86,20 @@ namespace CubeICE {
 			listview_.Columns().Add(PsdotNet::Forms::ColumnHeader(_T("値"), 250));
 			this->InsertListView();
 			
+			menu_ = ::LoadMenu(::GetModuleHandle(NULL), _T("IDR_POPUPMENU"));
+			
 			super::OnCreateControl();
+		}
+		
+		/* ----------------------------------------------------------------- */
+		/// OnDestroy
+		/* ----------------------------------------------------------------- */
+		virtual void OnDestroy() {
+			if (menu_) {
+				::DestroyMenu(menu_);
+				menu_ = NULL;
+			}
+			super::OnDestroy();
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -194,7 +207,7 @@ namespace CubeICE {
 			handle_type handle = reinterpret_cast<handle_type>(m.WParam());
 			int index = listview_.SelectedIndex();
 			if (handle != listview_.Handle() || index < 0) return;
-			HMENU popup = ::GetSubMenu(::LoadMenu(::GetModuleHandle(NULL), _T("IDR_POPUPMENU")), 0);
+			HMENU popup = ::GetSubMenu(menu_, 0);
 			if (!popup) return;
 			
 			// ショートカット、コンテキストメニューの場合は「リセット」、
@@ -1061,6 +1074,7 @@ namespace CubeICE {
 		UserSetting& setting_;
 		UserSetting builtin_;
 		PsdotNet::Forms::ListView listview_;
+		HMENU menu_;
 		bool associate_;
 	}; // class MainForm
 } // namespace CubeICE

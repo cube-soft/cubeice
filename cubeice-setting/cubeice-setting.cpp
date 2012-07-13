@@ -50,6 +50,7 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 		 */
 	}
 	
+	::InitCommonControls();
 	CubeICE::SettingDialog dialog(setting);
 	dialog.ShowDialog();
 	
