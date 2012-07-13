@@ -67,7 +67,9 @@ namespace CubeICE {
 			this->LoadOverwrite(this->Data().Decompression());
 			this->LoadFiltering(this->Data().Decompression());
 			this->LoadOpen(this->Data().Decompression());
+			this->LoadCreateFolder();
 			this->LoadDeleteOnExtract();
+			this->LoadTooltip();
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -76,14 +78,25 @@ namespace CubeICE {
 		virtual void OnCommand(PsdotNet::Forms::Message& m) {
 			int id = LOWORD(m.WParam());
 			
+			handle_type handle = ::GetDlgItem(this->Handle(), IDC_DETAIL_TOOLTIPCOUNT_T);
+			if (m.LParam() == reinterpret_cast<LPARAM>(handle) && HIWORD(m.WParam()) == EN_CHANGE) {
+				m.Result(this->SaveTooltipCount(IDC_DETAIL_TOOLTIPCOUNT));
+				return;
+			}
+			
 			switch (id) {
 			case IDC_OUTPUT_SPECIFIC:
 			case IDC_OUTPUT_SOURCE:
 			case IDC_OUTPUT_RUNTIME:
 				m.Result(this->SaveOutputCondition(this->Data().Decompression(), id));
 				break;
+			case IDC_OUTPUT_PATH:
+				if (HIWORD(m.WParam()) == EN_KILLFOCUS) {
+					m.Result(this->SaveOutputPath(this->Data().Decompression(), id));
+				}
+				break;
 			case IDC_OUTPUT_PATH_BUTTON:
-				m.Result(this->SaveOutputPath(this->Data().Decompression()));
+				m.Result(this->SaveOutputPath(this->Data().Decompression(), id));
 				break;
 			case IDC_DETAIL_CONFIRM:
 			case IDC_DETAIL_CONFIRMOLDER:
@@ -96,8 +109,16 @@ namespace CubeICE {
 			case IDC_DETAIL_SKIPDESKTOP:
 				m.Result(this->SaveOpen(this->Data().Decompression(), id));
 				break;
+			case IDC_DETAIL_CREATEFOLDER:
+			case IDC_DETAIL_SKIPSINGLEFOLDER:
+			case IDC_DETAIL_SKIPSINGLEFILE:
+				m.Result(this->SaveCreateFolder(id));
+				break;
 			case IDC_DETAIL_DELETEONEXTRACT:
-				m.Result(this->SaveDeleteOnExtract());
+				m.Result(this->SaveDeleteOnExtract(id));
+				break;
+			case IDC_DETAIL_TOOLTIP:
+				m.Result(this->SaveTooltip(id));
 				break;
 			default:
 				super::OnCommand(m);
@@ -106,6 +127,61 @@ namespace CubeICE {
 		}
 		
 	private:
+		/* ----------------------------------------------------------------- */
+		///
+		/// LoadCreateFolder
+		///
+		/// <summary>
+		/// フォルダを作成する方法に関する設定を読み込みます。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		result_type LoadCreateFolder() {
+			LOG_DEBUG(_T("DecompressionPage::LoadCreateFolder"));
+			UserDecompressionSetting& data = this->Data().Decompression();
+			
+			int create = BST_UNCHECKED;
+			int single_folder = BST_UNCHECKED;
+			int single_file = BST_UNCHECKED;
+			
+			switch (data.CreateFolder()) {
+			case CreateFolderKind::Skip:
+				LOG_TRACE(_T("CreateFolderKind: Skip"));
+				create = BST_UNCHECKED;
+				single_folder = BST_UNCHECKED;
+				single_file = BST_UNCHECKED;
+				break;
+			case CreateFolderKind::Create:
+				LOG_TRACE(_T("CreateFolderKind: Create"));
+				create = BST_CHECKED;
+				single_folder = BST_UNCHECKED;
+				single_file = BST_UNCHECKED;
+				break;
+			case CreateFolderKind::SkipSingleFolder:
+				LOG_TRACE(_T("CreateFolderKind: SkipSingleFolder"));
+				create = BST_CHECKED;
+				single_folder = BST_CHECKED;
+				single_file = BST_UNCHECKED;
+				break;
+			case CreateFolderKind::SkipSingleFile:
+				LOG_TRACE(_T("CreateFolderKind: SkipSingleFile"));
+				create = BST_CHECKED;
+				single_folder = BST_CHECKED;
+				single_file = BST_CHECKED;
+				break;
+			default:
+				return TRUE;
+			}
+			
+			::CheckDlgButton(this->Handle(), IDC_DETAIL_CREATEFOLDER, create);
+			::CheckDlgButton(this->Handle(), IDC_DETAIL_SKIPSINGLEFOLDER, single_folder);
+			::CheckDlgButton(this->Handle(), IDC_DETAIL_SKIPSINGLEFILE, single_file);
+			::EnableWindow(::GetDlgItem(this->Handle(), IDC_DETAIL_SKIPSINGLEFOLDER), create == BST_CHECKED ? TRUE : FALSE);
+			::EnableWindow(::GetDlgItem(this->Handle(), IDC_DETAIL_SKIPSINGLEFILE), create == BST_CHECKED ? TRUE : FALSE);
+			
+			return TRUE;
+		}
+		
 		/* ----------------------------------------------------------------- */
 		///
 		/// LoadDeleteOnExtract
@@ -117,9 +193,59 @@ namespace CubeICE {
 		/* ----------------------------------------------------------------- */
 		result_type LoadDeleteOnExtract() {
 			UserDecompressionSetting& data = this->Data().Decompression();
-			LOG_DEBUG(_T("ArchivePage::LoadDeleteOnExtract (%s)"), (data.DeleteOnExtract() ? _T("Checked") : _T("Unchecked")));
+			LOG_DEBUG(_T("DecompressionPage::LoadDeleteOnExtract (%s)"), (data.DeleteOnExtract() ? _T("Checked") : _T("Unchecked")));
 			::CheckDlgButton(this->Handle(), IDC_DETAIL_DELETEONEXTRACT, data.DeleteOnExtract() ? TRUE : FALSE);
 			return TRUE;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// LoadTooltip
+		///
+		/// <summary>
+		/// ツールチップの表示に関する設定を読み込みます。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		result_type LoadTooltip() {
+			UserSetting& data = this->Data();
+			LOG_DEBUG(_T("DecompressionPage::LoadTooltip (%s)"), (data.Tooltip() ? _T("Checked") : _T("Unchecked")));
+			::CheckDlgButton(this->Handle(), IDC_DETAIL_TOOLTIP, data.Tooltip() ? TRUE : FALSE);
+			
+			handle_type handle = ::GetDlgItem(this->Handle(), IDC_DETAIL_TOOLTIPCOUNT);
+			::SendMessage(handle, UDM_SETRANGE, 0, MAKELONG(20, 1));
+			::SendMessage(handle, UDM_SETPOS, 0, data.TooltipCount());
+			::EnableWindow(handle, data.Tooltip() ? TRUE : FALSE);
+			::EnableWindow(::GetDlgItem(this->Handle(), IDC_DETAIL_TOOLTIPCOUNT_T), data.Tooltip() ? TRUE : FALSE);
+			
+			return TRUE;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// SaveCreateFolder
+		///
+		/// <summary>
+		/// フォルダを作成する方法に関する設定を保存します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		result_type SaveCreateFolder(int id) {
+			LOG_DEBUG(_T("DecompressionPage::SaveCreateFolder"));
+			UserDecompressionSetting& data = this->Data().Decompression();
+			
+			bool create = ::IsDlgButtonChecked(this->Handle(), IDC_DETAIL_CREATEFOLDER) == BST_CHECKED;
+			bool single_folder = ::IsDlgButtonChecked(this->Handle(), IDC_DETAIL_SKIPSINGLEFOLDER) == BST_CHECKED;
+			bool single_file = ::IsDlgButtonChecked(this->Handle(), IDC_DETAIL_SKIPSINGLEFILE) == BST_CHECKED;
+			
+			if (create && single_file && (single_folder || id == IDC_DETAIL_SKIPSINGLEFILE)) {
+				data.CreateFolder(CreateFolderKind::SkipSingleFile);
+			}
+			else if (create && single_folder) data.CreateFolder(CreateFolderKind::SkipSingleFolder);
+			else if (create) data.CreateFolder(CreateFolderKind::Create);
+			else data.CreateFolder(CreateFolderKind::Skip);
+			
+			return this->LoadCreateFolder();
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -131,10 +257,44 @@ namespace CubeICE {
 		/// </summary>
 		///
 		/* ----------------------------------------------------------------- */
-		result_type SaveDeleteOnExtract() {
+		result_type SaveDeleteOnExtract(int /* id */) {
 			UserDecompressionSetting& data = this->Data().Decompression();
 			data.DeleteOnExtract(::IsDlgButtonChecked(this->Handle(), IDC_DETAIL_DELETEONEXTRACT) == BST_CHECKED);
-			LOG_DEBUG(_T("ArchivePage::SaveDeleteOnExtract (%s)"), (data.DeleteOnExtract() ? _T("Checked") : _T("Unchecked")));
+			LOG_DEBUG(_T("DecompressionPage::SaveDeleteOnExtract (%s)"), (data.DeleteOnExtract() ? _T("Checked") : _T("Unchecked")));
+			return TRUE;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// SaveTooltip
+		///
+		/// <summary>
+		/// ツールチップの表示に関する設定を保存します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		result_type SaveTooltip(int /* id */) {
+			UserSetting& data = this->Data();
+			data.Tooltip(::IsDlgButtonChecked(this->Handle(), IDC_DETAIL_TOOLTIP) == BST_CHECKED);
+			LOG_DEBUG(_T("DecompressionPage::SaveTooltip (%s)"), (data.Tooltip() ? _T("Checked") : _T("Unchecked")));
+			return this->LoadTooltip();
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// SaveTooltip
+		///
+		/// <summary>
+		/// ツールチップの表示件数に関する設定を保存します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		result_type SaveTooltipCount(int /* id */) {
+			UserSetting& data = this->Data();
+			LOG_DEBUG(_T("DecompressionPage::SaveTooltipCount"));
+			int n = ::SendMessage(::GetDlgItem(this->Handle(), IDC_DETAIL_TOOLTIPCOUNT), UDM_GETPOS, 0, 0);
+			LOG_TRACE(_T("TooltipCount: %d"), n);
+			data.TooltipCount(n);
 			return TRUE;
 		}
 	}; // class CompressionPage

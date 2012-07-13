@@ -82,8 +82,13 @@ namespace CubeICE {
 			case IDC_OUTPUT_RUNTIME:
 				m.Result(this->SaveOutputCondition(this->Data().Compression(), id));
 				break;
+			case IDC_OUTPUT_PATH:
+				if (HIWORD(m.WParam()) == EN_KILLFOCUS) {
+					m.Result(this->SaveOutputPath(this->Data().Compression(), id));
+				}
+				break;
 			case IDC_OUTPUT_PATH_BUTTON:
-				m.Result(this->SaveOutputPath(this->Data().Compression()));
+				m.Result(this->SaveOutputPath(this->Data().Compression(), id));
 				break;
 			case IDC_DETAIL_CONFIRM:
 			case IDC_DETAIL_CONFIRMOLDER:
@@ -117,7 +122,7 @@ namespace CubeICE {
 		/* ----------------------------------------------------------------- */
 		result_type LoadDeleteOnMail() {
 			UserCompressionSetting& data = this->Data().Compression();
-			LOG_DEBUG(_T("ArchivePage::LoadDeleteOnMail (%s)"), (data.DeleteOnMail() ? _T("Checked") : _T("Unchecked")));
+			LOG_DEBUG(_T("CompressionPage::LoadDeleteOnMail (%s)"), (data.DeleteOnMail() ? _T("Checked") : _T("Unchecked")));
 			::CheckDlgButton(this->Handle(), IDC_DETAIL_DELETEONMAIL, data.DeleteOnMail() ? TRUE : FALSE);
 			return TRUE;
 		}
@@ -134,7 +139,7 @@ namespace CubeICE {
 		result_type SaveDeleteOnMail() {
 			UserCompressionSetting& data = this->Data().Compression();
 			data.DeleteOnMail(::IsDlgButtonChecked(this->Handle(), IDC_DETAIL_DELETEONMAIL) == BST_CHECKED);
-			LOG_DEBUG(_T("ArchivePage::SaveDeleteOnMail (%s)"), (data.DeleteOnMail() ? _T("Checked") : _T("Unchecked")));
+			LOG_DEBUG(_T("CompressionPage::SaveDeleteOnMail (%s)"), (data.DeleteOnMail() ? _T("Checked") : _T("Unchecked")));
 			return TRUE;
 		}
 	}; // class CompressionPage

@@ -232,15 +232,17 @@ namespace CubeICE {
 		///
 		/* ----------------------------------------------------------------- */
 		template <class SettingType>
-		result_type SaveOutputPath(SettingType& data) {
-			LOG_DEBUG(_T("ArchivePage::SaveOutputPath"));
-			string_type path = cubeice::dialog::browsefolder(this->Handle(), data.OutputPath().c_str(), _T("保存先ディレクトリを選択して下さい。"));
-			if (path.empty()) return FALSE;
-			else {
+		result_type SaveOutputPath(SettingType& data, int id) {
+			LOG_DEBUG(_T("ArchivePage::SaveOutputPath (%d)"), id);
+			if (id == IDC_OUTPUT_PATH_BUTTON) {
+				string_type path = cubeice::dialog::browsefolder(this->Handle(), data.OutputPath().c_str(), _T("保存先ディレクトリを選択して下さい。"));
+				if (path.empty()) return FALSE;
 				data.OutputPath(path);
 				::SetWindowText(::GetDlgItem(this->Handle(), IDC_OUTPUT_PATH), data.OutputPath().c_str());
-				LOG_TRACE(_T("OutputPath: %s"), data.OutputPath().c_str());
 			}
+			else data.OutputPath(PsdotNet::Forms::Utility::GetText(::GetDlgItem(this->Handle(), id)));
+			
+			LOG_TRACE(_T("OutputPath: %s"), data.OutputPath().c_str());
 			return TRUE;
 		}
 		

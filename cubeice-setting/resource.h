@@ -116,6 +116,7 @@
 #define IDC_DETAIL_SKIPDESKTOP      3107 // デスクトップの場合は開かない
 #define IDC_DETAIL_DELETEONMAIL     3110 // メール添付の際にファイルを残さない
 #define IDC_DETAIL_TOOLTIP          3111 // ツールチップにファイル一覧を表示する
+#define IDC_DETAIL_TOOLTIPCOUNT_T   3112
 #define IDC_DETAIL_TOOLTIPCOUNT     3113 // ツールチップの表示する最大件数
 #define IDC_DETAIL_DELETEONEXTRACT  3115 // 元ファイルを削除する
 
