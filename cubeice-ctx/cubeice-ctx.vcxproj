@@ -191,25 +191,18 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\cubeice-7z\CPP\7zip\Common\FileStreams.cpp" />
-    <ClCompile Include="..\cubeice-7z\CPP\Windows\FileIO.cpp" />
-    <ClCompile Include="..\cubeice-7z\CPP\Windows\PropVariant.cpp" />
-    <ClCompile Include="cubeice-comment.cpp" />
     <ClCompile Include="cubeice-ctx.cpp" />
     <ClCompile Include="cubeice-menu.cpp" />
-    <ClCompile Include="cubeice-propsheet.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cubeice-ctx.def" />
     <None Include="cubeice.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cubeice-comment.h" />
     <ClInclude Include="cubeice-ctxbase.h" />
     <ClInclude Include="cubeice-ctxfactory.h" />
     <ClInclude Include="cubeice-ctxvista.h" />
     <ClInclude Include="cubeice-ctxxp.h" />
-    <ClInclude Include="cubeice-propsheet.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

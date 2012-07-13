@@ -52,14 +52,14 @@ namespace CubeICE {
 		/* ----------------------------------------------------------------- */
 		/// constructor
 		/* ----------------------------------------------------------------- */
-		explicit SettingDialog(UserSetting& data) :
+		explicit SettingDialog(UserSetting& data, bool install = false) :
 			data_(data), changed_(new int(0)),
 			general_(data_, changed_),
 			compression_(data_, changed_),
 			decompression_(data_, changed_),
 			filtering_(data_, changed_),
 			version_(data_, changed_) {
-			this->InitializeComponent();
+			this->InitializeComponent(install);
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -77,7 +77,7 @@ namespace CubeICE {
 		/// </summary>
 		///
 		/* ----------------------------------------------------------------- */
-		void InitializeComponent() {
+		void InitializeComponent(bool install) {
 			this->Text(_T("CubeICE Ý’è "));
 			this->Icon(PsdotNet::Drawing::Icon(PsdotNet::Drawing::Icon::Type::Resource, _T("IDI_APP")));
 			
@@ -86,6 +86,25 @@ namespace CubeICE {
 			this->Add(decompression_);
 			this->Add(filtering_);
 			this->Add(version_);
+			
+			if (install) {
+				this->Header().dwFlags |= PSH_USECALLBACK;
+				this->Header().pfnCallback = (PFNPROPSHEETCALLBACK)SettingDialog::PshProcForInstall;
+				*changed_ = 2;
+			}
+		}
+		
+	private:
+		/* ----------------------------------------------------------------- */
+		/// PshProcForInstall
+		/* ----------------------------------------------------------------- */
+		static INT_PTR CALLBACK PshProcForInstall(HWND handle,UINT msg, LPARAM param) {
+			if (msg == PSCB_INITIALIZED) {
+				::EnableWindow(GetDlgItem(handle, IDCANCEL), FALSE);
+				HMENU menu = ::GetSystemMenu(handle, FALSE);
+				::RemoveMenu(menu, SC_CLOSE, MF_BYCOMMAND);
+			}
+			return FALSE;
 		}
 		
 	private:

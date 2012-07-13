@@ -37,7 +37,7 @@
 #include <shlguid.h>
 #include <shlobj.h>
 #include "cubeice-ctxfactory.h"
-#include "cubeice-propsheet.h"
+//#include "cubeice-propsheet.h"
 
 namespace {
 	ULONG	dllRefCount = 0;
@@ -81,7 +81,7 @@ STDAPI DllCanUnloadNow( void )
 STDAPI DllGetClassObject( REFCLSID rclsid, REFIID riid, LPVOID *ppvOut )
 {
 	using CubeICE::CShlCtxMenuFactory;
-	using CubeICE::CShellPropSheetFactory;
+	//using CubeICE::CShellPropSheetFactory;
 
 	*ppvOut = NULL;
 

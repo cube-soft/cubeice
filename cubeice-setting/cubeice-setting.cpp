@@ -37,21 +37,11 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 	LOG_INFO(PsdotNet::Environment::OSVersion().VersionString().c_str());
 	LOG_INFO(_T("InstallDirectory: %s"), setting.InstallDirectory().c_str());
 	
-	std::basic_string<TCHAR> args(pCmdLine);
-	if (args == _T("install")) {
-		/*
-		 * 初期設定
-		 *   1. 以下のファイルに関連付け:
-		 *      *.zip, *.lzh, *.rar, *.tar, *.gz, *.7z, *.bz2, *.cab, *.tbz, *.tgz, *.xz
-		 *   2. 以下のコンテキストメニューを作成
-		 *      圧縮/解凍
-		 *   3. 以下のショートカットを作成:
-		 *      圧縮/解凍
-		 */
-	}
+	CubeICE::string_type args(pCmdLine);
+	bool install = (args == _T("install"));
 	
 	::InitCommonControls();
-	CubeICE::SettingDialog dialog(setting);
+	CubeICE::SettingDialog dialog(setting, install);
 	dialog.ShowDialog();
 	
 	return 0;
