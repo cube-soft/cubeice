@@ -17,26 +17,26 @@ IDR_CONTEXT_MENU MENU
 {
     POPUP "Root"
     {
-        MENUITEM "メニューを追加", 6105
-        MENUITEM "新しいフォルダを追加", 6109
+        MENUITEM "メニューを追加", 6005
+        MENUITEM "新しいフォルダを追加", 6009
         MENUITEM SEPARATOR
-        MENUITEM "リセット", 6111
+        MENUITEM "リセット", 6011
     }
     POPUP "Others"
     {
-        MENUITEM "上へ移動", 6107
-        MENUITEM "下へ移動", 6108
+        MENUITEM "上へ移動", 6007
+        MENUITEM "下へ移動", 6008
         MENUITEM SEPARATOR
-        MENUITEM "メニューを追加", 6105
-        MENUITEM "新しいフォルダを追加", 6109
-        MENUITEM "削除", 6106
-        MENUITEM "名前の変更", 6110
+        MENUITEM "メニューを追加", 6005
+        MENUITEM "新しいフォルダを追加", 6009
+        MENUITEM "削除", 6006
+        MENUITEM "名前の変更", 6010
         MENUITEM SEPARATOR
-        MENUITEM "リセット", 6111
+        MENUITEM "リセット", 6011
     }
     POPUP "AddMenu"
     {
-        MENUITEM "現在のコンテキストメニューに追加", 6105
+        MENUITEM "現在のコンテキストメニューに追加", 6005
     }
 }
 
@@ -91,7 +91,7 @@ FONT 9, "MS UI Gothic"
 
 
 LANGUAGE LANG_NEUTRAL, SUBLANG_NEUTRAL
-IDD_DECOMPRESSION DIALOG 0, 0, 270, 274
+IDD_DECOMPRESSION DIALOG 0, 0, 270, 262
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
 CAPTION "解凍"
 FONT 9, "MS UI Gothic"
@@ -102,17 +102,16 @@ FONT 9, "MS UI Gothic"
     AUTOCHECKBOX    "更新日時が新しい場合は確認しない", 3102, 28, 130, 117, 10
     AUTOCHECKBOX    "フォルダを自動生成する", 3103, 16, 144, 79, 10
     AUTOCHECKBOX    "単一フォルダの場合は生成しない", 3109, 28, 158, 105, 10
-    AUTOCHECKBOX    "単一ファイル/フォルダの場合は生成しない", 3118, 28, 172, 127, 10
-    AUTOCHECKBOX    "ファイルのフィルタリングを行う", 3105, 16, 186, 90, 10
-    AUTOCHECKBOX    "保存先フォルダを開く", 3106, 16, 200, 72, 10
-    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 214, 94, 10
-    AUTOCHECKBOX    "解凍後に元ファイルを削除する", 3115, 16, 228, 98, 10
-    AUTOCHECKBOX    "ツールチップにファイル一覧を表示する", 3111, 16, 242, 115, 10
-    EDITTEXT        3112, 192, 241, 30, 12, ES_AUTOHSCROLL | ES_NUMBER
-    CONTROL         "", 3113, UPDOWN_CLASS, UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_SETBUDDYINT, 212, 241, 10, 12
+    AUTOCHECKBOX    "ファイルのフィルタリングを行う", 3105, 16, 172, 90, 10
+    AUTOCHECKBOX    "保存先フォルダを開く", 3106, 16, 186, 72, 10
+    AUTOCHECKBOX    "デスクトップの場合は開かない", 3107, 28, 200, 94, 10
+    AUTOCHECKBOX    "解凍後に元ファイルを削除する", 3115, 16, 214, 98, 10
+    AUTOCHECKBOX    "ツールチップにファイル一覧を表示する", 3111, 16, 228, 115, 10
+    EDITTEXT        3112, 192, 227, 30, 12, ES_AUTOHSCROLL | ES_NUMBER
+    CONTROL         "", 3113, UPDOWN_CLASS, UDS_ALIGNRIGHT | UDS_ARROWKEYS | UDS_AUTOBUDDY | UDS_SETBUDDYINT, 212, 227, 10, 12
     GROUPBOX        "出力先フォルダ", 3000, 8, 8, 254, 84
-    GROUPBOX        "詳細", 3100, 8, 100, 254, 164
-    LTEXT           "最大表示件数 :", 3114, 144, 243, 46, 8, SS_LEFT
+    GROUPBOX        "詳細", 3100, 8, 100, 254, 150
+    LTEXT           "最大表示件数 :", 3114, 144, 229, 46, 8, SS_LEFT
     AUTORADIOBUTTON "指定したフォルダ （省略時はデスクトップ）", 3001, 16, 24, 125, 10, WS_TABSTOP
     AUTORADIOBUTTON "元のファイルと同じフォルダ", 3002, 16, 60, 85, 10, WS_TABSTOP
     AUTORADIOBUTTON "実行時に指定する", 3003, 16, 74, 66, 10, WS_TABSTOP

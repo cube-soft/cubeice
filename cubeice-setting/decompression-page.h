@@ -111,7 +111,6 @@ namespace CubeICE {
 				break;
 			case IDC_DETAIL_CREATEFOLDER:
 			case IDC_DETAIL_SKIPSINGLEFOLDER:
-			case IDC_DETAIL_SKIPSINGLEFILE:
 				m.Result(this->SaveCreateFolder(id));
 				break;
 			case IDC_DETAIL_DELETEONEXTRACT:
@@ -142,32 +141,23 @@ namespace CubeICE {
 			
 			int create = BST_UNCHECKED;
 			int single_folder = BST_UNCHECKED;
-			int single_file = BST_UNCHECKED;
 			
 			switch (data.CreateFolder()) {
 			case CreateFolderKind::Skip:
 				LOG_TRACE(_T("CreateFolderKind: Skip"));
 				create = BST_UNCHECKED;
 				single_folder = BST_UNCHECKED;
-				single_file = BST_UNCHECKED;
 				break;
 			case CreateFolderKind::Create:
 				LOG_TRACE(_T("CreateFolderKind: Create"));
 				create = BST_CHECKED;
 				single_folder = BST_UNCHECKED;
-				single_file = BST_UNCHECKED;
 				break;
 			case CreateFolderKind::SkipSingleFolder:
+			case CreateFolderKind::SkipSingleFile:
 				LOG_TRACE(_T("CreateFolderKind: SkipSingleFolder"));
 				create = BST_CHECKED;
 				single_folder = BST_CHECKED;
-				single_file = BST_UNCHECKED;
-				break;
-			case CreateFolderKind::SkipSingleFile:
-				LOG_TRACE(_T("CreateFolderKind: SkipSingleFile"));
-				create = BST_CHECKED;
-				single_folder = BST_CHECKED;
-				single_file = BST_CHECKED;
 				break;
 			default:
 				return TRUE;
@@ -175,9 +165,7 @@ namespace CubeICE {
 			
 			::CheckDlgButton(this->Handle(), IDC_DETAIL_CREATEFOLDER, create);
 			::CheckDlgButton(this->Handle(), IDC_DETAIL_SKIPSINGLEFOLDER, single_folder);
-			::CheckDlgButton(this->Handle(), IDC_DETAIL_SKIPSINGLEFILE, single_file);
 			::EnableWindow(::GetDlgItem(this->Handle(), IDC_DETAIL_SKIPSINGLEFOLDER), create == BST_CHECKED ? TRUE : FALSE);
-			::EnableWindow(::GetDlgItem(this->Handle(), IDC_DETAIL_SKIPSINGLEFILE), create == BST_CHECKED ? TRUE : FALSE);
 			
 			return TRUE;
 		}
@@ -236,12 +224,8 @@ namespace CubeICE {
 			
 			bool create = ::IsDlgButtonChecked(this->Handle(), IDC_DETAIL_CREATEFOLDER) == BST_CHECKED;
 			bool single_folder = ::IsDlgButtonChecked(this->Handle(), IDC_DETAIL_SKIPSINGLEFOLDER) == BST_CHECKED;
-			bool single_file = ::IsDlgButtonChecked(this->Handle(), IDC_DETAIL_SKIPSINGLEFILE) == BST_CHECKED;
 			
-			if (create && single_file && (single_folder || id == IDC_DETAIL_SKIPSINGLEFILE)) {
-				data.CreateFolder(CreateFolderKind::SkipSingleFile);
-			}
-			else if (create && single_folder) data.CreateFolder(CreateFolderKind::SkipSingleFolder);
+			if (create && single_folder) data.CreateFolder(CreateFolderKind::SkipSingleFolder);
 			else if (create) data.CreateFolder(CreateFolderKind::Create);
 			else data.CreateFolder(CreateFolderKind::Skip);
 			

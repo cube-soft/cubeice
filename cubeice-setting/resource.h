@@ -109,7 +109,6 @@
 #define IDC_DETAIL_CONFIRMOLDER     3102 // 更新日時が新しい場合は確認しない
 #define IDC_DETAIL_CREATEFOLDER     3103 // フォルダを自動生成する
 #define IDC_DETAIL_SKIPSINGLEFOLDER 3109 // 単一フォルダの場合は生成しない
-#define IDC_DETAIL_SKIPSINGLEFILE   3118 // 単一ファイルの場合は生成しない
 #define IDC_DETAIL_ENCODE           3104 // ファイル名の文字コードを変換する
 #define IDC_DETAIL_FILTERING        3105 // ファイルのフィルタンリングを行う
 #define IDC_DETAIL_OPEN             3106 // 保存先フォルダを開く
@@ -140,24 +139,14 @@
 /* ------------------------------------------------------------------------- */
 //  コンテキストメニューのカスタマイズ用ダイアログ
 /* ------------------------------------------------------------------------- */
-#define IDC_CURRENT_LABEL           6001
-#define IDC_ADD_LABEL               6002
-#define IDC_CURRENT_TREEVIEW        6003
-#define IDC_ADD_TREEVIEW            6004
-#define IDC_ADD_BUTTON              6005
-#define IDC_DELETE_BUTTON           6006
-#define IDC_UP_BUTTON               6007
-#define IDC_DOWN_BUTTON             6008
-#define IDC_FOLDER_BUTTON           6009
-#define IDC_RENAME_BUTTON           6010
-#define IDC_RESET_BUTTON            6011
-
-#define IDM_UP_MENU                 6107
-#define IDM_DOWN_MENU               6108
-#define IDM_FOLDER_MENU             6109
-#define IDM_RENAME_MENU             6110
-#define IDM_RESET_MENU              6111
-#define IDM_DELETE_MENU             6106
-#define IDM_ADD_MENU                6105
+#define IDC_CUSTOMIZE_CURRENT       6003 // 現在のコンテキストメニュー
+#define IDC_CUSTOMIZE_AVAILABLE     6004 // 追加できるコンテキストメニュー
+#define IDC_CUSTOMIZE_INSERT        6005 // 追加
+#define IDC_CUSTOMIZE_DELETE        6006 // 削除
+#define IDC_CUSTOMIZE_UP            6007 // 上へ
+#define IDC_CUSTOMIZE_DOWN          6008 // 下へ
+#define IDC_CUSTOMIZE_FOLDER        6009 // フォルダの新規作成
+#define IDC_CUSTOMIZE_RENAME        6010 // 名前の変更
+#define IDC_CUSTOMIZE_RESET         6011 // リセット
 
 #endif // CUBEICE_SETTING_RESOURCE_H
