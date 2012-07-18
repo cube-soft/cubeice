@@ -641,7 +641,7 @@ namespace CubeICE {
 			hit.pt.y = pt.y;
 			::ScreenToClient(hto_, &hit.pt );
 			HTREEITEM target = TreeView_HitTest(hto_, &hit);
-			if (!target || this->IsChild(hto_, target, dragging_.second) || (hit.flags & (TVHT_ONITEM | TVHT_ONITEMRIGHT)) == 0) return FALSE;
+			if (!target || target == dragging_.second || this->IsChild(hto_, target, dragging_.second) || (hit.flags & (TVHT_ONITEM | TVHT_ONITEMRIGHT)) == 0) return FALSE;
 			
 			TVITEM tvi = this->GetTreeViewItem(hto_, target);
 			HTREEITEM child = TreeView_GetChild(hto_, target);

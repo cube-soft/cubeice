@@ -21,11 +21,47 @@
 /* ------------------------------------------------------------------------- */
 #include "cubeice-setting.h"
 #include <psdotnet/environment.h>
+#include <psdotnet/registry.h>
 #include "setting-dialog.h"
 
+/* ------------------------------------------------------------------------- */
+///
+/// UpgradeSetting
+///
+/// <summary>
+/// 旧バージョンのユーザ設定用データ構造からアップグレードします。
+/// </summary>
+///
+/* ------------------------------------------------------------------------- */
+bool UpgradeSetting(CubeICE::UserSetting& setting) {
+	try {
+		PsdotNet::RegistryKey root = PsdotNet::Registry::CurrentUser().CreateSubKey(_T("Software\\CubeSoft"));
+		if (!root) return false;
+		PsdotNet::RegistryKey subkey = root.CreateSubKey(_T("CubeICE"));
+		if (!subkey) return false;
+		int checker = subkey.GetValue<int>(_T("Initialize"), -1);
+		if (checker == -1) return false;
+		
+		CubeICE::UserSetting::Version1 v1;
+		v1.load();
+		setting.Upgrade(v1);
+		
+		root.DeleteSubKeyTree(_T("CubeICE"));
+		setting.Save();
+		
+		return true;
+	}
+	catch (std::exception& /* err */) {
+		return false;
+	}
+}
+
+/* ------------------------------------------------------------------------- */
+/// WinMain
+/* ------------------------------------------------------------------------- */
 int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int showCmd) {
 	CubeICE::UserSetting setting;
-	setting.Load();
+	if (!UpgradeSetting(setting)) setting.Load();
 	
 #ifndef PSDOTNET_INVALIDATE_LOG_MACRO
 	CubeICE::string_type path = setting.InstallDirectory() + _T("\\cubeice-setting.log");
