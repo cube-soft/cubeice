@@ -1046,7 +1046,7 @@ namespace v1 {
 				disposition = 0;
 				status = RegCreateKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex\\") + clsid_tooltip ).c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
 				if (!status) {
-					RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)CLSID_CubeICE_CTX_STR, sizeof( CLSID_CubeICE_CTX_STR ));
+					RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)CUBEICE_CLSID_CONTEXT, sizeof( CUBEICE_CLSID_CONTEXT ));
 				}
 			}
 			else {

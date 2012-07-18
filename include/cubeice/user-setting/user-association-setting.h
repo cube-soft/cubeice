@@ -148,6 +148,7 @@ namespace CubeICE {
 		static void Synchronize(const PsdotNet::RegistryKey& src) {
 			BOOST_FOREACH(const string_type& name, src.GetValueNames()) {
 				string_type archiver = _T("cubeice_") + name;
+				string_type tooltip = _T("shellex\\") CUBEICE_CLSID_TOOLTIP;
 				
 				try {
 					if (src.GetValue<bool>(name)) { // CubeICE を関連付ける
@@ -157,6 +158,9 @@ namespace CubeICE {
 						string_type pre_archiver = subkey.GetValue<string_type>(_T(""));
 						if (!pre_archiver.empty() && pre_archiver != archiver) subkey.SetValue(_T("PreArchiver"), pre_archiver);
 						subkey.SetValue(_T(""), archiver);
+						
+						PsdotNet::RegistryKey child = subkey.CreateSubKey(tooltip);
+						child.SetValue(_T(""), CUBEICE_CLSID_CONTEXT);
 					}
 					else { // 関連付けを元に戻す、または削除する
 						PsdotNet::RegistryKey subkey = PsdotNet::Registry::ClassesRoot().OpenSubKey(_T(".") + name, true);
@@ -166,6 +170,7 @@ namespace CubeICE {
 						if (!pre_archiver.empty()) {
 							subkey.SetValue(_T(""), pre_archiver);
 							subkey.DeleteValue(_T("PreArchiver"));
+							subkey.DeleteSubKeyTree(tooltip);
 						}
 						else {
 							subkey.Close();
