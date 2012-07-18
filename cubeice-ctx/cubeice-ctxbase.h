@@ -28,12 +28,12 @@
 
 #include <cubeice/config.h>
 #include <vector>
+#include <clx/lexical_cast.h>
 #include <clx/date_time.h>
 #include <clx/tokenizer.h>
 #include <cubeice/format.h>
 #include <cubeice/wpopen.h>
 #include <cubeice/user-setting.h>
-#include <boost/lexical_cast.hpp>
 
 #define CUBEICE_ENGINE _T("cubeice-exec.exe")
 #define CUBEICE_MAXFILESIZE (1024 * 1024 * 1024)
@@ -91,7 +91,12 @@ namespace CubeICE {
 				fileNum( 0 ), folderNum( 0 ), inserted_() {
 				ctxSetting.Load();
 				InterlockedIncrement( reinterpret_cast<LONG*>(&dllRefCount) );
-				cubeiceEnginePath = ctxSetting.InstallDirectory() + _T("\\") + CUBEICE_ENGINE;
+				
+				TCHAR path[2048] = {};
+				GetModuleFileName( hDllInstance, path, sizeof( path ) );
+				PathRemoveFileSpec( path );
+				cubeiceEnginePath = path;
+				cubeiceEnginePath += _T( "\\" ) CUBEICE_ENGINE;
 			}
 			
 			/* ------------------------------------------------------------- */
@@ -354,7 +359,7 @@ namespace CubeICE {
 			/* ------------------------------------------------------------- */
 			STDMETHODIMP GetInfoTip(DWORD dwFlags, WCHAR **ppwszTip) {
 				static const size_type maxcolumn = 50; // 1行に出力する最大文字数
-
+				
 				string_type tooltip = _T( "種類: " );
 				TCHAR* ext = PathFindExtension( compFileName.c_str() );
 				if( ext ) {
@@ -406,8 +411,8 @@ namespace CubeICE {
 					
 					tooltip += _T("\r\n");
 					if (static_cast<int>(compFileList.size()) > ctxSetting.TooltipCount()) tooltip += _T("ほか、");
-					tooltip += _T("全 ") + boost::lexical_cast<string_type>(fileNum) + _T(" ファイル ");
-					tooltip += boost::lexical_cast<string_type>(folderNum) + _T(" フォルダ");
+					tooltip += _T("全 ") + clx::lexical_cast<string_type>(fileNum) + _T(" ファイル ");
+					tooltip += clx::lexical_cast<string_type>(folderNum) + _T(" フォルダ");
 				}
 
 				*ppwszTip = static_cast<wchar_t*>( CoTaskMemAlloc( ( tooltip.size() + 5 ) * sizeof( wchar_t ) ) );
@@ -416,7 +421,6 @@ namespace CubeICE {
 #else	// UNICODE
 				MultiByteToWideChar( CP_OEMCP, 0, tooltip.c_str(), -1, *ppwszTip, ( tooltip.size() + 5 ) * sizeof( wchar_t ) );
 #endif
-
 				return S_OK;
 			}
 			
@@ -600,10 +604,10 @@ namespace CubeICE {
 					
 					if (buffer.find(_T("files")) != string_type::npos && buffer.find(_T("folders")) != string_type::npos && v.size() == 6) {
 						try {
-							fileNum = boost::lexical_cast<size_type>(v.at(2));
-							folderNum = boost::lexical_cast<size_type>(v.at(4));
+							fileNum = clx::lexical_cast<size_type>(v.at(2));
+							folderNum = clx::lexical_cast<size_type>(v.at(4));
 						}
-						catch (boost::bad_lexical_cast&) {}
+						catch (clx::bad_lexical_cast&) {}
 					}
 					
 					if (v.empty() || v.at(0) != _T("<>")) {
@@ -615,7 +619,7 @@ namespace CubeICE {
 						// ファイルリストの更新
 						fileinfo elem;
 						elem.name = v.at(5);
-						elem.size = v.at(3) != _T("-") ? boost::lexical_cast<std::size_t>(v.at(3)) : 0;
+						elem.size = v.at(3) != _T("-") ? clx::lexical_cast<std::size_t>(v.at(3)) : 0;
 						if (v.at(1) != _T("-")) elem.time.from_string(v.at(1), string_type(_T("%Y-%m-d %H:%M:%S")));
 						elem.directory = (v.at(2).find(_T('D')) != string_type::npos);
 						dest.push_back( elem );

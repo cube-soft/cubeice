@@ -79,6 +79,8 @@ namespace CubeICE {
 			
 			// ポップアップメニュー
 			hmenu_ = ::LoadMenu(::GetModuleHandle(NULL), _T("IDR_CONTEXT_MENU"));
+			
+			super::OnCreateControl();
 		}
 		
 		/* ----------------------------------------------------------------- */

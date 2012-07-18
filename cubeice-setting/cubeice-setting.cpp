@@ -35,9 +35,9 @@
 /* ------------------------------------------------------------------------- */
 bool UpgradeSetting(CubeICE::UserSetting& setting) {
 	try {
-		PsdotNet::RegistryKey root = PsdotNet::Registry::CurrentUser().CreateSubKey(_T("Software\\CubeSoft"));
+		PsdotNet::RegistryKey root = PsdotNet::Registry::CurrentUser().CreateSubKey(CUBEICE_REG_COMPANY);
 		if (!root) return false;
-		PsdotNet::RegistryKey subkey = root.CreateSubKey(_T("CubeICE"));
+		PsdotNet::RegistryKey subkey = root.OpenSubKey(_T("CubeICE"), false);
 		if (!subkey) return false;
 		int checker = subkey.GetValue<int>(_T("Initialize"), -1);
 		if (checker == -1) return false;
@@ -57,11 +57,33 @@ bool UpgradeSetting(CubeICE::UserSetting& setting) {
 }
 
 /* ------------------------------------------------------------------------- */
+///
+/// LoadSetting
+///
+/// <summary>
+/// ÉÜÅ[ÉUê›íËÇì«Ç›çûÇ›Ç‹Ç∑ÅB
+/// </summary>
+///
+/* ------------------------------------------------------------------------- */
+void LoadSetting(CubeICE::UserSetting& setting) {
+	try {
+		std::basic_stringstream<CubeICE::char_type> ss;
+		ss << CUBEICE_REG_ROOT << _T("\\") << CUBEICE_REG_STRUCTVERSION;
+		PsdotNet::RegistryKey subkey = PsdotNet::Registry::CurrentUser().OpenSubKey(ss.str(), false);
+		if (!subkey || UpgradeSetting(setting)) return;
+		setting.Load();
+	}
+	catch (std::exception& /* err */) {
+		return;
+	}
+}
+
+/* ------------------------------------------------------------------------- */
 /// WinMain
 /* ------------------------------------------------------------------------- */
 int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int showCmd) {
 	CubeICE::UserSetting setting;
-	if (!UpgradeSetting(setting)) setting.Load();
+	LoadSetting(setting);
 	
 #ifndef PSDOTNET_INVALIDATE_LOG_MACRO
 	CubeICE::string_type path = setting.InstallDirectory() + _T("\\cubeice-setting.log");

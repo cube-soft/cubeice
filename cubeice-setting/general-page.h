@@ -351,6 +351,7 @@ namespace CubeICE {
 		result_type EnableExtendedContext() {
 			LOG_DEBUG(_T("GeneralPage::EnableExtendedContext"));
 			CustomizeDialog dialog(this->Data());
+			dialog.Icon(PsdotNet::Drawing::Icon(PsdotNet::Drawing::Icon::Type::Resource, _T("IDI_APP")));
 			if (dialog.ShowDialog(*this) == PsdotNet::Forms::DialogResult::OK) {
 				LOG_TRACE(_T("ExtendedContext enabled"));
 				this->Data().Context().IsExtended(true);

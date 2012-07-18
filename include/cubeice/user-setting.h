@@ -41,6 +41,10 @@
 /* ------------------------------------------------------------------------- */
 //  レジストリに関する定義
 /* ------------------------------------------------------------------------- */
+#ifndef CUBEICE_REG_COMPANY
+#define CUBEICE_REG_COMPANY                     _T("Software\\CubeSoft")
+#endif
+
 #ifndef CUBEICE_REG_ROOT
 #define CUBEICE_REG_ROOT                        _T("Software\\CubeSoft\\CubeICE")
 #endif
