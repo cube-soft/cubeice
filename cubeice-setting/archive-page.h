@@ -240,7 +240,11 @@ namespace CubeICE {
 				data.OutputPath(path);
 				::SetWindowText(::GetDlgItem(this->Handle(), IDC_OUTPUT_PATH), data.OutputPath().c_str());
 			}
-			else data.OutputPath(PsdotNet::Forms::Utility::GetText(::GetDlgItem(this->Handle(), id)));
+			else {
+				string_type path = PsdotNet::Forms::Utility::GetText(::GetDlgItem(this->Handle(), id));
+				if (data.OutputPath() == path) return FALSE;
+				data.OutputPath(path);
+			}
 			
 			LOG_TRACE(_T("OutputPath: %s"), data.OutputPath().c_str());
 			return TRUE;
