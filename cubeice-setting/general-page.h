@@ -321,14 +321,9 @@ namespace CubeICE {
 		///
 		/* ----------------------------------------------------------------- */
 		result_type SaveContextSub(int id) {
-			bool found = false;
 			cx_map::iterator pos = compression_.find(id);
-			if (!found && pos != compression_.end()) found = true;
-			else pos = decompression_.find(id);
-			if (!found && pos != decompression_.end()) found = true;
-			else pos = mail_.find(id);
-			if (!found) return FALSE;
-			
+			if (!this->FindContextSub(id, pos)) return FALSE;
+
 			LOG_DEBUG(_T("GeneralPage::SaveContextSub"));
 			bool checked = ::IsDlgButtonChecked(this->Handle(), id) == BST_CHECKED;
 			int flags = this->Data().Context().Builtin();
@@ -338,6 +333,30 @@ namespace CubeICE {
 			return TRUE;
 		}
 		
+		/* ----------------------------------------------------------------- */
+		///
+		/// FindContextSub
+		///
+		/// <summary>
+		/// 指定された ID から該当するサブコンテキストメニューへの
+		/// イテレータを検索します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		template <class Iter>
+		bool FindContextSub(int id, Iter& dest) {
+			dest = compression_.find(id);
+			if (dest != compression_.end()) return true;
+
+			dest = decompression_.find(id);
+			if (dest != decompression_.end()) return true;
+
+			dest = mail_.find(id);
+			if (dest != mail_.end()) return true;
+
+			return false;
+		}
+
 		/* ----------------------------------------------------------------- */
 		///
 		/// EnableExtendedContext
