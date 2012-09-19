@@ -222,6 +222,7 @@ namespace CubeICE {
 			Document doc;
 			this->SaveToDocument(doc);
 			doc.Write(root);
+			this->SaveStartup();
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -237,6 +238,7 @@ namespace CubeICE {
 			Document doc;
 			this->SaveToDocument(doc);
 			doc.Write(path);
+			this->SaveStartup();
 		}
 		
 		/* ----------------------------------------------------------------- */
@@ -667,6 +669,33 @@ namespace CubeICE {
 			NodeSet ns_runtime;
 			runtime_.SaveToParameter(ns_runtime);
 			doc.Root().push_back(Node(_T("Runtime"), ns_runtime));
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// SaveStartup
+		///
+		/// <summary>
+		/// スタートアップに cubeice-checker.exe を登録、または登録解除
+		/// します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void SaveStartup() {
+			string_type subkey = _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
+			string_type name   = _T("cubeice-checker");
+			string_type path   = _T("\"") + path_ + _T("\\cubeice-checker.exe\"");
+			
+			try {
+				PsdotNet::RegistryKey reg = PsdotNet::Registry::CurrentUser().OpenSubKey(subkey, true);
+				if (!reg) return;
+				
+				if (this->CheckUpdate()) reg.SetValue(name, path);
+				else reg.DeleteValue(name, false);
+			}
+			catch (std::exception& /* err */) {
+				return;
+			}
 		}
 		
 	private:
