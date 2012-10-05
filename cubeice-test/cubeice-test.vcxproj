@@ -159,7 +159,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cubeice-test.cpp" />
+    <ClCompile Include="runtime-compression-setting-test.cpp" />
+    <ClCompile Include="user-association-setting-test.cpp" />
+    <ClCompile Include="user-compression-setting-test.cpp" />
+    <ClCompile Include="user-context-setting-test.cpp" />
+    <ClCompile Include="user-decompression-setting-test.cpp" />
+    <ClCompile Include="user-dragdrop-setting-test.cpp" />
+    <ClCompile Include="user-filtering-setting-test.cpp" />
     <ClCompile Include="user-setting-test.cpp" />
+    <ClCompile Include="user-shortcut-setting-test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cubeice-test.h" />

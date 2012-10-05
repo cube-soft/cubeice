@@ -1,7 +1,7 @@
 // -*- coding: shift-jis -*-
 /* ------------------------------------------------------------------------- */
 /*
- *  user-setting-saver.h
+ *  user-filtering-setting-test.cpp
  *
  *  Copyright (c) 2010 CubeSoft Inc.
  *
@@ -19,36 +19,41 @@
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_TEST_USER_SETTING_SAVER_H
-#define CUBEICE_TEST_USER_SETTING_SAVER_H
-
-#include <cubeice/config.h>
+#include <boost/test/unit_test.hpp>
 #include <cubeice/user-setting.h>
+#include "cubeice-test.h"
+
+BOOST_AUTO_TEST_SUITE(UserFilteringSettingTest)
+
+typedef CubeICE::UserSettingBase::ValueKind ValueKind;
+typedef CubeICE::UserSettingBase::Node Node;
+typedef CubeICE::UserSettingBase::NodeSet NodeSet;
 
 /* ------------------------------------------------------------------------- */
 ///
-//  UserSettingSaver
+/// TestDefaultValue
 ///
 /// <summary>
-/// UserSetting クラスのテストをする際、既に保存されている各種設定を
-/// 一時退避させて、テスト終了後に元に戻すためのクラスです。
+/// 各種設定の初期値のテスト。
 /// </summary>
 ///
 /* ------------------------------------------------------------------------- */
-class UserSettingSaver {
-public:
-	/* --------------------------------------------------------------------- */
-	/// constructor
-	/* --------------------------------------------------------------------- */
-	UserSettingSaver() : setting_() { setting_.Load(); }
-	
-	/* --------------------------------------------------------------------- */
-	/// destructor
-	/* --------------------------------------------------------------------- */
-	~UserSettingSaver() { setting_.Save(); }
+BOOST_AUTO_TEST_CASE(TestDefaultValue) {
+	try {
+		CubeICE::UserSetting root;
+		CubeICE::UserFilteringSetting& setting = root.Filtering();
+		BOOST_CHECK(setting.Parameters().size() == 0);
+		
+		BOOST_CHECK(setting.Empty() == false);
+		BOOST_CHECK(setting.Count() == 4);
+		BOOST_CHECK(setting.Contains(_T(".DS_Store")) == true);
+		BOOST_CHECK(setting.Contains(_T("Thumbs.db")) == true);
+		BOOST_CHECK(setting.Contains(_T("__MACOSX")) == true);
+		BOOST_CHECK(setting.Contains(_T("desktop.ini")) == true);
+	}
+	catch (std::exception& err) {
+		BOOST_FAIL(err.what());
+	}
+}
 
-private:
-	CubeICE::UserSetting setting_;
-};
-
-#endif // CUBEICE_TEST_USER_SETTING_SAVER_H
+BOOST_AUTO_TEST_SUITE_END()

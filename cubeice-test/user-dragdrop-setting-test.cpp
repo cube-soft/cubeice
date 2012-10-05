@@ -1,7 +1,7 @@
 // -*- coding: shift-jis -*-
 /* ------------------------------------------------------------------------- */
 /*
- *  user-setting-saver.h
+ *  user-dragdrop-setting-test.cpp
  *
  *  Copyright (c) 2010 CubeSoft Inc.
  *
@@ -19,36 +19,41 @@
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_TEST_USER_SETTING_SAVER_H
-#define CUBEICE_TEST_USER_SETTING_SAVER_H
-
-#include <cubeice/config.h>
+#include <boost/test/unit_test.hpp>
 #include <cubeice/user-setting.h>
+#include "cubeice-test.h"
+
+BOOST_AUTO_TEST_SUITE(UserDragDropSettingTest)
+
+typedef CubeICE::UserSettingBase::ValueKind ValueKind;
+typedef CubeICE::UserSettingBase::Node Node;
+typedef CubeICE::UserSettingBase::NodeSet NodeSet;
 
 /* ------------------------------------------------------------------------- */
 ///
-//  UserSettingSaver
+/// TestDefaultValue
 ///
 /// <summary>
-/// UserSetting クラスのテストをする際、既に保存されている各種設定を
-/// 一時退避させて、テスト終了後に元に戻すためのクラスです。
+/// 各種設定の初期値のテスト。
 /// </summary>
 ///
 /* ------------------------------------------------------------------------- */
-class UserSettingSaver {
-public:
-	/* --------------------------------------------------------------------- */
-	/// constructor
-	/* --------------------------------------------------------------------- */
-	UserSettingSaver() : setting_() { setting_.Load(); }
-	
-	/* --------------------------------------------------------------------- */
-	/// destructor
-	/* --------------------------------------------------------------------- */
-	~UserSettingSaver() { setting_.Save(); }
+BOOST_AUTO_TEST_CASE(TestDefaultValue) {
+	try {
+		CubeICE::UserSetting root;
+		CubeICE::UserDragDropSetting& setting = root.DragDrop();
+		BOOST_CHECK(setting.Parameters().size() == 1);
+		boost::optional<Node&> pt;
+		
+		pt = setting.FindOptional(_T("IsExtended"));
+		BOOST_CHECK((bool)pt);
+		BOOST_CHECK(pt->Kind() == ValueKind::Bool);
+		BOOST_CHECK(pt->Value<ValueKind::Bool>() == false);
+		BOOST_CHECK(setting.IsExtended() == false);
+	}
+	catch (std::exception& err) {
+		BOOST_FAIL(err.what());
+	}
+}
 
-private:
-	CubeICE::UserSetting setting_;
-};
-
-#endif // CUBEICE_TEST_USER_SETTING_SAVER_H
+BOOST_AUTO_TEST_SUITE_END()

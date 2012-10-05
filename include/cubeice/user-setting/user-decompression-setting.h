@@ -23,8 +23,8 @@
 #define CUBEICE_USER_SETTING_USER_DECOMPRESSION_SETTING_H
 
 #include <cubeice/config.h>
-#include <cubeice/user-setting/utility.h>
 #include <cubeice/user-setting/user-setting-base.h>
+#include <cubeice/user-setting/user-setting-value.h>
 
 namespace CubeICE {
 	/* --------------------------------------------------------------------- */

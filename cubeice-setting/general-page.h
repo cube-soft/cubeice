@@ -3,7 +3,7 @@
 /*
  *  cubeice-setting/general-page.h
  *
- *  Copyright (c) 2010 CubeSoft Inc.
+ *  Copyright (c) 2010 CubeSoft, Inc.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

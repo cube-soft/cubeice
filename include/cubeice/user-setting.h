@@ -28,8 +28,8 @@
 #include <psdotnet/logger.h>
 #include <psdotnet/registry.h>
 
-#include <cubeice/user-setting/utility.h>
 #include <cubeice/user-setting/user-setting-base.h>
+#include <cubeice/user-setting/user-setting-value.h>
 #include <cubeice/user-setting/user-association-setting.h>
 #include <cubeice/user-setting/user-context-setting.h>
 #include <cubeice/user-setting/user-shortcut-setting.h>

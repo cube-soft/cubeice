@@ -1,7 +1,7 @@
 // -*- coding: shift-jis -*-
 /* ------------------------------------------------------------------------- */
 /*
- *  cubeice/user-setting/utility.h
+ *  cubeice/user-setting/user-setting-value.h
  *
  *  Copyright (c) 2010 CubeSoft Inc.
  *
@@ -19,8 +19,8 @@
  *  along with this program.  If not, see < http://www.gnu.org/licenses/ >.
  */
 /* ------------------------------------------------------------------------- */
-#ifndef CUBEICE_USER_SETTING_UTILITY_H
-#define CUBEICE_USER_SETTING_UTILITY_H
+#ifndef CUBEICE_USER_SETTING_USER_SETTING_VALUE_H
+#define CUBEICE_USER_SETTING_USER_SETTING_VALUE_H
 
 #include <cubeice/config.h>
 #include <cubeice/context.h>
@@ -279,4 +279,4 @@ namespace CubeICE {
 	}
 } // namespace CubeICE
 
-#endif // CUBEICE_USER_SETTING_UTILITY_H
+#endif // CUBEICE_USER_SETTING_USER_SETTING_VALUE_H
