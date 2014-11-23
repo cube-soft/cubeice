@@ -24,7 +24,7 @@
 #include <cubeice/style.h>
 #include <windows.h>
 #include <psdotnet/logger.h>
-#include <psdotnet/appender.h>
+#include <psdotnet/logger/file-appender.h>
 
 cubeice::user_setting UserSetting;
 

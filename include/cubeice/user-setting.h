@@ -590,7 +590,7 @@ namespace cubeice {
 						ptree		root;
 						ptree		ctx_root;
 
-						xml_parser::read_xml(xmlpath, root);
+						xml_parser::read_xml(unicode_to_sjis(xmlpath), root);
 						ctx_root = root.get_child(CUBEICE_CONTEXT_ROOT);
 
 						if(ctx_root.get<std::string>(CUBEICE_CONTEXT_CUSTOMIZE) == "yes") {
@@ -680,7 +680,7 @@ namespace cubeice {
 				CreateDirectory(xmlpath, NULL);
 				PathAppend(xmlpath, CUBEICE_XML_FILE_NAME);
 				try {
-					boost::property_tree::xml_parser::write_xml(xmlpath, root);
+					boost::property_tree::xml_parser::write_xml(unicode_to_sjis(xmlpath), root);
 				}
 				catch (...) {
 					LOG_ERROR(_T("boost::property_tree::xml_parser::write_xml"));

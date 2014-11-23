@@ -39,7 +39,7 @@
 #include <clx/date_time.h>
 #include <clx/timer.h>
 #include <psdotnet/logger.h>
-#include <psdotnet/appender.h>
+#include <psdotnet/logger/file-appender.h>
 #include <cubeice/wpopen.h>
 #include <cubeice/io.h>
 #include <cubeice/format.h>
