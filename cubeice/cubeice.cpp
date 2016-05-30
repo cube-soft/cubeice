@@ -21,37 +21,37 @@
  */
 /* ------------------------------------------------------------------------- */
 #include "cubeice.h"
-#include <cubeice/style.h>
 #include <windows.h>
 #include <psdotnet/logger.h>
 #include <psdotnet/logger/file-appender.h>
 
-cubeice::user_setting UserSetting;
-
 int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int showCmd) {
+	CubeICE::UserSetting setting;
+	setting.Load();
+	
 #ifndef PSDOTNET_INVALIDATE_LOG_MACRO
-	std::basic_string<TCHAR> path(UserSetting.install_path() + _T("\\cubeice.log"));
+	std::basic_string<TCHAR> path(setting.InstallDirectory() + _T("\\cubeice.log"));
 	PsdotNet::FileAppender writer(path, PsdotNet::FileAppender::CloseOnWrite | PsdotNet::FileAppender::WriteAll);
-	PsdotNet::Logger::Configure(writer, PsdotNet::Utility::ToLogLevel(UserSetting.loglevel()));
+	PsdotNet::Logger::Configure(writer, PsdotNet::Utility::ToLogLevel(setting.LogLevel()));
 #endif
 	
-	LOG_INFO(_T("CubeICE version %s"), UserSetting.version().c_str());
+	LOG_INFO(_T("CubeICE version %s"), setting.Version().c_str());
 	
 	OSVERSIONINFO osinfo;
 	osinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&osinfo);
 	std::basic_string<TCHAR> edition = sizeof(INT_PTR) == 4 ? _T("x86") : _T("x64");
 	LOG_INFO(_T("Windows version %d.%d.%d (%s)"), osinfo.dwMajorVersion, osinfo.dwMinorVersion, osinfo.dwBuildNumber, edition.c_str());
-	LOG_INFO(_T("InstallPath = %s"), UserSetting.install_path().c_str());
-	LOG_INFO(_T("LogLevel = %d"), UserSetting.loglevel());
+	LOG_INFO(_T("InstallPath = %s"), setting.InstallDirectory().c_str());
+	LOG_INFO(_T("LogLevel = %d"), setting.LogLevel());
 	LOG_INFO(_T("CmdLine = %s"), pCmdLine);
 	
 	cubeice::cmdline::separator sep(_T(" \t"), _T("\""), _T(""));
 	cubeice::cmdline::splitter args(pCmdLine, sep);
 	cubeice::cmdline::splitter::iterator pos = args.begin();
 	
-	cubeice::archiver ar(UserSetting);
-	if (pos != args.end() && pos->compare(0, 3, _T("/c:")) == 0) ar.compress(pos, args.end());
+	cubeice::archiver ar(setting);
+	if (pos != args.end() && pos->compare(0, 2, _T("/c")) == 0) ar.compress(pos, args.end());
 	else if (pos != args.end() && pos->compare(0, 2, _T("/x")) == 0) ar.decompress(pos, args.end());
 	else {
 		// デフォルトは設定画面を開く．	
@@ -60,7 +60,7 @@ int WINAPI _tWinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPTSTR pCmdLine, int 
 		TCHAR buffer[CUBE_MAX_PATH] ={};
 		GetModuleFileName(hInst, buffer, CUBE_MAX_PATH);
 		std::basic_string<TCHAR> tmp = buffer;
-		std::basic_string<TCHAR> path = tmp.substr(0, tmp.find_last_of(_T('\\'))) + _T("\\cubeice-setting.exe");
+		std::basic_string<TCHAR> path = tmp.substr(0, tmp.find_last_of(_T('\\'))) + _T("\\") + CUBEICE_SETTING_NAME;
 		
 		HINSTANCE proc = ShellExecute(NULL, _T("runas"), path.c_str(), NULL, NULL, SW_SHOWNORMAL);
 		DWORD result = (DWORD)proc;

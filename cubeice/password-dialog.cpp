@@ -93,11 +93,18 @@ namespace cubeice {
 							}
 						}
 					}
-					if (pass.find('\"') != std::basic_string<TCHAR>::npos) {
-						MessageBox(hWnd, _T("パスワードにダブルクオートを含めることはできません。"), _T("エラー"), MB_OK | MB_ICONERROR);
-						break;
-					}
-					cubeice::password() = pass;
+
+                    {   // NOTE: パスワードに引用符を許容する。要リファクタリング
+                        std::basic_string<TCHAR> target = _T("\"");
+                        std::basic_string<TCHAR> replace = _T("\\\"");
+                        std::basic_string<TCHAR>::size_type offset = pass.find(target);
+                        while (offset != std::basic_string<TCHAR>::npos) {
+                            pass.replace(offset, target.length(), replace);
+                            offset = pass.find(target, offset + replace.length());
+                        }
+                    }
+
+                    cubeice::password() = pass;
 					EndDialog(hWnd, IDOK);
 					break;
 				}

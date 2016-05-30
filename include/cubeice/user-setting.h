@@ -1,6 +1,7 @@
+// -*- coding: shift-jis -*-
 /* ------------------------------------------------------------------------- */
 /*
- *  user-setting.h
+ *  cubeice/user-setting.h
  *
  *  Copyright (c) 2010 CubeSoft Inc.
  *
@@ -21,1157 +22,694 @@
 #ifndef CUBEICE_USER_SETTING_H
 #define CUBEICE_USER_SETTING_H
 
-#ifndef CLX_USE_WCHAR
-#define CLX_USE_WCHAR
-#endif
-
-// 64bit 版コンパイル時のみ発生する警告を抑制する．
-// TODO: 修正できたら外す．
-#ifdef WIN64
-#pragma warning(disable:4244)
-#pragma warning(disable:4267)
-#endif
-
-#include <tchar.h>
-#include <cstdlib>
-#include <set>
-#include <map>
-#include <string>
-#include <windows.h>
-#include <winreg.h>
-#include <shlobj.h>
-#include <shlwapi.h>
-#include <clx/split.h>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/foreach.hpp>
-#include <boost/optional.hpp>
-#include <boost/lexical_cast.hpp>
-#include <cubeice/encode.h>
+#include <cubeice/config.h>
+#include <sstream>
+#include <exception>
 #include <psdotnet/logger.h>
-#include "guid.h"
+#include <psdotnet/registry.h>
+
+#include <cubeice/user-setting/user-setting-base.h>
+#include <cubeice/user-setting/user-setting-value.h>
+#include <cubeice/user-setting/user-association-setting.h>
+#include <cubeice/user-setting/user-context-setting.h>
+#include <cubeice/user-setting/user-shortcut-setting.h>
+#include <cubeice/user-setting/user-compression-setting.h>
+#include <cubeice/user-setting/user-decompression-setting.h>
+#include <cubeice/user-setting/user-filtering-setting.h>
+#include <cubeice/user-setting/runtime-setting.h>
 
 /* ------------------------------------------------------------------------- */
-//  関連付けに関連するフラグ
+//  レジストリに関する定義
 /* ------------------------------------------------------------------------- */
-#define ZIP_FLAG            0x00000001
-#define LZH_FLAG            0x00000002
-#define RAR_FLAG            0x00000004
-#define TAR_FLAG            0x00000008
-#define GZ_FLAG             0x00000010
-#define SEVENZIP_FLAG       0x00000020
-#define ARJ_FLAG            0x00000040
-#define BZ2_FLAG            0x00000080
-#define CAB_FLAG            0x00000100
-#define CHM_FLAG            0x00000200
-#define CPIO_FLAG           0x00000400
-#define DEB_FLAG            0x00000800
-#define DMG_FLAG            0x00001000
-#define ISO_FLAG            0x00002000
-#define RPM_FLAG            0x00004000
-#define TBZ_FLAG            0x00008000
-#define TGZ_FLAG            0x00010000
-#define WIM_FLAG            0x00020000
-#define XAR_FLAG            0x00040000
-#define XZ_FLAG             0x00080000
-#define EXE_FLAG            0x00100000 // 自己解凍形式
-#define JAR_FLAG            0x00200000
-
-/* ------------------------------------------------------------------------- */
-//  コンテキストメニューに関連するフラグ
-/* ------------------------------------------------------------------------- */
-#define COMPRESS_FLAG       0x0001
-#define DECOMPRESS_FLAG     0x0002
-#define SETTING_FLAG        0x0004
-#define MAIL_FLAG           0x0008
-
-/* ------------------------------------------------------------------------- */
-//  解凍のコンテキストメニューに関連するフラグ
-/* ------------------------------------------------------------------------- */
-#define DECOMP_HERE_FLAG            0x00000010
-#define DECOMP_DESKTOP_FLAG         0x00000020
-#define DECOMP_RUNTIME_FLAG         0x00000040
-#define DECOMP_MYDOCUMENTS_FLAG     0x00000080
-#define DECOMP_ALL_FLAG             0x000000f0
-
-/* ------------------------------------------------------------------------- */
-//  圧縮のコンテキストメニューに関連するフラグ
-/* ------------------------------------------------------------------------- */
-#define COMP_ZIP_FLAG               0x00000100
-#define COMP_ZIP_PASS_FLAG          0x00000200
-#define COMP_SEVENZIP_FLAG          0x00000400
-#define COMP_BZIP2_FLAG             0x00000800
-#define COMP_GZIP_FLAG              0x00001000
-#define COMP_DETAIL_FLAG            0x00002000
-#define COMP_EXE_FLAG               0x00004000
-#define COMP_ALL_FLAG               0x00007f00
-
-/* ------------------------------------------------------------------------- */
-//  圧縮してメール送信のコンテキストメニューに関連するフラグ
-/* ------------------------------------------------------------------------- */
-#define MAIL_ZIP_FLAG               0x00010000
-#define MAIL_ZIP_PASS_FLAG          0x00020000
-#define MAIL_SEVENZIP_FLAG          0x00040000
-#define MAIL_BZIP2_FLAG             0x00080000
-#define MAIL_GZIP_FLAG              0x00100000
-#define MAIL_DETAIL_FLAG            0x00200000
-#define MAIL_EXE_FLAG               0x00400000
-#define MAIL_ALL_FLAG               0x007f0000
-
-/* ------------------------------------------------------------------------- */
-//  出力先フォルダに関連するフラグ
-/* ------------------------------------------------------------------------- */
-#define OUTPUT_RUNTIME      0x00    // 実行時に指定する
-#define OUTPUT_SPECIFIC     0x01    // 指定したフォルダ
-#define OUTPUT_SOURCE       0x02    // 元のファイルと同じフォルダ
-
-/* ------------------------------------------------------------------------- */
-//  上書きに関連するフラグ
-/* ------------------------------------------------------------------------- */
-#define OVERWRITE_FORCE     0x00    // 強制的に上書き
-#define OVERWRITE_NOTIFY    0x01    // 上書きの確認
-#define OVERWRITE_NEWER     0x02    // 更新日時が元のファイルより新しい場合上書き
-
-/* ------------------------------------------------------------------------- */
-//  圧縮/解凍タブの詳細設定に関連するフラグ
-/* ------------------------------------------------------------------------- */
-#define DETAIL_OVERWRITE      0x0001  // 上書きの確認
-#define DETAIL_IGNORE_NEWER   0x0002  // 更新日時が新しい場合は無視
-#define DETAIL_OPEN           0x0004  // 保存先を開く
-#define DETAIL_CREATE_FOLDER  0x0008  // フォルダを作成する
-#define DETAIL_SINGLE_FILE    0x1000  // 単一ファイルの場合は作成しない
-#define DETAIL_SINGLE_FOLDER  0x0100  // 単一フォルダの場合は作成しない
-#define DETAIL_CHARCODE       0x0010  // 文字コードを変換する
-#define DETAIL_FILTER         0x0020  // フィルタリングを行う
-#define DETAIL_SKIP_DESKTOP   0x0040  // デスクトップの場合は開かない
-#define DETAIL_MAIL_REMOVE    0x0200  // メール添付の際にファイルを残さない
-#define DETAIL_REPORT         0x0080  // エラーレポートを表示する
-#define DETAIL_TOOLTIP        0x0400  // ツールチップにファイル一覧を表示する
-#define DETAIL_REMOVE_SRC     0x0800  // 元ファイルを削除する
-
-/* ------------------------------------------------------------------------- */
-//  レジストリに関する情報
-/* ------------------------------------------------------------------------- */
-#define CUBEICE_REG_ROOT                _T("Software\\CubeSoft\\CubeICE")
-#define CUBEICE_REG_COMPRESS            _T("Compress")
-#define CUBEICE_REG_DECOMPRESS          _T("Decompress")
-//#define CUBEICE_REG_FLAGS               _T("Flags")
-#define CUBEICE_REG_DETAILS	            _T("Details")
-#define CUBEICE_REG_OUTPUT_CONDITION    _T("OutputCondition")
-#define CUBEICE_REG_OUTPUT_PATH         _T("OutputPath")
-#define CUBEICE_REG_MAX_FILELIST        _T("MaxFilelist")
-#define CUBEICE_REG_CONTEXT             _T("ContextFlags")
-//#define CUBEICE_REG_SHORTCUT            _T("ShortcutFlags")
-#define CUBEICE_REG_SCCOMPRESS          _T("ScCompressIndex")
-#define CUBEICE_REG_FILTER              _T("Filter")
-#define CUBEICE_REG_INSTALL             _T("InstallDirectory")
-#define CUBEICE_REG_VERSION             _T("Version")
-#define CUBEICE_REG_PREVARCHIVER        _T("PrevArchiver")
-#define CUBEICE_REG_LOGLEVEL            _T("LogLevel")
-#define CUBEICE_REG_EXPLORER            _T("Explorer")
-
-/* ------------------------------------------------------------------------- */
-//  設定ファイルに関する情報
-/* ------------------------------------------------------------------------- */
-#define CUBEICE_XML_COMPANY_DIR         _T("CubeSoft")
-#define CUBEICE_XML_PRODUCT_DIR         _T("CubeICE")
-#define CUBEICE_XML_FILE_NAME           _T("setting.xml")
-#define CUBEICE_XML_FILE_PATH           CUBEICE_XML_COMPANY_DIR _T("\\") CUBEICE_XML_PRODUCT_DIR _T("\\") CUBEICE_XML_FILE_NAME
-#define CUBEICE_CONTEXT_ROOT            "cubeice.general.ctxmenu"
-#define CUBEICE_CONTEXT_CUSTOMIZE       "customize"
-#define CUBEICE_CONTEXT_CHECK_VALUE     "check"
-#define CUBEICE_CONTEXT_ITEM_ID         "<xmlattr>.id"
-
-/* ------------------------------------------------------------------------- */
-//  ショートカットに関する情報
-/* ------------------------------------------------------------------------- */
-#define CUBEICE_SC_COMPRESS             _T("CubeICE 圧縮.lnk")
-#define CUBEICE_SC_DECOMPRESS           _T("CubeICE 解凍.lnk")
-#define CUBEICE_SC_SETTING              _T("CubeICE 設定.lnk")
-
-namespace cubeice {
-	namespace detail {
-		typedef std::map<std::basic_string<TCHAR>, std::pair<std::basic_string<TCHAR>, std::size_t> > ext_map;
-		typedef std::map<std::size_t, std::pair<std::basic_string<TCHAR>, std::basic_string<TCHAR> > > param_map;
-		
-		/* ----------------------------------------------------------------- */
-		//  extensions
-		/* ----------------------------------------------------------------- */
-		inline ext_map& extensions() {
-			static bool initialized = false;
-			static ext_map exts;
-			if (!initialized) {
-				exts[_T(".zip")] = std::make_pair(_T("cubeice_zip"), ZIP_FLAG);
-				exts[_T(".lzh")] = std::make_pair(_T("cubeice_lzh"), LZH_FLAG);
-				exts[_T(".rar")] = std::make_pair(_T("cubeice_rar"), RAR_FLAG);
-				exts[_T(".tar")] = std::make_pair(_T("cubeice_tar"), TAR_FLAG);
-				exts[_T(".gz")]  = std::make_pair(_T("cubeice_gz"),  GZ_FLAG);
-				exts[_T(".7z")]  = std::make_pair(_T("cubeice_7z"),  SEVENZIP_FLAG);
-				exts[_T(".arj")] = std::make_pair(_T("cubeice_arj"), ARJ_FLAG);
-				exts[_T(".bz2")] = std::make_pair(_T("cubeice_bz2"), BZ2_FLAG);
-				exts[_T(".cab")] = std::make_pair(_T("cubeice_cab"), CAB_FLAG);
-				exts[_T(".chm")] = std::make_pair(_T("cubeice_chm"), CHM_FLAG);
-				exts[_T(".cpio")]= std::make_pair(_T("cubeice_cpio"),CPIO_FLAG);
-				exts[_T(".deb")] = std::make_pair(_T("cubeice_deb"), DEB_FLAG);
-				exts[_T(".dmg")] = std::make_pair(_T("cubeice_dmg"), DMG_FLAG);
-				exts[_T(".iso")] = std::make_pair(_T("cubeice_iso"), ISO_FLAG);
-				exts[_T(".rpm")] = std::make_pair(_T("cubeice_rpm"), RPM_FLAG);
-				exts[_T(".tbz")] = std::make_pair(_T("cubeice_tbz"), TBZ_FLAG);
-				exts[_T(".tgz")] = std::make_pair(_T("cubeice_tgz"), TGZ_FLAG);
-				exts[_T(".wim")] = std::make_pair(_T("cubeice_wim"), WIM_FLAG);
-				exts[_T(".xar")] = std::make_pair(_T("cubeice_xar"), XAR_FLAG);
-				exts[_T(".xz")]  = std::make_pair( _T("cubeice_xz"),  XZ_FLAG);
-				exts[_T(".jar")]  = std::make_pair( _T("cubeice_jar"),  JAR_FLAG);
-				initialized = true;
-			}
-			return exts;
-		}
-		
-		/* ----------------------------------------------------------------- */
-		//  compress_parameters
-		/* ----------------------------------------------------------------- */
-		inline param_map& compress_parameters() {
-			static bool initialized = false;
-			static param_map params;
-			if (!initialized) {
-				params[0] = std::make_pair(_T("zip"), _T("/c:zip"));
-				params[1] = std::make_pair(_T("zip (パスワード)"), _T("/c:zip /p"));
-				params[2] = std::make_pair(_T("7z"), _T("/c:7z"));
-				params[3] = std::make_pair(_T("gzip"), _T("/c:gzip"));
-				params[4] = std::make_pair(_T("bzip2"), _T("/c:bzip2"));
-				params[5] = std::make_pair(_T("詳細設定"), _T("/c:detail"));
-				initialized = true;
-			}
-			return params;
-		}
-	}
-	
-	/* --------------------------------------------------------------------- */
-	/*
-	 *  RegDeleteKeyNT
-	 *
-	 *  see also: http://support.microsoft.com/kb/142491/ja
-	 */
-	/* --------------------------------------------------------------------- */
-	inline DWORD RegDeleteKeyNT(HKEY hStartKey , LPCTSTR pKeyName ){
-		static const int max_keylen = 2048;
-		DWORD   dwRtn, dwSubKeyLength;
-		LPTSTR  pSubKey = NULL;
-		TCHAR   szSubKey[max_keylen] = {};
-		HKEY    hKey;
-		
-		// Do not allow NULL or empty key name
-		if ( pKeyName &&  lstrlen(pKeyName)) {
-			if( (dwRtn=RegOpenKeyEx(hStartKey,pKeyName, 0, KEY_ENUMERATE_SUB_KEYS | DELETE, &hKey )) == ERROR_SUCCESS ) {
-				while (dwRtn == ERROR_SUCCESS ) {
-					dwSubKeyLength = max_keylen;
-					dwRtn = RegEnumKeyEx(
-								hKey,
-								0,       // always index zero
-								szSubKey,
-								&dwSubKeyLength,
-								NULL,
-								NULL,
-								NULL,
-								NULL
-							);
-					
-					if(dwRtn == ERROR_NO_MORE_ITEMS) {
-						dwRtn = RegDeleteKey(hStartKey, pKeyName);
-						break;
-					}
-					else if(dwRtn == ERROR_SUCCESS) dwRtn=RegDeleteKeyNT(hKey, szSubKey);
-				}
-				RegCloseKey(hKey);
-				// Do not save return code because error
-				// has already occurred
-			}
-		}
-		else dwRtn = ERROR_BADKEY;
-		
-		return dwRtn;
-	}
-	
-	/* --------------------------------------------------------------------- */
-	/*
-	 *  archive_setting
-	 *
-	 *  圧縮/解凍の設定をレジストリへ入出力するためのクラス．
-	 */
-	/* --------------------------------------------------------------------- */
-	class archive_setting {
-	public:
-		typedef std::size_t size_type;
-		typedef TCHAR char_type;
-		typedef std::basic_string<char_type> string_type;
-		
-		/* ----------------------------------------------------------------- */
-		//  constructor
-		/* ----------------------------------------------------------------- */
-		explicit archive_setting(const string_type& root) :
-			root_(root), flags_(0), details_(0), max_filelist_(0), output_condition_(0), output_path_(), explorer_() {
-			//this->load();
-		}
-		
-		/* ----------------------------------------------------------------- */
-		//  is_associated
-		/* ----------------------------------------------------------------- */
-		bool is_associated(const string_type& key, const string_type& value) {
-			HKEY subkey;
-			LONG status = RegOpenKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, KEY_READ, &subkey);
-			if (!status) { 
-				char_type buffer[32] = {};
-				DWORD type = 0;
-				DWORD size = sizeof(buffer);
-				if (RegQueryValueEx(subkey, _T(""), NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS && string_type(buffer) == value) {
-					return true;
-				}
-			}
-			return false;
-		}
-		
-		/* ----------------------------------------------------------------- */
-		//  load
-		/* ----------------------------------------------------------------- */
-		void load() {
-			LOG_TRACE(_T("function archive_setting::load() start"));
-			
-			HKEY hkResult;
-			LONG lResult = RegOpenKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, KEY_ALL_ACCESS, &hkResult);
-			if (!lResult) {
-				DWORD dwType;
-				DWORD dwSize;
-				
-				dwSize = sizeof(details_);
-				RegQueryValueEx(hkResult, CUBEICE_REG_DETAILS, NULL, &dwType, (LPBYTE)&details_, &dwSize);
-				
-				dwSize = sizeof(max_filelist_);
-				RegQueryValueEx(hkResult, CUBEICE_REG_MAX_FILELIST, NULL, &dwType, (LPBYTE)&max_filelist_, &dwSize);
-				
-				dwSize = sizeof(output_condition_);
-				RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_CONDITION, NULL, &dwType, (LPBYTE)&output_condition_, &dwSize);
-				
-				char_type buffer[1024] = {};
-				dwSize = sizeof(buffer);
-				if (RegQueryValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) {
-					output_path_ = buffer;
-				}
-				
-				ZeroMemory(buffer, sizeof(buffer));
-				dwSize = sizeof(buffer);
-				if (RegQueryValueEx(hkResult, CUBEICE_REG_EXPLORER, NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) {
-					explorer_ = buffer;
-				}
-			}
-			
-			// Flagsはレジストリに置かず，それぞれの拡張子のキーの既定値が cubeice_XXX かどうかで判断
-			flags_ = 0;
-			const detail::ext_map& exts = detail::extensions();
-			for (detail::ext_map::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
-				if (this->is_associated(pos->first, pos->second.first)) flags_ |= pos->second.second;
-			}
-			
-			LOG_TRACE(_T("function archive_setting::load() end"));
-		}
-		
-		
-		/* ----------------------------------------------------------------- */
-		//  save
-		/* ----------------------------------------------------------------- */
-		void save() {
-			LOG_TRACE(_T("function archive_setting::save() start"));
-			
-			HKEY hkResult; // キーのハンドル
-			DWORD dwDisposition; // 処理結果を受け取る
-			LONG lResult; // 関数の戻り値を格納する
-			string_type		str;
-			lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
-			if (!lResult) {
-				LOG_INFO(_T("HKCU, %s"), root_.c_str());
-				//RegSetValueEx(hkResult, CUBEICE_REG_FLAGS, 0, REG_DWORD, (CONST BYTE*)&flags_, sizeof(flags_));
-				
-				DWORD value = static_cast<DWORD>(details_);
-				RegSetValueEx(hkResult, CUBEICE_REG_DETAILS, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
-				LOG_INFO(_T("%s = 0x%x"), CUBEICE_REG_DETAILS, details_);
-				
-				value = static_cast<DWORD>(max_filelist_);
-				RegSetValueEx(hkResult, CUBEICE_REG_MAX_FILELIST, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
-				LOG_INFO(_T("%s = %d"), CUBEICE_REG_MAX_FILELIST, max_filelist_);
-				
-				value = static_cast<DWORD>(output_condition_);
-				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_CONDITION, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
-				RegSetValueEx(hkResult, CUBEICE_REG_OUTPUT_PATH, 0, REG_SZ, (CONST BYTE*)output_path_.c_str(), (output_path_.length() + 1) * sizeof(char_type));
-				LOG_INFO(_T("%s = %d"), CUBEICE_REG_OUTPUT_CONDITION, output_condition_);
-				LOG_INFO(_T("%s = %s"), CUBEICE_REG_OUTPUT_PATH, output_path_.c_str());
-				
-				RegSetValueEx(hkResult, CUBEICE_REG_EXPLORER, 0, REG_SZ, (CONST BYTE*)explorer_.c_str(), (explorer_.length() + 1) * sizeof(char_type));
-			}
-			else {
-				LOG_ERROR(_T("RegCreateKeyEx(HKCU, %s)"), root_.c_str());
-			}
-			
-			LOG_TRACE(_T("function archive_setting::save() end"));
-		}
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  flags
-		 *
-		 *  圧縮に対応するファイル群．圧縮はコンテキストメニューの
-		 *  「圧縮」のサブ項目に表示させるものになり，
-		 *  各フラグ (FLAG_ZIP, ..., FLAG_XZ) の和集合となる．ただし，
-		 *  7-zip が圧縮に対応しているもののみ．
-		 */
-		/* ----------------------------------------------------------------- */
-		size_type& flags() { return flags_; }
-		const size_type& flags() const { return flags_; }
-		
-		/* ----------------------------------------------------------------- */
-		//  details
-		/* ----------------------------------------------------------------- */
-		size_type& details() { return details_; }
-		const size_type& details() const { return details_; }
-
-		/* ----------------------------------------------------------------- */
-		//  max_filelist
-		/* ----------------------------------------------------------------- */
-		size_type& max_filelist() { return max_filelist_; }
-		const size_type& max_filelist() const { return max_filelist_; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  output_condition
-		 *
-		 *  出力先フォルダの設定．OUTPUT_SPECIFIC, OUTPUT_SOURCE, 
-		 *  OUTPUT_RUNTIME のどれか．
-		 */
-		/* ----------------------------------------------------------------- */
-		size_type& output_condition() { return output_condition_; }
-		const size_type& output_condition() const { return output_condition_; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  output_path
-		 *
-		 *  output_condition が OUTPUT_SPECIFIC の場合，path_compress
-		 *  の値が有効となる．
-		 */
-		/* ----------------------------------------------------------------- */
-		string_type& output_path() { return output_path_; }
-		const string_type& output_path() const { return output_path_; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  explorer
-		 *
-		 *  「ファイルを開く」際に使用するプログラム (explorer.exe 等)
-		 */
-		/* ----------------------------------------------------------------- */
-		string_type& explorer() { return explorer_; }
-		const string_type& explorer() const { return explorer_; }
-		
-	private:
-		string_type root_;
-		size_type flags_;
-		size_type details_;
-		size_type max_filelist_;
-		size_type output_condition_;
-		string_type output_path_;
-		string_type explorer_;
-	};
-	
-	/* --------------------------------------------------------------------- */
-	//  user_setting
-	/* --------------------------------------------------------------------- */
-	class user_setting {
-	public:
-		typedef archive_setting archive_type;
-		typedef archive_type::size_type size_type;
-		typedef archive_type::char_type char_type;
-		typedef archive_type::string_type string_type;
-		typedef std::set<string_type> container_type;
-
-		struct SUBMENU {
-			int						id;
-			string_type				str;
-			std::vector<SUBMENU>	children;
-
-			SUBMENU(int id_, string_type str_) : id(id_), str(str_)
-			{
-			}
-		};
-		
-		/* ----------------------------------------------------------------- */
-		//  constructor
-		/* ----------------------------------------------------------------- */
-		user_setting(const bool &delay = false) :
-			root_(CUBEICE_REG_ROOT), install_(_T("")), version_(_T("")),
-			comp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_COMPRESS),
-			decomp_(string_type(CUBEICE_REG_ROOT) + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), loglevel_(50), associate_invoke_(false) {
-			comp_.output_condition() = 0x02;
-			comp_.details() = 0x281;
-			comp_.max_filelist() = 5;
-			decomp_.output_condition() = 0x01;
-			decomp_.details() = 0x5ed;
-			if(!delay) this->load();
-		}
-		
-		explicit user_setting(const string_type& root) :
-			root_(root), install_(_T("")), version_(_T("")),
-			comp_(root + _T('\\') + CUBEICE_REG_COMPRESS),
-			decomp_(root + _T('\\') + CUBEICE_REG_DECOMPRESS),
-			ctx_flags_(0x03), sc_flags_(0), sc_index_(0), filters_(), update_(true), loglevel_(50), associate_invoke_(false) {
-			comp_.output_condition() = 0x02;
-			comp_.details() = 0x281;
-			comp_.max_filelist() = 5;
-			decomp_.output_condition() = 0x01;
-			decomp_.details() = 0x5ed;
-			this->load();
-		}
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  load
-		 *
-		 *  NOTE: 通常，load() のログは出力されない（ロード後でないと，
-		 *  ログの出力先が確定しないため．load() のログを確認したい場合は，
-		 *  load() をコールする前に適当なパスで PsdotNet::Logger を初期化
-		 *  する必要がある．
-		 */
-		/* ----------------------------------------------------------------- */
-		void load() {
-			LOG_TRACE(_T("function user_setting::load() start"));
-			
-			comp_.load();
-			decomp_.load();
-			
-			HKEY hkResult;
-			LONG lResult = RegOpenKeyEx(HKEY_LOCAL_MACHINE, root_.c_str(), 0, KEY_READ, &hkResult);
-			if (!lResult) {
-				DWORD dwType;
-				DWORD dwSize = 0;
-				
-				char_type install[2 * 1024] = {};
-				dwSize = sizeof(install);
-				if (RegQueryValueEx(hkResult, CUBEICE_REG_INSTALL, NULL, &dwType, (LPBYTE)install, &dwSize) == ERROR_SUCCESS) {
-					install_ = install;
-				}
-				
-				char_type version[32] = {};
-				dwSize = sizeof(version);
-				if (RegQueryValueEx(hkResult, CUBEICE_REG_VERSION, NULL, &dwType, (LPBYTE)version, &dwSize) == ERROR_SUCCESS) {
-					version_ = version;
-				}
-			}
-			else {
-				LOG_ERROR(_T("RegOpenKeyEx(HKLM, %s)"), root_.c_str());
-			}
-			
-			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, KEY_ALL_ACCESS, &hkResult);
-			if (!lResult) {
-				DWORD dwType;
-				DWORD dwSize;
-				
-				TCHAR xmlpath[2*MAX_PATH];
-				
-				ctx_flags_ = 0;
-				SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
-				PathAppend(xmlpath, CUBEICE_XML_FILE_PATH);
-
-				ctx_customize_ = false;
-				if (!PathFileExists(xmlpath)) {
-						dwSize = sizeof(ctx_flags_);
-						RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
-				}
-				else {
-					try {
-						using namespace boost::property_tree;
-						ptree		root;
-						ptree		ctx_root;
-
-						xml_parser::read_xml(unicode_to_sjis(xmlpath), root);
-						ctx_root = root.get_child(CUBEICE_CONTEXT_ROOT);
-
-						if(ctx_root.get<std::string>(CUBEICE_CONTEXT_CUSTOMIZE) == "yes") {
-							ctx_customize_ = true;
-							context_read(ctx_root, ctx_submenu_);
-						}
-						
-						boost::optional<unsigned int> value = ctx_root.get_optional<unsigned int>(CUBEICE_CONTEXT_CHECK_VALUE);
-						if (value) ctx_flags_ = *value;
-						else {
-							dwSize = sizeof(ctx_flags_);
-							RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
-						}
-					} catch( const boost::property_tree::ptree_error & ) {
-						dwSize = sizeof(ctx_flags_);
-						RegQueryValueEx(hkResult, CUBEICE_REG_CONTEXT, NULL, &dwType, (LPBYTE)&ctx_flags_, &dwSize);
-					}
-				}
-				
-				sc_flags_ = 0;
-				//dwSize = sizeof(sc_flags_);
-				//RegQueryValueEx(hkResult, CUBEICE_REG_SHORTCUT, NULL, &dwType, (LPBYTE)&sc_flags_, &dwSize);
-				if (shortcut_exist(CUBEICE_SC_COMPRESS)) sc_flags_ |= COMPRESS_FLAG;
-				if (shortcut_exist(CUBEICE_SC_DECOMPRESS)) sc_flags_ |= DECOMPRESS_FLAG;
-				if (shortcut_exist(CUBEICE_SC_SETTING)) sc_flags_ |= SETTING_FLAG;
-				
-				dwSize = sizeof(sc_index_);
-				RegQueryValueEx(hkResult, CUBEICE_REG_SCCOMPRESS, NULL, &dwType, (LPBYTE)&sc_index_, &dwSize);
-				
-				// 変数側の型は std::set<std::string>
-				char_type buffer[8 * 1024] = {};
-				dwSize = sizeof(buffer);
-				if (RegQueryValueEx(hkResult, CUBEICE_REG_FILTER, NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) {
-					string_type s(buffer);
-					filters_.clear();
-					clx::split_if(s, filters_, clx::is_any_of(_T("<>")));
-				}
-
-				dwSize = sizeof(loglevel_);
-				RegQueryValueEx(hkResult, CUBEICE_REG_LOGLEVEL, NULL, NULL, (LPBYTE)&loglevel_, &dwSize);
-			}
-			else {
-				LOG_ERROR(_T("RegOpenKeyEx(HKCU, %s)"), root_.c_str());
-			}
-			
-			update_ = false;
-			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 0, KEY_ALL_ACCESS, &hkResult);
-			if (!lResult) {
-				char_type buffer[1024] = {};
-				DWORD dwType;
-				DWORD dwSize = sizeof(buffer);
-				if (RegQueryValueEx(hkResult, _T("cubeice-checker"), NULL, &dwType, (LPBYTE)buffer, &dwSize) == ERROR_SUCCESS) update_ = true;
-				LOG_INFO(_T("UpdateCheck = %d"), (update_ ? 1 : 0));
-			}
-			else {
-				LOG_ERROR(_T("RegOpenKeyEX(HKCU, Software\\Microsoft\\Windows\\CurrentVersion\\Run)"));
-			}
-			
-			LOG_TRACE(_T("function user_setting::load() end"));
-		}
-		
-		/* ----------------------------------------------------------------- */
-		//  save
-		/* ----------------------------------------------------------------- */
-		void save() {
-			LOG_TRACE(_T("function user_setting::save() start"));
-			
-			comp_.save();
-			decomp_.save();
-			
-			HKEY hkResult;
-			DWORD dwDisposition;
-			LONG lResult = RegCreateKeyEx(HKEY_CURRENT_USER, root_.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkResult, &dwDisposition);
-			if (!lResult) {
-				boost::property_tree::ptree		root;
-				boost::property_tree::ptree		&ctx_root = root.put(CUBEICE_CONTEXT_ROOT, "");
-				TCHAR							xmlpath[2*MAX_PATH];
-				
-				ctx_root.put(CUBEICE_CONTEXT_CUSTOMIZE, ctx_customize_ ? "yes" : "no");
-				ctx_root.put(CUBEICE_CONTEXT_CHECK_VALUE, boost::lexical_cast<std::string>(ctx_flags_));
-				if (ctx_customize_) context_write(ctx_root, ctx_submenu_);
-				
-				SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, SHGFP_TYPE_CURRENT, xmlpath);
-				PathAppend(xmlpath, CUBEICE_XML_COMPANY_DIR);
-				CreateDirectory(xmlpath, NULL);
-				PathAppend(xmlpath, CUBEICE_XML_PRODUCT_DIR);
-				CreateDirectory(xmlpath, NULL);
-				PathAppend(xmlpath, CUBEICE_XML_FILE_NAME);
-				try {
-					boost::property_tree::xml_parser::write_xml(unicode_to_sjis(xmlpath), root);
-				}
-				catch (...) {
-					LOG_ERROR(_T("boost::property_tree::xml_parser::write_xml"));
-					RegSetValueEx(hkResult, CUBEICE_REG_CONTEXT, 0, REG_DWORD, (CONST BYTE*)&ctx_flags_, sizeof(ctx_flags_));
-					LOG_INFO(_T("%s = 0x%x"), CUBEICE_REG_CONTEXT, ctx_flags_);
-				}
-				
-				// ショートカットの処理．
-				DWORD value = static_cast<DWORD>(sc_index_);
-				RegSetValueEx(hkResult, CUBEICE_REG_SCCOMPRESS, 0, REG_DWORD, (CONST BYTE*)&value, sizeof(value));
-				
-				TCHAR buffer[2048] ={};
-				GetModuleFileName(GetModuleHandle(NULL), buffer, 2048);
-				std::basic_string<TCHAR> tmp = buffer;
-				std::basic_string<TCHAR> current = tmp.substr(0, tmp.find_last_of(_T('\\')));
-				const detail::param_map& v = detail::compress_parameters();
-				std::basic_string<TCHAR> params = (v.find(sc_index_) != v.end()) ? v.find(sc_index_)->second.second : _T("/c:zip");
-				if ((sc_flags_ & COMPRESS_FLAG)) this->create_shortcut(current + _T("\\cubeice.exe"), params, CUBEICE_SC_COMPRESS, 1);
-				else this->remove_shortcut(CUBEICE_SC_COMPRESS);
-				if ((sc_flags_ & DECOMPRESS_FLAG)) this->create_shortcut(current + _T("\\cubeice.exe"), _T("/x"), CUBEICE_SC_DECOMPRESS, 2);
-				else this->remove_shortcut(CUBEICE_SC_DECOMPRESS);
-				if ((sc_flags_ & SETTING_FLAG)) this->create_shortcut(current + _T("\\cubeice-setting.exe"), _T(""), CUBEICE_SC_SETTING, 0);
-				else this->remove_shortcut(CUBEICE_SC_SETTING);
-				
-				string_type dest;
-				clx::join(filters_, dest, _T("<>"));
-				RegSetValueEx(hkResult, CUBEICE_REG_FILTER, 0, REG_SZ, (CONST BYTE*)dest.c_str(), (dest.length() + 1) * sizeof(char_type));
-				LOG_INFO(_T("%s = %s"), CUBEICE_REG_FILTER, dest.c_str());
-				
-				{
-					// ちゃんと書き込めたかチェック
-					char_type buffer[8 * 1024] = {};
-					DWORD dwSize = sizeof(buffer);
-					LSTATUS result;
-					if ((result = RegQueryValueEx(hkResult, CUBEICE_REG_FILTER, NULL, NULL, (LPBYTE)buffer, &dwSize)) == ERROR_SUCCESS) {
-						if (dest != buffer) {
-							LOG_WARN(_T("Filtering is unmatched (%s)"), buffer);
-						}
-					}
-					else {
-						LOG_ERROR(_T("RegQueryValueEx(%s), ErrorCode = %d"), CUBEICE_REG_FILTER, result);
-					}
-				}
-				
-				RegSetValueEx(hkResult, CUBEICE_REG_LOGLEVEL, 0, REG_DWORD, (CONST BYTE*)&loglevel_, sizeof(loglevel_));
-			}
-			else {
-				LOG_ERROR(_T("RegCreateKeyEx(HKCU, %s)"), root_.c_str());
-			}
-			
-			lResult = RegOpenKeyEx(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), 0, KEY_ALL_ACCESS, &hkResult);
-			if (!lResult) {
-				if (update_) {
-					std::basic_string<TCHAR> value = _T("\"");
-					value += install_;
-					value += _T("\\cubeice-checker.exe\"");
-					RegSetValueEx(hkResult, _T("cubeice-checker"), 0, REG_SZ, (CONST BYTE*)value.c_str(), (value.length() + 1) * sizeof(char_type));
-					LOG_DEBUG(_T("RegSetValueEx(cubeice-checker, %s)"), value.c_str());
-				}
-				else {
-					RegDeleteValue(hkResult, _T("cubeice-checker"));
-					LOG_DEBUG(_T("RegDeleteValue(cubeice-checker)"));
-				}
-			}
-			else {
-				LOG_ERROR(_T("RegOpenKeyEx(HKCU, Software\\Microsoft\\Windows\\CurrentVersion\\Run)"));
-			}
-			
-			if(associate_invoke_) this->associate(decomp_.flags(), decomp_.details());
-			
-			LOG_TRACE(_T("function user_setting::save() end"));
-		}
-		
-		/* ----------------------------------------------------------------- */
-		//  install_path
-		/* ----------------------------------------------------------------- */
-		const string_type& install_path() const { return install_; }
-		
-		/* ----------------------------------------------------------------- */
-		//  version
-		/* ----------------------------------------------------------------- */
-		const string_type& version() const { return version_; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  compression
-		 *
-		 *  圧縮に関する設定．
-		 */
-		/* ----------------------------------------------------------------- */
-		archive_type& compression() { return comp_; }
-		const archive_type& compression() const { return comp_; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  decompression
-		 *
-		 *  解凍に関する設定．
-		 */
-		/* ----------------------------------------------------------------- */
-		archive_type& decompression() { return decomp_; }
-		const archive_type& decompression() const { return decomp_; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  associate_changed
-		 *
-		 *  関連付けに対する変更．
-		 */
-		/* ----------------------------------------------------------------- */
-		void associate_changed() { associate_invoke_ = true; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  context_flags
-		 *
-		 *  コンテキストメニューに表示させるもの．
-		 */
-		/* ----------------------------------------------------------------- */
-		size_type& context_flags() { return ctx_flags_; }
-		const size_type& context_flags() const { return ctx_flags_; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  context_customize
-		 *
-		 *  コンテキストメニューがカスタマイズされたかどうか．
-		 */
-		/* ----------------------------------------------------------------- */
-		bool& context_customize() { return ctx_customize_; }
-		const bool& context_customize() const { return ctx_customize_; }
-
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  context_flags
-		 *
-		 *  コンテキストメニューに表示させるもの．
-		 */
-		/* ----------------------------------------------------------------- */
-		std::vector<SUBMENU>& context_submenu() { return ctx_submenu_; }
-		const std::vector<SUBMENU>& context_submenu() const { return ctx_submenu_; }
-
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  shortcut_flags
-		 *
-		 *  ショートカットを表示させるかどうか．
-		 */
-		/* ----------------------------------------------------------------- */
-		size_type& shortcut_flags() { return sc_flags_; }
-		const size_type& shortcut_flags() const { return sc_flags_; }
-		
-		/* ----------------------------------------------------------------- */
-		//  shortcut_compress_index
-		/* ----------------------------------------------------------------- */
-		size_type& shortcut_compress_index() { return sc_index_; }
-		const size_type& shortcut_compress_index() const { return sc_index_; }
-		
-		/* ----------------------------------------------------------------- */
-		//  filters
-		/* ----------------------------------------------------------------- */
-		container_type& filters() { return filters_; }
-		const container_type& filters() const { return filters_; }
-		
-		/* ----------------------------------------------------------------- */
-		//  update
-		/* ----------------------------------------------------------------- */
-		bool& update() { return update_; }
-		const bool& update() const { return update_; }
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  loglevel
-		 *
-		 *  ログレベルの定義は以下の通り．
-		 *
-		 *   10: TRACE
-		 *   20: DEBUG
-		 *   30: INFO
-		 *   40: WARN
-		 *   50: ERROR
-		 *   60: FATAL
-		 *
-		 *  設定されたレベル「以上」のログが出力されるようになる．例えば，
-		 *  INFO (3) を設定した場合，INFO, WARN, ERROR, FATAL の 4 種類の
-		 *  ログが出力される．
-		 *
-		 *  NOTE: ログを出力する場合は，アプリケーションの最初に
-		 *  PsdotNet::Logger::Configure(path, loglevel);
-		 *  と言う形でロガーの初期設定を行う必要がある．
-		 */
-		/* ----------------------------------------------------------------- */
-		int& loglevel() { return loglevel_; }
-		const int& loglevel() const { return loglevel_; }
-		
-	private:
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  associate
-		 *
-		 *  NOTE: レジストリに登録する cubeice_* はインストーラを用いて
-		 *  あらかじめ登録しておくこと．
-		 *  SPLIT_ADMIN_OPERATIONS が定義されている場合は，管理者権限の
-		 *  必要な処理だけ別の exe で実行する．
-		 */
-		/* ----------------------------------------------------------------- */
-		void associate(size_type flags, size_type details) {
-			LOG_TRACE(_T("function user_setting::associate() start"));
-			LOG_TRACE(_T("flags = %d"), flags);
-			LOG_TRACE(_T("details = %d"), details);
-			
-#define SPLIT_ADMIN_OPERATIONS
-#ifdef  SPLIT_ADMIN_OPERATIONS
-			CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-			
-			TCHAR buffer[32] = {};
-			::_itot_s(flags, buffer, sizeof(buffer), 10);
-			
-			string_type exec = install_ + _T("\\cubeice-associate.exe");
-			SHELLEXECUTEINFO sei = {};
-			sei.cbSize = sizeof(SHELLEXECUTEINFO);
-			//sei.lpVerb = _T("runas");
-			sei.lpFile = exec.c_str();
-			sei.lpParameters = buffer;
-			LOG_DEBUG(_T("SHELLEXECUTEINFO::lpFile = %s"), exec.c_str());
-			LOG_DEBUG(_T("SHELLEXECUTEINFO::lpParameters = %s"), buffer);
-			ShellExecuteEx(&sei);
-			
-			CoUninitialize();
-#else
-			const detail::ext_map& exts = detail::extensions();
-			for (detail::ext_map::const_iterator pos = exts.begin(); pos != exts.end(); pos++) {
-				this->associate(pos->first, pos->second.first, ((flags & pos->second.second) != 0), ((details & DETAIL_TOOLTIP) != 0));
-			}
-			SHChangeNotify(SHCNE_ASSOCCHANGED,SHCNF_FLUSH,0,0);
-#endif // SPLIT_ADMIN_OPERATIONS
-			
-			LOG_TRACE(_T("function user_setting::associate() end"));
-		}
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  associate
-		 *
-		 *  flag が true の場合はレジストリに追加，false の場合で該当の
-		 *  キーが存在する場合はそのキーを削除する．
-		 *
-		 *  2010/12/29 変更:
-		 *   - flag が true の場合、レジストリにも value 以外のキーが設定
-		 *     されていた場合、そのキーを PREV_ARCHIVER に保存
-		 *   - flag が false の場合、レジストリの CUBEICE_REG_PREVARCHIVER
-		 *     があれば、その値を取得し、既定のキーとする
-		 */
-		/* ----------------------------------------------------------------- */
-		void associate(const string_type& key, const string_type& value, bool flag, bool tooltip) {
-			static const char_type* clsid_tooltip = _T("{00021500-0000-0000-C000-000000000046}");
-			HKEY subkey;
-			LONG status = RegOpenKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex" ) ).c_str(), 0, KEY_ALL_ACCESS, &subkey );
-			
-			if( !status ) {
-				RegDeleteKeyNT( subkey, clsid_tooltip );
-				RegCloseKey( subkey );
-			}
-			
-			if (flag) {
-				DWORD disposition = 0;
-				LONG status = RegCreateKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
-				if (!status) { 
-					char_type buffer[32] = {};
-					DWORD type = 0;
-					DWORD size = sizeof(buffer);
-					if (RegQueryValueEx(subkey, _T(""), NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS && string_type(buffer) != value) {
-						RegSetValueEx(subkey, CUBEICE_REG_PREVARCHIVER, 0, REG_SZ, (CONST BYTE*)buffer, (_tcslen(buffer) + 1) * sizeof(char_type));
-					}
-					RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)value.c_str(), (value.size() + 1) * sizeof(char_type));
-				}
-				
-				disposition = 0;
-				status = RegCreateKeyEx(HKEY_CLASSES_ROOT, ( key + _T( "\\shellex\\") + clsid_tooltip ).c_str(), 0, _T(""), REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &subkey, &disposition);
-				if (!status) {
-					RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)CLSID_CubeICE_CTX_STR, sizeof( CLSID_CubeICE_CTX_STR ));
-				}
-			}
-			else {
-				LONG status = RegOpenKeyEx(HKEY_CLASSES_ROOT, key.c_str(), 0, KEY_ALL_ACCESS, &subkey);
-				if (!status) {
-					char_type buffer[32] = {};
-					DWORD type = 0;
-					DWORD size = sizeof(buffer);
-					if (RegQueryValueEx(subkey, _T(""), NULL, &type, (LPBYTE)buffer, &size) == ERROR_SUCCESS && string_type(buffer) == value) {
-						char_type prev[32] = {};
-						type = 0;
-						size = sizeof(prev);
-						if (RegQueryValueEx(subkey, CUBEICE_REG_PREVARCHIVER, NULL, &type, (LPBYTE)prev, &size) == ERROR_SUCCESS) {
-							RegSetValueEx(subkey, _T(""), 0, REG_SZ, (CONST BYTE*)prev, (_tcslen(prev) + 1) * sizeof(char_type));
-						}
-						else {
-							RegCloseKey(subkey);
-							RegDeleteKeyNT(HKEY_CLASSES_ROOT, key.c_str());
-						}
-					}
-				}
-			}
-		}
-		
-		/* ----------------------------------------------------------------- */
-		//  shortcut_exist
-		/* ----------------------------------------------------------------- */
-		bool shortcut_exist(const std::basic_string<TCHAR>& link) {
-			LPITEMIDLIST pidl;
-			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl);
-			
-			TCHAR buf[2048] = {};
-			SHGetPathFromIDList(pidl, buf);
-			lstrcat(buf, _T("\\"));
-			lstrcat(buf, link.c_str());
-			
-			return PathFileExists(buf) != FALSE;
-		}
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  create_shortcut
-		 *
-		 *  ショートカットを作成する．
-		 *  see also: http://support.microsoft.com/kb/179904/ja
-		 */
-		/* ----------------------------------------------------------------- */
-		void create_shortcut(const std::basic_string<TCHAR>& path, const std::basic_string<TCHAR>& args, const std::basic_string<TCHAR>& link, int icon) {
-			LOG_TRACE(_T("function user_setting::create_shortcut() start"));
-			LOG_TRACE(_T("path = %s"), path.c_str());
-			LOG_TRACE(_T("args = %s"), args.c_str());
-			LOG_TRACE(_T("link = %s"), link.c_str());
-			LOG_TRACE(_T("icon = %d"), icon);
-			
-			HRESULT hres = CoInitialize(NULL);
-			if (FAILED(hres)) return;
-			
-			IShellLink *psl = NULL;
-			hres = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC_SERVER, IID_IShellLink, (LPVOID*)&psl);
-			if (FAILED(hres)) {
-				LOG_ERROR(_T("CoCreateInstance"));
-				goto cleanup;
-			}
-			
-			IPersistFile *pPf = NULL;
-			hres = psl->QueryInterface(IID_IPersistFile, (LPVOID*)&pPf);
-			if (FAILED(hres)) {
-				LOG_ERROR(_T("IShellLink::QueryInterface"));
-				goto cleanup;
-			}
-			
-			hres = psl->SetPath(path.c_str());
-			if (FAILED(hres)) {
-				LOG_ERROR(_T("IShellLink::SetPath(%s)"), path.c_str());
-				goto cleanup;
-			}
-			
-			if (!args.empty()) {
-				hres = psl->SetArguments(args.c_str());
-				if (FAILED(hres)) {
-					LOG_ERROR(_T("IShellLink::SetArguments(%s)"), args.c_str());
-					goto cleanup;
-				}
-			}
-			
-			//place the shortcut on the desktop
-			LPITEMIDLIST pidl;
-			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl);
-			
-			TCHAR buf[2048] = {};
-			SHGetPathFromIDList(pidl, buf);
-			lstrcat(buf, _T("\\"));
-			lstrcat(buf, link.c_str());
-			
-#ifdef	UNICODE
-			WORD *wsz = reinterpret_cast<WORD*>(buf);
-#else	// UNICODE
-			WORD wsz[2048] = {};
-			MultiByteToWideChar(CP_ACP, 0, buf, -1, (LPWSTR)wsz, 2048);
-#endif	// UNICODE
-			hres = psl->SetIconLocation(path.c_str(), icon);
-			if (FAILED(hres)) {
-				LOG_ERROR(_T("IShellLink::SetIconLocation(%s, %d)"), path.c_str(), icon);
-				goto cleanup;
-			}
-			
-			pPf->Save((LPCOLESTR)wsz, TRUE);
-cleanup:
-			if (pPf) pPf->Release();
-			if (psl) psl->Release();
-			CoUninitialize();
-			
-			LOG_TRACE(_T("function user_setting::create_shortcut() end"));
-		}
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  remove_shortcut
-		 *
-		 *  ショートカットを削除する．
-		 */
-		/* ----------------------------------------------------------------- */
-		void remove_shortcut(const std::basic_string<TCHAR>& link) {
-			LOG_TRACE(_T("function user_setting::remove_shortcut() start"));
-			LOG_TRACE(_T("link = %s"), link.c_str());
-			
-			LPITEMIDLIST pidl;
-			SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOP, &pidl);
-			
-			TCHAR buf[2048] = {};
-			SHGetPathFromIDList(pidl, buf);
-			lstrcat(buf, _T("\\"));
-			lstrcat(buf, link.c_str());
-			
-			DeleteFile(buf);
-			
-			LOG_TRACE(_T("function user_setting::remove_shortcut() end"));
-		}
-		
-		/* ----------------------------------------------------------------- */
-		/*
-		 *  context_read
-		 *
-		 *  コンテキストメニューの構造を読み込む．
-		 */
-		/* ----------------------------------------------------------------- */
-		void context_read(const boost::property_tree::ptree &pt, std::vector<SUBMENU> &parent)
-		{
-			using namespace boost;
-			using namespace boost::property_tree;
-
-			BOOST_FOREACH(const ptree::value_type &v, pt) {
-				if(v.first == "item") {
-					optional<int> attr_id = v.second.get_optional<int>("<xmlattr>.id");
-					optional<std::string> attr_name = v.second.get_optional<std::string>("<xmlattr>.name");
-					if(attr_id) {
-#ifdef	UNICODE
-						parent.push_back(SUBMENU( *attr_id, attr_name ? cubeice::utf8_to_unicode(*attr_name) : L"" ));
-#else
-						parent.push_back(SUBMENU( *attr_id, attr_name ? cubeice::utf8_to_sjis(*attr_name) : "" ));
+#ifndef CUBEICE_REG_COMPANY
+#define CUBEICE_REG_COMPANY                     _T("Software\\CubeSoft")
 #endif
-						if(v.second.size()) context_read(v.second, parent.back().children);
-					}
-				}
-			}
+
+#ifndef CUBEICE_REG_ROOT
+#define CUBEICE_REG_ROOT                        _T("Software\\CubeSoft\\CubeICE")
+#endif
+
+#ifndef CUBEICE_REG_STRUCTVERSION
+#define CUBEICE_REG_STRUCTVERSION               _T("v2")
+#endif
+
+/* ------------------------------------------------------------------------- */
+//  基本的な情報
+/* ------------------------------------------------------------------------- */
+#define CUBEICE_NAME_INSTALL_DIRECTORY          _T("InstallDirectory")
+#define CUBEICE_NAME_VERSION                    _T("Version")
+
+namespace CubeICE {
+	/* --------------------------------------------------------------------- */
+	///
+	/// UserSetting
+	///
+	/// <summary>
+	/// CubeICE に関連する各種ユーザ設定を取得・保存するクラスです。
+	/// </summary>
+	///
+	/* --------------------------------------------------------------------- */
+	class UserSetting : public UserSettingBase{
+	public:
+		typedef CubeICE::UserAssociationSetting association_type;
+		typedef CubeICE::UserContextSetting context_type;
+		typedef CubeICE::UserDragDropSetting dragdrop_type;
+		typedef CubeICE::UserShortcutSetting shortcut_type;
+		typedef CubeICE::UserCompressionSetting compression_type;
+		typedef CubeICE::UserDecompressionSetting decompression_type;
+		typedef CubeICE::UserFilteringSetting filtering_type;
+		typedef CubeICE::RuntimeSetting runtime_type;
+		
+	public:
+		/* ----------------------------------------------------------------- */
+		/// constructor
+		/* ----------------------------------------------------------------- */
+		UserSetting() :
+			UserSettingBase(),
+			path_(), version_(),
+			association_(), context_(), dragdrop_(), shortcut_(),
+			compression_(), decompression_(),
+			filtering_(), runtime_() {
+			this->Reset();
+			this->LoadBasicData();
 		}
 		
 		/* ----------------------------------------------------------------- */
-		/*
-		 *  context_write
-		 *
-		 *  コンテキストメニューの構造を書き込む．
-		 */
+		/// constructor
 		/* ----------------------------------------------------------------- */
-		void context_write(boost::property_tree::ptree &pt, const std::vector<SUBMENU> &submenu)
-		{
-			using namespace boost;
-			using namespace boost::property_tree;
+		UserSetting(const UserSetting& cp) :
+			UserSettingBase(cp),
+			path_(cp.path_), version_(cp.version_),
+			association_(cp.association_), context_(cp.context_), dragdrop_(cp.dragdrop_), shortcut_(cp.shortcut_),
+			compression_(cp.compression_), decompression_(cp.decompression_),
+			filtering_(cp.filtering_), runtime_() {}
+		
+		/* ----------------------------------------------------------------- */
+		/// destructor
+		/* ----------------------------------------------------------------- */
+		virtual ~UserSetting() {}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Reset
+		///
+		/// <summary>
+		/// CubeICE の各種設定項目をここで定義します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		virtual void Reset() {
+			UserSettingBase::Reset();
+			this->Parameters().push_back(Node(_T("Tooltip"), true));
+			this->Parameters().push_back(Node(_T("TooltipCount"), 5));
+			this->Parameters().push_back(Node(_T("Explorer"), _T("")));
+			this->Parameters().push_back(Node(_T("ErrorReport"), true));
+			this->Parameters().push_back(Node(_T("LogLevel"), PsdotNet::LogLevel::Error));
+			this->Parameters().push_back(Node(_T("CheckUpdate"), true));
+			this->Parameters().push_back(Node(_T("WarnOnDetail"), true));
 			
-			BOOST_FOREACH(const SUBMENU &s, submenu) {
-				ptree& item = pt.add("item", "");
-				ptree& attr = item.put("<xmlattr>", "");
-				attr.put("id", boost::lexical_cast<std::string>(s.id));
-				if(s.str!=_T("")) {
-#ifdef	UNICODE
-					attr.put("name", cubeice::unicode_to_utf8(s.str));
-#else
-					attr.put("name", cubeice::sjis_to_utf8(s.str));
-#endif
-				}
-				context_write(item, s.children);
+			compression_.Reset();
+			decompression_.Reset();
+			association_.Reset();
+			context_.Reset();
+			dragdrop_.Reset();
+			shortcut_.Reset();
+			filtering_.Reset();
+			runtime_.Reset();
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Upgrade
+		///
+		/// <summary>
+		/// 旧バージョンのデータ構造から現在のものに変換します。
+		///
+		/// NOTE: いくつかの項目については、旧バージョンには同じものを
+		/// 表すものが compression/decompression それぞれに存在します。
+		/// 現状では、decomression で設定されている値を採用しています。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		virtual void Upgrade(const Version1& old) {
+			this->Tooltip((old.decompression().details() & DETAIL_TOOLTIP) != 0);
+			this->TooltipCount(old.decompression().max_filelist());
+			this->Explorer(old.decompression().explorer());
+			this->ErrorReport((old.decompression().details() & DETAIL_REPORT) != 0);
+			this->LogLevel(old.loglevel());
+			this->CheckUpdate(old.update());
+			
+			compression_.Upgrade(old);
+			decompression_.Upgrade(old);
+			association_.Upgrade(old);
+			context_.Upgrade(old);
+			dragdrop_.Upgrade(old);
+			shortcut_.Upgrade(old);
+			filtering_.Upgrade(old);
+			runtime_.Upgrade(old);
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Load
+		///
+		/// <summary>
+		/// レジストリから各種ユーザ設定を読み込みます。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void Load() {
+			std::basic_stringstream<char_type> ss;
+			ss << CUBEICE_REG_ROOT << _T("\\") << CUBEICE_REG_STRUCTVERSION;
+			PsdotNet::RegistryKey root = PsdotNet::Registry::CurrentUser().CreateSubKey(ss.str());
+			if (!root) return;
+			
+			Document doc;
+			doc.Read(root);
+			this->LoadFromDocument(doc);
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Load
+		///
+		/// <summary>
+		/// XML ファイルから各種ユーザ設定を読み込みます。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void Load(const string_type& path) {
+			Document doc;
+			doc.Read(path);
+			this->LoadFromDocument(doc);
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Save
+		///
+		/// <summary>
+		/// レジストリへ各種ユーザ設定を保存します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void Save() {
+			std::basic_stringstream<char_type> ss;
+			ss << CUBEICE_REG_ROOT << _T("\\") << CUBEICE_REG_STRUCTVERSION;
+			PsdotNet::RegistryKey root = PsdotNet::Registry::CurrentUser().CreateSubKey(ss.str());
+			if (!root) return;
+			
+			Document doc;
+			this->SaveToDocument(doc);
+			doc.Write(root);
+			this->SaveStartup();
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Save
+		///
+		/// <summary>
+		/// XML ファイルへ各種ユーザ設定を保存します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void Save(const string_type& path) {
+			Document doc;
+			this->SaveToDocument(doc);
+			doc.Write(path);
+			this->SaveStartup();
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// InstallDirectory
+		///
+		/// <summary>
+		/// CubeICE がインストールされたディレクトリのパスを取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		const string_type& InstallDirectory() const { return path_; }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Version
+		///
+		/// <summary>
+		/// インストールされている CubeICE のバージョン情報を取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		const string_type& Version() const { return version_; }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Association
+		///
+		/// <summary>
+		/// ファイルの関連付けに関する設定を取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		association_type& Association() { return association_; }
+		const association_type& Association() const { return association_; }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Context
+		///
+		/// <summary>
+		/// コンテキストメニューに関する設定を取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		context_type& Context() { return context_; }
+		const context_type& Context() const { return context_; }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// DragDrop
+		///
+		/// <summary>
+		/// ドラッグ&ドロップに関する設定を取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		dragdrop_type& DragDrop() { return dragdrop_; }
+		const dragdrop_type& DragDrop() const { return dragdrop_; }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Shortcut
+		///
+		/// <summary>
+		/// デスクトップに作成するショートカットに関する設定を取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		shortcut_type& Shortcut() { return shortcut_; }
+		const shortcut_type& Shortcut() const { return shortcut_; }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Compression
+		///
+		/// <summary>
+		/// 圧縮に関する設定を取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		compression_type& Compression() { return compression_; }
+		const compression_type& Compression() const { return compression_; }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Decompression
+		///
+		/// <summary>
+		/// 解凍に関する設定を取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		decompression_type& Decompression() { return decompression_; }
+		const decompression_type& Decompression() const { return decompression_; }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Filtering
+		///
+		/// <summary>
+		/// フィルタリングに関する設定を取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		filtering_type& Filtering() { return filtering_; }
+		const filtering_type& Filtering() const { return filtering_; }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Runtime
+		///
+		/// ランタイム時に関する設定を取得します。
+		///
+		/* ----------------------------------------------------------------- */
+		runtime_type& Runtime() { return runtime_; }
+		const runtime_type& Runtime() const { return runtime_; }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Tooltip
+		///
+		/// <summary>
+		/// エクスプローラで圧縮ファイルにマウスカーソルを合わせた時に
+		/// 表示されるツールチップで、ファイル一覧を表示するかどうかを
+		/// 取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		const bool& Tooltip() const {
+			return this->Find(_T("Tooltip")).Value<ValueKind::Bool>();
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Tooltip
+		///
+		/// <summary>
+		/// エクスプローラで圧縮ファイルにマウスカーソルを合わせた時に
+		/// 表示されるツールチップで、ファイル一覧を表示するかどうかを
+		/// 設定します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void Tooltip(bool enable) {
+			this->Find(_T("Tooltip")).Value<ValueKind::Bool>() = enable;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// TooltipCount
+		///
+		/// <summary>
+		/// エクスプローラで圧縮ファイルにマウスカーソルを合わせた時に
+		/// 表示されるツールチップで、ファイル一覧を表示する際の最大表示
+		/// 件数を取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		const int& TooltipCount() const {
+			return this->Find(_T("TooltipCount")).Value<ValueKind::Number>();
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// TooltipCount
+		///
+		/// <summary>
+		/// エクスプローラで圧縮ファイルにマウスカーソルを合わせた時に
+		/// 表示されるツールチップで、ファイル一覧を表示する際の最大表示
+		/// 件数を設定します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void TooltipCount(int n) {
+			this->Find(_T("TooltipCount")).Value<ValueKind::Number>() = n;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Explorer
+		///
+		/// <summary>
+		/// 圧縮・解凍終了後に出力先フォルダを開く際に使用するプログラムの
+		/// パスを取得します。取得される値が空文字の場合、エクスプローラが
+		/// 使用されます。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		const string_type& Explorer() const {
+			return this->Find(_T("Explorer")).Value<ValueKind::String>();
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// Explorer
+		///
+		/// <summary>
+		/// 圧縮・解凍終了後に出力先フォルダを開く際に使用するプログラムの
+		/// パスを設定します。取得される値が空文字の場合、エクスプローラが
+		/// 使用されます。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void Explorer(const string_type& path) {
+			this->Find(_T("Explorer")).Value<ValueKind::String>() = path;
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// ErrorReport
+		///
+		/// <summary>
+		/// CubeICE 実行中に何らかのエラーが発生した時、エラーレポート用
+		/// ダイアログを表示するかどうかを取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		const bool& ErrorReport() const { return this->Find(_T("ErrorReport")).Value<ValueKind::Bool>(); }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// ErrorReport
+		///
+		/// <summary>
+		/// CubeICE 実行中に何らかのエラーが発生した時、エラーレポート用
+		/// ダイアログを表示するかどうかを設定します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void ErrorReport(bool enable) { this->Find(_T("ErrorReport")).Value(enable); }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// LogLevel
+		///
+		/// <summary>
+		/// ログの出力レベルを取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		const int& LogLevel() const {
+			return this->Find(_T("LogLevel")).Value<ValueKind::Number>();
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// LogLevel
+		///
+		/// <summary>
+		/// ログの出力レベルを設定します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void LogLevel(int level) { this->Find(_T("LogLevel")).Value(level); }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// LogLevel
+		///
+		/// <summary>
+		/// ログの出力レベルを設定します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void LogLevel(const PsdotNet::LogLevel& level) { this->LogLevel(level.ToEnum()); }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// CheckUpdate
+		///
+		/// <summary>
+		/// アップデートチェックプログラムをスタートアップに登録するか
+		/// どうかを表す値を取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		const bool& CheckUpdate() const { return this->Find(_T("CheckUpdate")).Value<ValueKind::Bool>(); }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// CheckUpdate
+		///
+		/// <summary>
+		/// アップデートチェックプログラムをスタートアップに登録するか
+		/// どうかを表す値を設定します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void CheckUpdate(bool enable) { this->Find(_T("CheckUpdate")).Value(enable); }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// WarnOnDetail
+		///
+		/// <summary>
+		/// CubeICE 詳細設定を起動した際に警告を表示するかどうかを表す値を
+		/// 取得します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		const bool& WarnOnDetail() const { return this->Find(_T("WarnOnDetail")).Value<ValueKind::Bool>(); }
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// WarnOnDetail
+		///
+		/// <summary>
+		/// CubeICE 詳細設定を起動した際に警告を表示するかどうかを表す値を
+		/// 設定します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void WarnOnDetail(bool enable) { this->Find(_T("WarnOnDetail")).Value(enable); }
+		
+	private:
+		/* ----------------------------------------------------------------- */
+		///
+		/// LoadBasicData
+		///
+		/// <summary>
+		/// インストールディレクトリ、バージョン等、HKEY_LOCAL_MACHINE 以下
+		/// に保存されている CubeICE の基本的なデータを読み込みます。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void LoadBasicData() {
+			try {
+				using PsdotNet::Registry;
+				using PsdotNet::RegistryKey;
+				using PsdotNet::RegistryValueKind;
+				
+				RegistryKey subkey = Registry::LocalMachine().OpenSubKey(CUBEICE_REG_ROOT, false);
+				if (!subkey) return;
+				
+				path_ = subkey.GetValue<string_type>(CUBEICE_NAME_INSTALL_DIRECTORY);
+				version_ = subkey.GetValue<string_type>(CUBEICE_NAME_VERSION);
+			}
+			catch (const std::exception& /* err */) {}
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// LoadFromDocument
+		///
+		/// <summary>
+		/// CubeICE の各種設定を読み込みます。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void LoadFromDocument(const Document& doc) {
+			this->LoadFromParameter(doc.Root());
+			filtering_.LoadFromParameter(doc.Root());
+			
+			// 圧縮関連の設定
+			optional<const Node&> node_compression = PsdotNet::Parameter::FindOptional(doc.Root(), _T("Compression"));
+			if (node_compression) compression_.LoadFromParameter(node_compression->Value<ValueKind::NodeSet>());
+			
+			// 解凍関連の設定
+			optional<const Node&> node_decompression = PsdotNet::Parameter::FindOptional(doc.Root(), _T("Decompression"));
+			if (node_decompression) decompression_.LoadFromParameter(node_decompression->Value<ValueKind::NodeSet>());
+			
+			// コンテキストメニュー関連の設定
+			optional<const Node&> node_context = PsdotNet::Parameter::FindOptional(doc.Root(), _T("Context"));
+			if (node_context) context_.LoadFromParameter(node_context->Value<ValueKind::NodeSet>());
+			
+			// ドラッグ&ドロップ関連の設定
+			optional<const Node&> node_dragdrop = PsdotNet::Parameter::FindOptional(doc.Root(), _T("DragDrop"));
+			if (node_dragdrop) dragdrop_.LoadFromParameter(node_dragdrop->Value<ValueKind::NodeSet>());
+			
+			// 関連付け関連の設定
+			optional<const Node&> node_association = PsdotNet::Parameter::FindOptional(doc.Root(), _T("Association"));
+			if (node_association) association_.LoadFromParameter(node_association->Value<ValueKind::NodeSet>());
+			
+			// ショートカット関連の設定
+			optional<const Node&> node_shortcut = PsdotNet::Parameter::FindOptional(doc.Root(), _T("Shortcut"));
+			if (node_shortcut) shortcut_.LoadFromParameter(node_shortcut->Value<ValueKind::NodeSet>());
+			
+			// ランタイム時の設定
+			optional<const Node&> node_runtime = PsdotNet::Parameter::FindOptional(doc.Root(), _T("Runtime"));
+			if (node_runtime) runtime_.LoadFromParameter(node_runtime->Value<ValueKind::NodeSet>());
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// SaveToDocument
+		///
+		/// <summary>
+		/// CubeICE の各種設定を保存します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void SaveToDocument(Document& doc) {
+			this->SaveToParameter(doc.Root());
+			filtering_.SaveToParameter(doc.Root());
+			
+			// 圧縮関連の設定
+			NodeSet ns_compression;
+			compression_.SaveToParameter(ns_compression);
+			doc.Root().push_back(Node(_T("Compression"), ns_compression));
+			
+			// 解凍関連の設定
+			NodeSet ns_decompression;
+			decompression_.SaveToParameter(ns_decompression);
+			doc.Root().push_back(Node(_T("Decompression"), ns_decompression));
+			
+			// コンテキストメニュー関連の設定
+			NodeSet ns_context;
+			context_.SaveToParameter(ns_context);
+			doc.Root().push_back(Node(_T("Context"), ns_context));
+			
+			// ドラッグ&ドロップ関連の設定
+			NodeSet ns_dragdrop;
+			dragdrop_.SaveToParameter(ns_dragdrop);
+			doc.Root().push_back(Node(_T("DragDrop"), ns_dragdrop));
+			
+			// 関連付け関連の設定
+			NodeSet ns_association;
+			association_.SaveToParameter(ns_association);
+			doc.Root().push_back(Node(_T("Association"), ns_association));
+			
+			// ショートカット関連の設定
+			NodeSet ns_shortcut;
+			shortcut_.SaveToParameter(ns_shortcut);
+			doc.Root().push_back(Node(_T("Shortcut"), ns_shortcut));
+			
+			// ランタイム時の設定
+			NodeSet ns_runtime;
+			runtime_.SaveToParameter(ns_runtime);
+			doc.Root().push_back(Node(_T("Runtime"), ns_runtime));
+		}
+		
+		/* ----------------------------------------------------------------- */
+		///
+		/// SaveStartup
+		///
+		/// <summary>
+		/// スタートアップに cubeice-checker.exe を登録、または登録解除
+		/// します。
+		/// </summary>
+		///
+		/* ----------------------------------------------------------------- */
+		void SaveStartup() {
+			string_type subkey = _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
+			string_type name   = _T("cubeice-checker");
+			string_type path   = _T("\"") + path_ + _T("\\cubeice-checker.exe\"");
+			
+			try {
+				PsdotNet::RegistryKey reg = PsdotNet::Registry::CurrentUser().OpenSubKey(subkey, true);
+				if (!reg) return;
+				
+				if (this->CheckUpdate()) reg.SetValue(name, path);
+				else reg.DeleteValue(name, false);
+			}
+			catch (std::exception& /* err */) {
+				return;
 			}
 		}
 		
 	private:
-		string_type root_;
-		string_type install_;
-		string_type version_;
-		archive_type comp_;
-		archive_type decomp_;
-		size_type ctx_flags_;
-		size_type sc_flags_;
-		size_type sc_index_;
-		container_type filters_;
-		bool update_;
-		int loglevel_;
-		bool ctx_customize_;
-		std::vector<SUBMENU> ctx_submenu_;
-		bool associate_invoke_;
-	};
-}
+		string_type             path_;              // インストールディレクトリ
+		string_type             version_;           // バージョン
+		association_type        association_;       // ファイルの関連付け
+		context_type            context_;           // コンテキストメニュー
+		dragdrop_type           dragdrop_;          // ドラッグ&ドロップメニュー
+		shortcut_type           shortcut_;          // デスクトップに作成するショートカット
+		compression_type        compression_;       // 圧縮
+		decompression_type      decompression_;     // 解凍
+		filtering_type          filtering_;         // フィルタリング
+		runtime_type            runtime_;           // ランタイム時の設定
+	}; // class UserSetting
+} // namespace CubeICE
 
 #endif // CUBEICE_USER_SETTING_H

@@ -39,12 +39,11 @@
 #include <clx/config.h>
 #include <clx/tokenizer.h>
 
+#include <cubeice/config.h>
 #include <cubeice/user-setting.h>
 #include <cubeice/dialog.h>
 #include <cubeice/sendmail.h>
 #include "archiver.h"
-
-extern cubeice::user_setting UserSetting;
 
 namespace cubeice {
 	namespace cmdline {
