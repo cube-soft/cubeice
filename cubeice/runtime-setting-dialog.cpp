@@ -209,13 +209,25 @@ namespace cubeice {
 				setting.thread_size() = SendMessage(GetDlgItem(hWnd, IDC_THREAD_UPDOWN), UDM_GETPOS, 0, 0);
 				
 				// パスワード
-				if (IsDlgButtonChecked(hWnd, IDC_PASSWORD_CHECKBOX)) {
-					TCHAR pass[128] = {};
-					GetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, pass, 2048);
-					setting.enable_password() = true;
-					setting.password() = pass;
-				}
-				else {
+                if (IsDlgButtonChecked(hWnd, IDC_PASSWORD_CHECKBOX)) {
+                    TCHAR buffer[2048] = {};
+                    GetDlgItemText(hWnd, IDC_PASSWORD_TEXTBOX, buffer, 2048);
+                    std::basic_string<TCHAR> pass = buffer;
+
+                    {   // NOTE: パスワードに引用符を許容する。
+                        std::basic_string<TCHAR> target = _T("\"");
+                        std::basic_string<TCHAR> replace = _T("\\\"");
+                        std::basic_string<TCHAR>::size_type offset = pass.find(target);
+                        while (offset != std::basic_string<TCHAR>::npos) {
+                            pass.replace(offset, target.length(), replace);
+                            offset = pass.find(target, offset + replace.length());
+                        }
+                    }
+
+                    setting.enable_password() = true;
+                    setting.password() = pass;
+                }
+                else {
 					setting.enable_password() = false;
 					setting.password().erase();
 				}
