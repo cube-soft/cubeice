@@ -10,7 +10,7 @@ http://www.cube-soft.jp/cubeice/
 
 CubeICE のリポジトリは、下記に移動しました。
 
-* https://github.com/cube-soft/Cube.FileSystem
-* https://github.com/cube-soft/Cube.FileSystem/tree/master/Applications/Ice
+* https://github.com/cube-soft/Cube.FileSystem.SevenZip
+* https://github.com/cube-soft/Cube.FileSystem.SevenZip/tree/master/Applications/Ice
 
 このリポジトリは間もなく削除されます。
